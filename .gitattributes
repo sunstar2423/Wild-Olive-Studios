@@ -1,0 +1,44 @@
+# =============================================================
+# Git LFS — track large binary game assets here.
+# Run `git lfs install` once per machine before committing these.
+# Add/remove patterns to match the engines & asset types you use.
+# =============================================================
+
+# Images / textures
+*.psd     filter=lfs diff=lfs merge=lfs -text
+*.tga     filter=lfs diff=lfs merge=lfs -text
+*.exr     filter=lfs diff=lfs merge=lfs -text
+*.hdr     filter=lfs diff=lfs merge=lfs -text
+# Large PNG/JPG art (small UI icons can stay in normal git — move them out if needed)
+# *.png   filter=lfs diff=lfs merge=lfs -text
+
+# Audio
+*.wav     filter=lfs diff=lfs merge=lfs -text
+*.mp3     filter=lfs diff=lfs merge=lfs -text
+*.ogg     filter=lfs diff=lfs merge=lfs -text
+*.flac    filter=lfs diff=lfs merge=lfs -text
+
+# Video
+*.mp4     filter=lfs diff=lfs merge=lfs -text
+*.mov     filter=lfs diff=lfs merge=lfs -text
+*.webm    filter=lfs diff=lfs merge=lfs -text
+
+# 3D models
+*.fbx     filter=lfs diff=lfs merge=lfs -text
+*.blend   filter=lfs diff=lfs merge=lfs -text
+*.glb     filter=lfs diff=lfs merge=lfs -text
+*.gltf    filter=lfs diff=lfs merge=lfs -text
+
+# Fonts & packed assets
+*.ttf     filter=lfs diff=lfs merge=lfs -text
+*.otf     filter=lfs diff=lfs merge=lfs -text
+*.zip     filter=lfs diff=lfs merge=lfs -text
+*.pak     filter=lfs diff=lfs merge=lfs -text
+
+# Normalize line endings for text/code
+*.cs      text
+*.js      text
+*.gd      text
+*.html    text
+*.css     text
+*.md      text
