@@ -22,6 +22,12 @@ network — while keeping riders happy and your fleet maintained.
 - **Keep the city happy.** Long waits, overcrowding and breakdowns lower the city's
   happiness; reliable, well-covered service raises it — and a happier city rides
   more.
+- **Ride the rhythm of the city.** Each morning rolls a **weather** type and
+  sometimes a **special event**. Event days — Match Day (Stadium), Opera Night,
+  the Arts Festival, Market Day, Graduation, Travel Rush, and sunny Beach Days —
+  surge demand at specific venues, rewarding players who pre-position vehicles.
+  **Weather** sways outdoor/leisure demand and, for **ferries**, scales speed and
+  wear: storms and blustery days leave ferries slower and wearing out faster.
 - **Read the daily report.** Each night you get fares, running costs, net profit,
   riders carried and the busiest journeys. A **🔥 Demand** overlay shows trips
   people want to make but can't yet — your cue to expand.
@@ -34,10 +40,15 @@ network — while keeping riders happy and your fleet maintained.
 - **Single-file HTML5 game** — vanilla JavaScript + Canvas 2D, no engine, no build
   step, no dependencies.
 - A tick-based simulation with live moving vehicles and individual passenger agents,
-  Dijkstra route-planning with transfer penalties, a gravity demand model, and a
-  wear/maintenance economy.
+  Dijkstra route-planning with transfer penalties, a gravity demand model, a daily
+  weather/event system, and a wear/maintenance economy.
+- **Procedural ambient sound** via the Web Audio API — a brown-noise harbour "wave
+  wash" with a slow swell, occasional gulls and a buoy bell, plus weather-reactive
+  wind and a goal chime. No audio files; mutable and gated behind a user gesture.
+- **Save/restore** in `localStorage`: auto-saves each night, manual save, and a
+  Continue option on the title screen.
 - Mouse and touch controls; keyboard shortcuts (`1`/`2`/`3` modes, `H` demand,
-  `Space` pause).
+  `S` save, `M` sound, `Space` pause).
 
 ## Where the playable build lives
 
@@ -69,8 +80,11 @@ that:
 
 ## Ideas to grow it
 
-- [ ] Save/restore via `localStorage`
-- [ ] Event days (festivals, match days) that spike demand at the Stadium / Opera
-- [ ] Weather affecting ferries and demand
+- [x] Save/restore via `localStorage`
+- [x] Event days (festivals, match days) that spike demand at the Stadium / Opera
+- [x] Weather affecting ferries and demand
+- [x] Procedural ambient harbour soundscape
 - [ ] Express vs. stopping services on a line
-- [ ] Sound: gentle ambient harbour loop + arrival chimes
+- [ ] Arrival chimes / fare jingles tied to vehicle events
+- [ ] Timetable / frequency controls per line
+- [ ] Season-long campaign with budget targets

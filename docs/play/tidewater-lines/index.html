@@ -184,6 +184,7 @@
     <div class="stat"><span class="k" id="uiDayK">Day · Time</span><span class="v" id="uiDay">1 · 06:00</span></div>
     <div class="stat hideSm"><span class="k">Riders today</span><span class="v" id="uiRiders">0</span></div>
     <div class="stat"><span class="k">Happiness</span><span class="v" id="uiHappy">75%</span></div>
+    <div class="stat hideSm"><span class="k">Today</span><span class="v" id="uiCond" style="font-size:.82rem">—</span></div>
     <div class="spacer"></div>
     <div class="speed" id="speed">
       <button data-s="0" title="Pause">⏸</button>
@@ -191,6 +192,7 @@
       <button data-s="2">2×</button>
       <button data-s="4">4×</button>
     </div>
+    <button class="savebtn" id="soundBtn" title="Sound on/off">🔊</button>
     <button class="savebtn" id="saveBtn" title="Save game now">💾</button>
   </header>
 
@@ -272,7 +274,10 @@
             <b style="color:#fff">4. Watch the numbers.</b> Toggle <b>🔥 Demand</b> to see where people want to travel but can't yet. Each night you get a profit/loss report. Keep funds above zero and riders happy.
           </p></div>
           <div class="card"><p class="muted">
-            <b style="color:#fff">5. Saving.</b> Your city <b>auto-saves every night</b>. Tap <b>💾</b> (or press <b>S</b>) to save any time, and pick <b>Continue</b> on the title screen to return to it. Shortcuts: <b>1/2/3</b> pick a mode, <b>H</b> toggles demand, <b>Space</b> pauses.
+            <b style="color:#fff">5. Weather & event days.</b> The top bar shows today's conditions. <b>Event days</b> — Match Day at the Stadium, Opera Night, the Arts Festival, Market Day and more — surge demand at specific venues, so pre-position vehicles to cash in. <b>Weather</b> sways outdoor demand (sunny Beach Days are golden), and rough seas <b>slow ferries and wear them faster</b> — keep them serviced through storms.
+          </p></div>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">6. Saving & sound.</b> Your city <b>auto-saves every night</b>. Tap <b>💾</b> (or <b>S</b>) to save, <b>🔊</b> (or <b>M</b>) for sound, and pick <b>Continue</b> on the title screen to return. Shortcuts: <b>1/2/3</b> modes, <b>H</b> demand, <b>Space</b> pause.
           </p></div>
           <div class="legend">
             <span><i style="background:var(--bus)"></i>Bus</span>
@@ -295,6 +300,7 @@
     <ul>
       <li>🚌 <b>Trace routes</b> between 18 unique destinations — libraries, an opera house, beaches, a forest park, the harbour and more.</li>
       <li>👥 <b>Watch live passengers</b> board, transfer at interchanges, and ride to their stops.</li>
+      <li>🏟️ <b>Ride the rhythm of the city</b> — Match Days, festivals and weather shift demand; rough seas slow the ferries.</li>
       <li>💷 <b>Balance profit & happiness</b> — expand smartly, maintain your fleet, and keep riders smiling.</li>
     </ul>
     <div class="legend">
@@ -416,6 +422,34 @@ const WATER = [
   [[420,560],[460,640],[430,720],[470,800],[560,800],[540,640],[520,560]],
 ];
 
+/* --------------------------- WEATHER & EVENTS ---------------------------- */
+/* Outdoor / leisure stops whose demand swings with the weather. */
+const OUTDOOR = [2,9,10,11,15,17];  // old town, waterfront, beach, forest, botanic, marina
+
+/* Weather is rolled each morning. It scales ferry speed & wear, shifts demand
+   at outdoor spots, and nudges overall ridership. */
+const WEATHERS = [
+  { key:"sunny",  name:"Sunny",     icon:"☀️", w:32, ferrySpeed:1.05, ferryWear:0.95, outdoor:1.45, global:1.05 },
+  { key:"fair",   name:"Fair",      icon:"🌤️", w:26, ferrySpeed:1.00, ferryWear:1.00, outdoor:1.10, global:1.00 },
+  { key:"cloudy", name:"Cloudy",    icon:"⛅", w:20, ferrySpeed:1.00, ferryWear:1.00, outdoor:0.90, global:1.00 },
+  { key:"rainy",  name:"Rainy",     icon:"🌧️", w:14, ferrySpeed:0.85, ferryWear:1.15, outdoor:0.55, global:1.08 },
+  { key:"windy",  name:"Blustery",  icon:"🌬️", w:5,  ferrySpeed:0.70, ferryWear:1.30, outdoor:0.75, global:0.98 },
+  { key:"storm",  name:"Storm",     icon:"⛈️", w:3,  ferrySpeed:0.45, ferryWear:1.45, outdoor:0.30, global:0.88 },
+];
+
+/* Special event days surge demand at particular venues. `req` (optional) gates an
+   event on the weather key. `mods` maps locId → demand multiplier. */
+const EVENTS = [
+  { key:"normal",  name:"",                icon:"",   w:48, note:"" , mods:{} },
+  { key:"match",   name:"Match Day",       icon:"🏟️", w:11, note:"Big crowds heading to the Stadium tonight.", mods:{14:4.2, 0:1.3, 1:1.2} },
+  { key:"opera",   name:"Opera Night",     icon:"🎶", w:8,  note:"A gala at the Opera House — dress circle's full.", mods:{6:3.4, 7:2.2, 0:1.2} },
+  { key:"festival",name:"Arts Festival",   icon:"🎭", w:7,  note:"The Theatre Quarter is buzzing with festival-goers.", mods:{7:3.0, 6:2.0, 8:1.8} },
+  { key:"market",  name:"Market Day",      icon:"🛍️", w:7,  note:"Market Day packs out the Shopping Centre.", mods:{4:2.4, 0:1.3} },
+  { key:"grad",    name:"Graduation",      icon:"🎓", w:5,  note:"Graduation brings families to the University.", mods:{3:2.6, 13:1.3} },
+  { key:"flight",  name:"Travel Rush",     icon:"✈️", w:5,  note:"A travel rush swells the Airport run.", mods:{16:2.6, 1:1.3} },
+  { key:"beach",   name:"Beach Day",       icon:"🏖️", w:9,  note:"Glorious weather — everyone's off to the coast!", mods:{10:2.6, 9:1.7, 17:1.6}, req:"sunny" },
+];
+
 /* --------------------------- STATE --------------------------------------- */
 const S = {
   money: CFG.START_MONEY,
@@ -434,6 +468,7 @@ const S = {
   autoService: true,
   heatmap: false,
   unmet: {},            // locId pair pulse intensities for demand overlay
+  weather: null, event: null,  // today's conditions (rolled each morning)
   goalsDone: {},
   ended: false,
 };
@@ -562,13 +597,49 @@ function timeFactor(peak){
   return Math.max(0.15, base*mult);
 }
 
+/* Roll the day's weather and (maybe) a special event. Beach Day requires sun. */
+function pickWeighted(list){
+  let tot=0; for(const o of list) tot+=o.w;
+  let r=Math.random()*tot;
+  for(const o of list){ r-=o.w; if(r<=0) return o; }
+  return list[0];
+}
+function rollDailyConditions(){
+  S.weather = pickWeighted(WEATHERS);
+  const pool = EVENTS.filter(e=>!e.req || e.req===S.weather.key);
+  S.event = pickWeighted(pool);
+  if(typeof SFX!=="undefined") SFX.setWeather(S.weather);
+}
+/* announce the new day's conditions (called after rolling, when a new day opens) */
+function announceConditions(){
+  updateConditions();
+  if(S.event && S.event.key!=="normal")
+    toast(`${S.event.icon} ${S.event.name} — ${S.event.note}`, "good");
+  if(S.weather && (S.weather.key==="storm" || S.weather.key==="windy"))
+    toast(`${S.weather.icon} ${S.weather.name} on the bay — ferries are slower and wear faster today.`, "warn");
+}
+function updateConditions(){
+  const el=$("uiCond"); if(!el) return;
+  if(!S.weather){ el.textContent="—"; return; }
+  const ev = (S.event && S.event.key!=="normal") ? ` · ${S.event.icon} ${S.event.name}` : "";
+  el.textContent = `${S.weather.icon} ${S.weather.name}${ev}`;
+}
+
+/* combined demand multiplier for a location from today's event + weather */
+function locDemandMult(id){
+  let m = 1;
+  if(S.event && S.event.mods[id]) m *= S.event.mods[id];
+  if(S.weather && OUTDOOR.includes(id)) m *= S.weather.outdoor;
+  return m;
+}
+
 function pickDestination(oId){
   let total=0; const w=[];
   for(const l of LOCATIONS){
     if(l.id===oId){ w.push(0); continue; }
     const d = dist(loc(oId),l);
-    // gravity model: attraction / distance falloff
-    const val = l.pull * (1/(1+d/260));
+    // gravity model: attraction / distance falloff, swayed by today's conditions
+    const val = l.pull * (1/(1+d/260)) * locDemandMult(l.id);
     w.push(val); total+=val;
   }
   let r=Math.random()*total;
@@ -580,15 +651,16 @@ function spawnPassengers(dtMin){
   if(S.time<CFG.DAY_START || S.time>CFG.DAY_END) return;
   if(S.passengers.length>=CFG.MAX_PASSENGERS) return;
   const happyMult = 0.55 + (S.happy/100)*0.75; // happier city → more riders
+  const wxGlobal = S.weather ? S.weather.global : 1;
   let rate=0;
-  for(const l of LOCATIONS) rate += l.demand*timeFactor(l.peak);
-  rate *= 0.15 * happyMult;          // global tuning → passengers per sim-min
+  for(const l of LOCATIONS) rate += l.demand*timeFactor(l.peak)*locDemandMult(l.id);
+  rate *= 0.15 * happyMult * wxGlobal;   // global tuning → passengers per sim-min
   S.spawnAcc += rate*dtMin;
   let guard=0;
   while(S.spawnAcc>=1 && S.passengers.length<CFG.MAX_PASSENGERS && guard++<40){
     S.spawnAcc-=1;
-    // choose origin weighted by demand*timefactor
-    let tot=0; const w=LOCATIONS.map(l=>{const v=l.demand*timeFactor(l.peak); tot+=v; return v;});
+    // choose origin weighted by demand*timefactor*conditions
+    let tot=0; const w=LOCATIONS.map(l=>{const v=l.demand*timeFactor(l.peak)*locDemandMult(l.id); tot+=v; return v;});
     let r=Math.random()*tot, oId=0;
     for(let i=0;i<w.length;i++){ r-=w[i]; if(r<=0){oId=i;break;} }
     const dId = pickDestination(oId);
@@ -658,7 +730,9 @@ function tickVehicle(v,dtMin){
 
   // t is the offset from stops[seg] (lower-index endpoint), 0..segLen[seg].
   // Forward (dir>0): t grows toward stops[seg+1]. Backward: t shrinks toward stops[seg].
-  let move=v.speed*dtMin;
+  // Ferries slow down in rough weather (and wear faster — handled in onArrive).
+  const wxSpeed = (v.mode==="ferry" && S.weather) ? S.weather.ferrySpeed : 1;
+  let move=v.speed*wxSpeed*dtMin;
   let safety=0;
   while(move>0 && safety++<60){
     const segL=line.path.segLen[v.seg]||0;
@@ -695,7 +769,8 @@ function onArrive(v,line,stopId,segL){
   const m=MODES[line.mode];
   arriveStop(v,line,stopId);
   v.dwell=0.55;
-  v.wear=clamp(v.wear+m.wearRate*segL,0,100);
+  const wxWear = (v.mode==="ferry" && S.weather) ? S.weather.ferryWear : 1;
+  v.wear=clamp(v.wear+m.wearRate*segL*wxWear,0,100);
   maybeBreak(v);
   if(S.autoService && v.wear>68 && !v.broken) doService(v,true);
 }
@@ -896,6 +971,8 @@ function endOfDay(){
   S.fareToday=0; S.maintToday=0; S.ridersToday=0; S.lostToday=0;
   S.breakdownsToday=0; S.deniedToday=0;
   S.odToday={};
+  rollDailyConditions();
+  announceConditions();
   checkGoals();
   checkEnd();
   if(!S.ended) saveGame(false);   // auto-save each night (after end check)
@@ -916,7 +993,7 @@ function connectedCount(){ const s=new Set(); for(const ln of S.lines) for(const
 function checkGoals(){
   let newly=false;
   for(const g of GOALS){
-    if(!S.goalsDone[g.id] && g.test()){ S.goalsDone[g.id]=true; newly=true; if(g.id!=="worth") toast("Goal complete: "+g.txt+" ✓","good"); }
+    if(!S.goalsDone[g.id] && g.test()){ S.goalsDone[g.id]=true; newly=true; if(g.id!=="worth"){ toast("Goal complete: "+g.txt+" ✓","good"); SFX.chime(); } }
   }
   renderGoals();
   return newly;
@@ -1002,6 +1079,7 @@ function confirmBuild(){
 /* pointer handling */
 cv.addEventListener("pointerdown",e=>{
   if(!S.running) return;
+  SFX.resume();   // browsers may suspend audio until a gesture in the page
   const rect=cv.getBoundingClientRect();
   const w=s2w(e.clientX-rect.left, e.clientY-rect.top);
   const l=nearestStop(w.x,w.y);
@@ -1040,6 +1118,36 @@ function render(){
   drawStops();
 
   ctx.restore();
+  drawWeather();   // full-screen overlay (rain, storm, sun glow)
+}
+
+function drawWeather(){
+  const w=S.weather; if(!w) return;
+  const W=cv.width, H=cv.height;
+  if(w.key==="sunny"){
+    const g=ctx.createRadialGradient(W*0.18,H*0.12,0, W*0.18,H*0.12, Math.max(W,H)*0.6);
+    g.addColorStop(0,"rgba(255,225,150,0.16)"); g.addColorStop(1,"rgba(255,225,150,0)");
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    return;
+  }
+  const rainLevel = w.key==="storm"?1 : w.key==="rainy"?0.6 : w.key==="windy"?0.25 : 0;
+  if(rainLevel<=0) return;
+  const n=Math.floor(70*rainLevel) + 20;
+  const slant = w.key==="windy"||w.key==="storm" ? 7 : 3;
+  ctx.strokeStyle = `rgba(180,210,220,${0.10+0.10*rainLevel})`;
+  ctx.lineWidth=1.2;
+  ctx.beginPath();
+  for(let i=0;i<n;i++){
+    const seed=(i*97.13);
+    const x=((seed*53 + pulse*60*slant) % W);
+    const y=((seed*137 + pulse*900*rainLevel) % H);
+    ctx.moveTo(x,y); ctx.lineTo(x-slant*2, y+12+8*rainLevel);
+  }
+  ctx.stroke();
+  // storm lightning: rare brief flash
+  if(w.key==="storm" && Math.random()<0.004){
+    ctx.fillStyle="rgba(220,230,255,0.18)"; ctx.fillRect(0,0,W,H);
+  }
 }
 
 function drawWater(){
@@ -1285,6 +1393,99 @@ function toast(msg,kind){
   while(host.children.length>4) host.removeChild(host.firstChild);
 }
 
+/* --------------------------- AMBIENT SOUND ------------------------------- */
+/* A self-contained harbour soundscape built with the Web Audio API — no audio
+   files. A soft brown-noise "wave wash" bed with a slow swell, plus occasional
+   gull cries and a distant buoy bell. Rougher weather makes the wind louder and
+   brighter. Must be kicked off by a user gesture (the Start/Continue buttons). */
+const SOUND_KEY = "tidewater-lines-sound";
+const SFX = {
+  ctx:null, master:null, on:true, started:false, windGain:null, windFilter:null, _timer:null,
+  _prefOn(){ try{ return localStorage.getItem(SOUND_KEY)!=="0"; }catch(e){ return true; } },
+  init(){
+    if(this.started){ this.resume(); return; }
+    const AC = (typeof window!=="undefined") && (window.AudioContext||window.webkitAudioContext);
+    if(!AC) return;
+    try{ this.ctx=new AC(); }catch(e){ return; }
+    this.on=this._prefOn();
+    this.master=this.ctx.createGain();
+    this.master.gain.value=this.on?0.6:0.0;
+    this.master.connect(this.ctx.destination);
+    this._buildBed(); this._scheduleAmbient();
+    this.started=true;
+    this.setWeather(S.weather);
+    const b=$("soundBtn"); if(b) b.textContent=this.on?"🔊":"🔇";
+  },
+  resume(){ if(this.ctx && this.ctx.state==="suspended") this.ctx.resume(); },
+  _noiseBuffer(){
+    const ctx=this.ctx, len=ctx.sampleRate*2, buf=ctx.createBuffer(1,len,ctx.sampleRate), d=buf.getChannelData(0);
+    let last=0;
+    for(let i=0;i<len;i++){ const white=Math.random()*2-1; last=(last+0.02*white)/1.02; d[i]=last*3.2; } // brown-ish
+    return buf;
+  },
+  _buildBed(){
+    const ctx=this.ctx;
+    const src=ctx.createBufferSource(); src.buffer=this._noiseBuffer(); src.loop=true;
+    const filt=ctx.createBiquadFilter(); filt.type="lowpass"; filt.frequency.value=480; filt.Q.value=0.6;
+    const g=ctx.createGain(); g.gain.value=0.10;
+    src.connect(filt); filt.connect(g); g.connect(this.master);
+    const lfo=ctx.createOscillator(); lfo.frequency.value=0.08;          // slow swell
+    const lfoG=ctx.createGain(); lfoG.gain.value=0.04;
+    lfo.connect(lfoG); lfoG.connect(g.gain);
+    src.start(); lfo.start();
+    this.windGain=g; this.windFilter=filt;
+  },
+  _scheduleAmbient(){
+    const tick=()=>{
+      if(!this.ctx) return;
+      if(this.on){ if(Math.random()<0.6) this.gull(); else this.bell(); }
+      this._timer=setTimeout(tick, 6000+Math.random()*9000);
+    };
+    this._timer=setTimeout(tick, 3500+Math.random()*4000);
+  },
+  gull(){
+    const ctx=this.ctx, t=ctx.currentTime;
+    const o=ctx.createOscillator(); o.type="triangle";
+    const bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1700; bp.Q.value=4;
+    const g=ctx.createGain();
+    o.frequency.setValueAtTime(1500,t); o.frequency.exponentialRampToValueAtTime(900,t+0.18);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.05,t+0.03); g.gain.exponentialRampToValueAtTime(0.0001,t+0.22);
+    o.connect(bp); bp.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t+0.28);
+  },
+  bell(){
+    const ctx=this.ctx, t=ctx.currentTime;
+    const o=ctx.createOscillator(); o.type="sine"; o.frequency.value=515+Math.random()*45;
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.05,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+1.4);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t+1.5);
+  },
+  chime(){ // gentle two-note flourish for goals / milestones
+    if(!this.ctx||!this.on) return;
+    const ctx=this.ctx, t=ctx.currentTime;
+    [660,880].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type="sine"; o.frequency.value=f;
+      const g=ctx.createGain(); const tt=t+i*0.12;
+      g.gain.setValueAtTime(0.0001,tt); g.gain.exponentialRampToValueAtTime(0.07,tt+0.02); g.gain.exponentialRampToValueAtTime(0.0001,tt+0.5);
+      o.connect(g); g.connect(this.master); o.start(tt); o.stop(tt+0.55); });
+  },
+  setWeather(w){
+    if(!this.ctx||!w) return;
+    const t=this.ctx.currentTime;
+    const map={ sunny:[0.07,430], fair:[0.09,470], cloudy:[0.10,480], rainy:[0.16,820], windy:[0.20,1000], storm:[0.28,1300] };
+    const [gain,freq]=map[w.key]||[0.10,480];
+    if(this.windGain) this.windGain.gain.setTargetAtTime(gain,t,1.5);
+    if(this.windFilter) this.windFilter.frequency.setTargetAtTime(freq,t,1.5);
+  },
+  setOn(v){
+    this.on=v;
+    if(this.master) this.master.gain.setTargetAtTime(v?0.6:0.0, this.ctx.currentTime, 0.15);
+    try{ localStorage.setItem(SOUND_KEY, v?"1":"0"); }catch(e){}
+    const b=$("soundBtn"); if(b) b.textContent=v?"🔊":"🔇";
+  },
+  toggle(){ this.init(); this.setOn(!this.on); },
+};
+
 /* --------------------------- SCREENS ------------------------------------- */
 function showScreen(id){ ["startScreen","dayScreen","endScreen"].forEach(s=>$(s).classList.toggle("hidden",s!==id)); }
 function hideScreens(){ ["startScreen","dayScreen","endScreen"].forEach(s=>$(s).classList.add("hidden")); }
@@ -1324,6 +1525,7 @@ function serialize(){
     fareToday:S.fareToday, maintToday:S.maintToday, odToday:S.odToday,
     autoService:S.autoService, peakRiders:S._peakRiders||0,
     goalsDone:S.goalsDone, nextLineId:S.nextLineId, nextVehId:S.nextVehId,
+    weatherKey:S.weather&&S.weather.key, eventKey:S.event&&S.event.key,
     lines:S.lines.map(l=>({ id:l.id, mode:l.mode, stops:l.stops.slice(),
       vehicles:l.vehicles.map(v=>({ id:v.id, wear:v.wear })) })),
   };
@@ -1356,6 +1558,12 @@ function deserialize(d){
   // restore id counters AFTER building (makeVehicle bumps nextVehId)
   S.nextLineId=d.nextLineId||(S.lines.reduce((m,l)=>Math.max(m,l.id),0)+1);
   S.nextVehId =d.nextVehId ||(S.vehicles.reduce((m,v)=>Math.max(m,v.id),0)+1);
+  // restore the day's conditions (re-roll if the save predates them)
+  S.weather = WEATHERS.find(w=>w.key===d.weatherKey) || null;
+  S.event   = EVENTS.find(e=>e.key===d.eventKey)     || null;
+  if(!S.weather || !S.event) rollDailyConditions();
+  if(typeof SFX!=="undefined") SFX.setWeather(S.weather);
+  updateConditions();
   rebuildGraph();
   return true;
 }
@@ -1369,6 +1577,7 @@ function saveGame(manual){
 function hasSave(){ try{ return !!localStorage.getItem(SAVE_KEY); }catch(e){ return false; } }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 function loadGame(){
+  SFX.init();   // Continue button gesture starts audio
   let raw=null; try{ raw=localStorage.getItem(SAVE_KEY); }catch(e){}
   if(!raw){ toast("No saved city found.","warn"); return false; }
   let ok=false;
@@ -1410,6 +1619,7 @@ let uiAcc=0;
 
 /* --------------------------- WIRING -------------------------------------- */
 function startGame(){
+  SFX.init();   // kicked off by the Start button gesture (audio autoplay policy)
   // reset
   Object.assign(S,{
     money:CFG.START_MONEY, day:1, time:CFG.DAY_START, speed:1, running:true, paused:false,
@@ -1421,6 +1631,7 @@ function startGame(){
   });
   LOCATIONS.forEach(l=>S.stops[l.id]={wait:[]});
   clearSave();   // a fresh city replaces any previous save
+  rollDailyConditions(); updateConditions();
   rebuildGraph();
   hideScreens();
   resize();
@@ -1437,6 +1648,8 @@ $("continueBtn").onclick=loadGame;
 $("dayBtn").onclick=()=>{ hideScreens(); S.paused=false; };
 $("endBtn").onclick=()=>{ refreshContinueBtn(); startGame(); };
 $("saveBtn").onclick=()=>{ if(S.running) saveGame(true); };
+$("soundBtn").onclick=()=>SFX.toggle();
+try{ if(localStorage.getItem(SOUND_KEY)==="0") $("soundBtn").textContent="🔇"; }catch(e){}
 $("drawGo").onclick=confirmBuild;
 $("drawCancel").onclick=cancelBuild;
 
@@ -1457,6 +1670,7 @@ window.addEventListener("keydown",e=>{
   else if(e.key==="3") setMode("ferry");
   else if(e.key==="h"||e.key==="H") setMode("heat");
   else if(e.key==="s"||e.key==="S") saveGame(true);
+  else if(e.key==="m"||e.key==="M") SFX.toggle();
   else if(e.key==="Escape") cancelBuild();
   else if(e.key===" "){ e.preventDefault(); setSpeed(S.speed>0?0:1); }
 });
