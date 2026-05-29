@@ -40,6 +40,10 @@ lean years, so just replant and try again.
 - **Co-op loans:** if you can't cover a rail fare, the shortfall becomes a loan
   shown in the HUD. Interest accrues each grow season and the loan auto-repays
   from spare cash; let it balloon past the limit and the co-op forecloses.
+- **Buy out a neighbour** ($300, tap their stall): you then run that shop, make
+  its product at the farm once a year, and keep its market sales.
+- **A growing market:** more shoppers and new stall types appear in later years.
+- **Chatter:** tap a shopper to hear a casual line — the market feels alive.
 
 ## Where it lives
 
@@ -54,6 +58,9 @@ lean years, so just replant and try again.
 - [ ] Weather/blight events and irrigation upgrades
 - [x] Buy a second market stall (more selling points)
 - [x] Set your own prices per grade (price elasticity: cheaper sells faster)
+- [x] Buy out a neighbouring shop and run a side business (make + sell its product)
+- [x] Market grows over the years (more shoppers, more stall types)
+- [x] Tap shoppers for casual chatter
 - [ ] Reputation that grows your premium customer base over the years
 - [x] Sound effects + upbeat market music
 - [x] Save/continue across sessions (localStorage)
