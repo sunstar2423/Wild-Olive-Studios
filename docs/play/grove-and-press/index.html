@@ -35,6 +35,8 @@
     padding:.25rem .6rem; border-radius:999px; white-space:nowrap; }
   .hud .money{ color:var(--gold); }
   .hud .debt{ color:#f0a3a3; border-color:rgba(240,120,120,.4); background:rgba(140,40,40,.18); }
+  .hud .goal{ color:#ffe49a; border-color:rgba(231,183,95,.4); background:rgba(231,183,95,.12); }
+  .hud .goal.done{ color:#bff0a0; border-color:rgba(159,207,107,.6); background:rgba(127,176,105,.2); }
   .hud .phase{ margin-left:auto; color:var(--olive-br); font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-size:.72rem; }
 
   /* ---------- stage area ---------- */
@@ -144,6 +146,7 @@
     <span class="pill">🫒 <b id="invOlives">0</b> olives</span>
     <span class="pill">🧴 <b id="invBottles">0</b> bottles</span>
     <span class="pill debt" id="debtPill" style="display:none;">🏦 Loan $<b id="debt">0</b></span>
+    <span class="pill goal" id="goalPill">🏆 $<b id="net">0</b>/<span id="netTarget">5000</span></span>
     <span class="phase" id="phaseLabel">The Grove</span>
     <button class="muteBtn" id="muteBtn" title="Toggle sound" aria-label="Toggle sound">🔊</button>
   </div>
@@ -224,12 +227,27 @@
         <span>🌱 Plant</span><span>☀️ Grow</span><span>🧺 Harvest</span>
         <span>🚂 Press</span><span>🧴 Bottle</span><span>🏙️ Sell</span><span>💰 Reinvest</span>
       </div>
-      <p style="font-size:.82rem; color:#a9b8a2;">You start with three mature trees and $200. Spend on planting, upkeep &amp; freight; earn at the market by pricing your oil well; and grow your fortune year by year. Short on a rail fare? The co-op will lend it — but interest builds each season, so pay it back.</p>
+      <p style="font-size:.82rem; color:#a9b8a2;">You start with three mature trees and $200. Spend on planting, upkeep &amp; freight; earn at the market by pricing your oil well; and grow your fortune year by year. <b>Goal: reach a net worth of $5,000</b> to become the Grove Tycoon (you can keep playing after). Short on a rail fare? The co-op will lend it — interest builds each season, so pay it back.</p>
       <div style="display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:.6rem;">
         <button class="btn btn--gold" id="continueBtn" style="display:none;">↺ Continue <small id="continueInfo"></small></button>
         <button class="btn btn--primary" id="startBtn">Start farming ▸</button>
       </div>
       <div class="credit">A playable demo · <a href="../../index.html">Wild Olive Studios</a></div>
+    </div>
+  </div>
+
+  <!-- WIN OVERLAY -->
+  <div class="overlay hidden" id="winScreen">
+    <div class="card">
+      <div class="tag">🏆 You did it</div>
+      <h1>Grove Tycoon!</h1>
+      <p>Your little grove grew into a thriving olive-oil empire.</p>
+      <p>Net worth <b id="winNet">$0</b> reached in <b id="winYears">0</b> years.</p>
+      <div style="display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:.6rem;">
+        <button class="btn btn--primary" id="keepPlayingBtn">Keep playing ▸</button>
+        <button class="btn btn--ghost" id="winRestartBtn">New game</button>
+      </div>
+      <div class="credit"><a href="../../index.html#games">← Other Wild Olive games</a></div>
     </div>
   </div>
 
@@ -266,6 +284,7 @@ const DEBT_LIMIT    = 500;    // if the loan grows past this, the co-op calls it
 const BUYOUT_COST   = 300;    // buy out a neighbouring shop and run it yourself
 const DRINKS_COST   = 250;    // buy a juice & tea stand for passive market income
 const DRINK_PRICE   = 5;      // per drink (small variation applied)
+const WIN_NETWORTH  = 5000;   // reach this net worth to win (you can keep playing after)
 
 // Occasional themed markets. sky/ground are gradient stops; decor scatters on the
 // ground; particle is the falling weather; creatures wander about.
@@ -335,6 +354,7 @@ function newGame(){
     sideStock: {},               // key -> units ready to sell
     producedSide: {},            // key -> made-this-year flag (resets each year)
     drinksStand: false,          // own a juice & tea stand (passive market income)
+    won: false,                  // reached the net-worth goal
   };
   // start with three mature trees in the first row
   G.plots[0] = makeTree(MATURE_AGE);
@@ -463,6 +483,17 @@ function setText(id,v){ $(id).textContent = v; }
 function bottlesTotal(){ return G.bottles.evoo + G.bottles.virgin + G.bottles.pomace; }
 function sideStockTotal(){ return Object.values(G.sideStock).reduce((a,b)=>a+b,0); }
 function buyoutCost(){ return BUYOUT_COST + G.ownedShops.length * 150; } // each shop you own makes the next dearer
+function netWorth(){
+  // cash + the sale/capital value of everything you own, minus debt
+  let w = G.money - (G.debt|0);
+  w += G.plots.filter(Boolean).length * 40;            // trees
+  w += Math.round(G.olives * 1.5);                     // loose olives
+  w += G.bottles.evoo*GRADES.evoo.price + G.bottles.virgin*GRADES.virgin.price + G.bottles.pomace*GRADES.pomace.price;
+  for(const k of G.ownedShops) w += (G.sideStock[k]|0) * SHOPS[k].price + 250; // side stock + shop capital
+  if(G.extraStall) w += EXTRA_STALL_COST;
+  if(G.drinksStand) w += DRINKS_COST;
+  return Math.round(w);
+}
 // pay an amount from cash; whatever you can't cover becomes co-op debt. returns amount borrowed.
 function chargeOrBorrow(amount){
   const pay = Math.min(G.money, amount);
@@ -479,6 +510,9 @@ function refreshHUD(){
   setText("invBottles", bottlesTotal());
   setText("debt", G.debt|0);
   $("debtPill").style.display = (G.debt|0) > 0 ? "inline-flex" : "none";
+  const nw = netWorth();
+  setText("net", nw);
+  $("goalPill").classList.toggle("done", nw >= WIN_NETWORTH);
   if(G.money > G.bestMoney) G.bestMoney = G.money;
 }
 
@@ -514,6 +548,14 @@ function enterGrove(){
   saveGame();
   $("groveMsg").textContent = trees ? "Grow the season to ripen your olives, then harvest." :
     "Plant some trees to get started!";
+  // net-worth victory (celebrated once; you can keep playing)
+  if(!G.won && netWorth() >= WIN_NETWORTH){
+    G.won = true; saveGame();
+    setText("winNet", "$"+netWorth());
+    setText("winYears", G.year);
+    AU.sfx("fanfare");
+    $("winScreen").classList.remove("hidden");
+  }
 }
 function renderGrove(){
   const grid = $("plotGrid");
@@ -1394,11 +1436,15 @@ $("continueBtn").onclick = ()=>{
   }
   if(typeof G.producedSide !== "object" || G.producedSide === null) G.producedSide = {};
   G.ownedShops = G.ownedShops.filter(k=>SHOPS[k]); // drop unknown keys
+  if(typeof G.won !== "boolean") G.won = false;
   delete G.ownedShop; delete G.producedSideThisYear;
   $("startScreen").classList.add("hidden");
   resumePhase();
 };
 $("restartBtn").onclick = ()=>{ AU.init(); AU.stopMusic(); newGame(); $("overScreen").classList.add("hidden"); enterGrove(); };
+$("keepPlayingBtn").onclick = ()=>{ AU.sfx("click"); $("winScreen").classList.add("hidden"); };
+$("winRestartBtn").onclick = ()=>{ AU.init(); AU.stopMusic(); newGame(); $("winScreen").classList.add("hidden"); enterGrove(); };
+$("netTarget").textContent = WIN_NETWORTH;
 })();
 </script>
 </body>

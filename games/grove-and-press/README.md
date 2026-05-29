@@ -73,6 +73,7 @@ lean years, so just replant and try again.
 - [x] Themed markets on a recurring seasonal calendar, each with its own music
 - [x] Buy out multiple neighbour shops
 - [x] Buy a juice & tea stand for passive income
+- [x] Net-worth win goal ($5,000) with a victory screen + keep-playing
 - [ ] Reputation that grows your premium customer base over the years
 - [x] Sound effects + upbeat market music
 - [x] Save/continue across sessions (localStorage)
