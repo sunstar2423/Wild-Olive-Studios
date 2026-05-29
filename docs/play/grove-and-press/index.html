@@ -143,7 +143,7 @@
     <section class="panel" id="groveStage">
       <div class="panel__head">
         <h2>🌿 Your Olive Grove</h2>
-        <p>Plant trees, then grow the season and harvest the ripe ones.</p>
+        <p>Plant trees, then grow the season (once a year), harvest the ripe ones, and rail them to the press.</p>
       </div>
       <div class="panel__body">
         <div class="grid" id="plotGrid"></div>
@@ -269,6 +269,7 @@ function newGame(){
     bestMoney: START_MONEY,
     earned: 0,
     phase: "grove",
+    grownThisYear: false,
   };
   // start with two mature trees in the first row
   G.plots[0] = makeTree(MATURE_AGE);
@@ -424,6 +425,9 @@ function renderGrove(){
     "panel__body season-" + SEASONS[G.seasonIdx].toLowerCase();
   setText("plantCost", PLANT_COST);
   $("plantBtn").classList.toggle("on", G.planting);
+  const sb = $("seasonBtn");
+  sb.disabled = G.grownThisYear || seasonBusy;
+  sb.textContent = G.grownThisYear ? "✓ Grown this year — off to the press" : "☀️ Grow the season ▶";
   grid.innerHTML = "";
   G.plots.forEach((t,i)=>{
     const el = document.createElement("div");
@@ -476,6 +480,7 @@ $("plantBtn").onclick = ()=>{ G.planting = !G.planting; AU.sfx("click"); renderG
 
 $("seasonBtn").onclick = ()=>{
   if(seasonBusy) return;
+  if(G.grownThisYear){ $("groveMsg").textContent = "You only get one growing season a year — harvest and rail your olives to the press."; return; }
   const trees = G.plots.filter(Boolean);
   if(trees.length === 0){ $("groveMsg").textContent = "Plant a tree first!"; return; }
   seasonBusy = true;
@@ -516,10 +521,10 @@ function ripen(){
     }
   });
   G.seasonIdx = 2; // Autumn = harvest time
-  if(bearers) AU.sfx("chime");
+  if(bearers){ AU.sfx("chime"); G.grownThisYear = true; } // one grow season per year
   renderGrove(); refreshHUD(); saveGame();
   $("groveMsg").textContent = bearers
-    ? `🍂 Autumn harvest! ${bearers} tree${bearers>1?"s":""} bore ${produced} olives ${yearLuck>1.1?"— a bumper year!":yearLuck<0.85?"— a lean year.":"."}  Click trees or “Harvest all”.`
+    ? `🍂 Autumn harvest! ${bearers} tree${bearers>1?"s":""} bore ${produced} olives ${yearLuck>1.1?"— a bumper year!":yearLuck<0.85?"— a lean year.":"."}  Harvest, then rail them to the press.`
     : "Your young trees aren't bearing fruit yet — grow another season.";
 }
 $("shipBtn").onclick = ()=>{
@@ -830,6 +835,7 @@ $("returnBtn").onclick = ()=>{
   AU.sfx("click");
   G.year++;
   G.seasonIdx = 0;
+  G.grownThisYear = false; // a new year — you can grow again
   // leftover bottles are kept and can be sold next market too
   enterGrove();
 };
@@ -880,6 +886,7 @@ $("continueBtn").onclick = ()=>{
   // tolerate older saves missing fields
   if(!G.phase) G.phase = "grove";
   if(!G.planning) G.planning = { evoo:0, virgin:0, pomace:0 };
+  if(typeof G.grownThisYear !== "boolean") G.grownThisYear = false;
   $("startScreen").classList.add("hidden");
   resumePhase();
 };
