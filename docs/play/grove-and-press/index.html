@@ -460,13 +460,13 @@ function enterGrove(){
   showStage("grove");
   // the co-op calls in a loan that's grown too large
   if(G.debt > DEBT_LIMIT){ return gameOver("debt"); }
-  // bankruptcy: nothing to sell, and no way to make anything to sell
+  // bankruptcy: nothing to sell and nothing to make it from (press fees can be loaned,
+  // so having trees or olives always lets you recover — debt foreclosure is the real loss)
   const trees = G.plots.filter(Boolean).length;
-  const cheapestPress = Math.min(...Object.values(GRADES).map(g=>g.press));
   const canSell = bottlesTotal() > 0 || G.sideStock > 0;
-  const canPress = G.money >= cheapestPress;
+  const canProduce = trees > 0 || G.olives > 0;
   const canMakeSide = G.ownedShop && G.money >= SHOPS[G.ownedShop].makeCost;
-  if(!canSell && !canPress && !canMakeSide){
+  if(!canSell && !canProduce && !canMakeSide){
     return gameOver("broke");
   }
   G.planting = false;
@@ -666,13 +666,11 @@ function changeQty(grade, dir){
   const g = GRADES[grade];
   if(dir>0){
     if(olivesUsed() + g.olives > G.olives){ $("refMsg").textContent = "Not enough olives for another bottle."; return; }
-    if(pressCost() + g.press > G.money){ $("refMsg").textContent = `Not enough money for the press fee ($${g.press}/bottle).`; return; }
-    G.planning[grade]++;
+    G.planning[grade]++;   // press fees beyond your cash are covered by a co-op loan
   } else {
     G.planning[grade] = Math.max(0, G.planning[grade]-1);
   }
   AU.sfx("click");
-  $("refMsg").textContent = "";
   updateRefinery();
 }
 function olivesUsed(){ return Object.entries(G.planning).reduce((s,[k,n])=>s+n*GRADES[k].olives,0); }
@@ -686,16 +684,17 @@ function updateRefinery(){
   setText("sumCost", "$"+pressCost());
   setText("sumBottles", plannedBottles());
   setText("sumRevenue", "$"+potentialRevenue());
-  // never lock you on this screen: if you can't afford to press, you can still ship onward
   $("pressBtn").disabled = false;
   $("pressBtn").textContent = plannedBottles() === 0
     ? "🚂 Rail to the city (skip pressing) →"
     : "🚂 Press, bottle & rail to the city →";
+  // press as many bottles as you have olives for — any shortfall becomes a co-op loan
+  const shortfall = Math.max(0, pressCost() + FREIGHT - G.money);
+  $("refMsg").textContent = shortfall > 0 ? `🏦 $${shortfall} of the press & fare will be a co-op loan.` : "";
 }
 function autoPlan(){
-  // greedy: make EVOO while possible, then virgin, then pomace, leaving money for freight
+  // bottle everything: make EVOO while possible, then virgin, then pomace, limited only by olives
   G.planning = { evoo:0, virgin:0, pomace:0 };
-  let budget = G.money; // suggest a plan you can afford; you can push further by hand
   const order = ["evoo","virgin","pomace"];
   let guard = 0;
   let progressed = true;
@@ -703,7 +702,7 @@ function autoPlan(){
     progressed = false;
     for(const k of order){
       const g = GRADES[k];
-      if(olivesUsed()+g.olives <= G.olives && pressCost()+g.press <= budget){
+      if(olivesUsed()+g.olives <= G.olives){
         G.planning[k]++; progressed = true;
       }
     }
@@ -711,17 +710,15 @@ function autoPlan(){
   updateRefinery();
 }
 $("pressBtn").onclick = ()=>{
-  const cost = pressCost();                 // you can only have planned what you can afford
-  G.money -= cost;                          // press fee always charged in full
   G.olives -= olivesUsed();
   G.bottles.evoo += G.planning.evoo;
   G.bottles.virgin += G.planning.virgin;
   G.bottles.pomace += G.planning.pomace;
-  // freight to the city — pay what you can, borrow the rest from the co-op
-  const owed = chargeOrBorrow(FREIGHT);
+  // press fee + city fare — pay what you can, borrow the rest from the co-op
+  const owed = chargeOrBorrow(pressCost()) + chargeOrBorrow(FREIGHT);
   AU.sfx("press");
   refreshHUD();
-  if(owed > 0){ $("refMsg").textContent = `🏦 The co-op loaned you $${owed} for the city fare.`; setTimeout(enterMarket, 650); }
+  if(owed > 0){ $("refMsg").textContent = `🏦 The co-op loaned you $${owed} for the press & fare.`; setTimeout(enterMarket, 650); }
   else setTimeout(enterMarket, 350);
 };
 
