@@ -29,6 +29,14 @@ lean years, so just replant and try again.
 - **Single-file HTML5 game** — vanilla JS, DOM UI for the farm/press panels and
   a **Canvas 2D** scene for the animated market crowd. No engine, no build step.
 - Touch- and mouse-friendly.
+- **Save & continue** via `localStorage` — pick up where you left off (with a
+  Continue button on the title screen).
+- **Procedural audio** via the Web Audio API (no sound files): an upbeat loop
+  that plays only in the market, a coin chime when a customer buys from your
+  stall, and small SFX for planting, harvesting, shipping, pressing, etc.
+  Mute toggle in the HUD (🔊).
+- At the market you can **see neighbouring stalls making sales too** — floating
+  "+$" pops over the honey/cheese/bread/wine stalls as NPCs spend there.
 
 ## Where it lives
 
@@ -43,5 +51,5 @@ lean years, so just replant and try again.
 - [ ] Weather/blight events and irrigation upgrades
 - [ ] Tunable market: hire a second stall, set your own prices
 - [ ] Reputation that grows your premium customer base over the years
-- [ ] Sound + a gentle seasonal soundtrack
-- [ ] Save/continue across sessions (localStorage)
+- [x] Sound effects + upbeat market music
+- [x] Save/continue across sessions (localStorage)

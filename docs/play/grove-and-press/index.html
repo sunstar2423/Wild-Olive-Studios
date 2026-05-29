@@ -110,6 +110,10 @@
   .back{ font-size:.72rem; color:#a9b8a2; text-decoration:none; white-space:nowrap;
     background:rgba(0,0,0,.4); padding:.3rem .7rem; border-radius:999px; border:1px solid var(--line); }
   .back:hover{ color:#fff; }
+  .muteBtn{ background:rgba(0,0,0,.4); border:1px solid var(--line); color:#eef3ea; cursor:pointer;
+    border-radius:999px; width:30px; height:30px; font-size:.9rem; line-height:1; padding:0; }
+  .muteBtn:hover{ border-color:var(--olive); }
+  .muteBtn.off{ opacity:.55; }
   .credit{ margin-top:1rem; font-size:.7rem; color:#7d8a76; }
   .credit a{ color:var(--olive); text-decoration:none; }
   @media (max-width:560px){
@@ -129,6 +133,7 @@
     <span class="pill">🫒 <b id="invOlives">0</b> olives</span>
     <span class="pill">🧴 <b id="invBottles">0</b> bottles</span>
     <span class="phase" id="phaseLabel">The Grove</span>
+    <button class="muteBtn" id="muteBtn" title="Toggle sound" aria-label="Toggle sound">🔊</button>
   </div>
 
   <!-- STAGE -->
@@ -204,7 +209,10 @@
         <span>🚂 Press</span><span>🧴 Bottle</span><span>🏙️ Sell</span><span>💰 Reinvest</span>
       </div>
       <p style="font-size:.82rem; color:#a9b8a2;">You start with two mature trees and $200 — enough to reach your first market. Spend on planting &amp; freight, earn at the market, and grow your fortune year by year.</p>
-      <button class="btn btn--primary" id="startBtn" style="margin-top:.6rem;">Start farming ▸</button>
+      <div style="display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:.6rem;">
+        <button class="btn btn--gold" id="continueBtn" style="display:none;">↺ Continue <small id="continueInfo"></small></button>
+        <button class="btn btn--primary" id="startBtn">Start farming ▸</button>
+      </div>
       <div class="credit">A playable demo · <a href="../../index.html">Wild Olive Studios</a></div>
     </div>
   </div>
@@ -260,6 +268,7 @@ function newGame(){
     planting: false,
     bestMoney: START_MONEY,
     earned: 0,
+    phase: "grove",
   };
   // start with two mature trees in the first row
   G.plots[0] = makeTree(MATURE_AGE);
@@ -268,6 +277,105 @@ function newGame(){
 function makeTree(age){ return { age:age, vigor: 0.65 + Math.random()*0.8, crop:0 }; }
 
 const SEASONS = ["Spring","Summer","Autumn","Winter"];
+
+/* =====================================================================
+   AUDIO — fully synthesized (Web Audio API), no external files.
+   Upbeat loop for the market only; short SFX for actions everywhere.
+   ===================================================================== */
+const AU = (function(){
+  let ctx = null, master = null, enabled = true;
+  let music = { on:false, step:0, next:0, timer:null };
+
+  // I–V–vi–IV in C major; pleasant + upbeat. Notes as frequencies (Hz).
+  const N = { C3:130.81,E3:164.81,G3:196.0,A3:220.0,F3:174.61,D3:146.83,
+              C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.0,A4:440.0,B4:493.88,C5:523.25 };
+  const BASS = [N.C3,N.G3,N.A3,N.F3];                  // one root per bar
+  const MEL  = [ // 8 steps per bar, chord-tone arpeggios (0 = rest)
+    [N.C4,N.E4,N.G4,N.E4,N.C5,N.G4,N.E4,N.G4],
+    [N.B4,N.G4,N.D4,N.G4,N.B4,N.G4,N.D4,N.G4],
+    [N.A4,N.E4,N.C4,N.E4,N.A4,N.E4,N.C4,N.E4],
+    [N.F4,N.A4,N.C5,N.A4,N.F4,N.C5,N.A4,N.F4],
+  ];
+  const STEP = 0.16; // seconds per 8th note (~94 BPM, bouncy)
+
+  function ensure(){
+    if(ctx) return true;
+    try{
+      ctx = new (window.AudioContext||window.webkitAudioContext)();
+      master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+    }catch(e){ return false; }
+    return true;
+  }
+  function init(){ if(!ensure()) return; if(ctx.state==="suspended") ctx.resume(); }
+  function setEnabled(on){ enabled = on; if(!on) stopMusic(); }
+  function isEnabled(){ return enabled; }
+
+  function blip(freq, dur, type, gain, when, glide){
+    if(!enabled || !ctx) return;
+    const t = when || ctx.currentTime;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type||"triangle"; o.frequency.setValueAtTime(freq, t);
+    if(glide) o.frequency.exponentialRampToValueAtTime(glide, t+dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain||0.2, t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.02);
+  }
+  function noise(dur, gain, when){
+    if(!enabled || !ctx) return;
+    const t = when || ctx.currentTime;
+    const n = Math.floor(ctx.sampleRate*dur);
+    const buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i] = (Math.random()*2-1)*(1-i/n);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const g = ctx.createGain(); g.gain.value = gain||0.08;
+    const f = ctx.createBiquadFilter(); f.type="highpass"; f.frequency.value=2000;
+    src.connect(f); f.connect(g); g.connect(master); src.start(t);
+  }
+
+  const SFX = {
+    click(){ blip(520,0.05,"square",0.08); },
+    plant(){ blip(330,0.12,"triangle",0.16,0,520); noise(0.08,0.05); },
+    harvest(){ blip(440,0.08,"triangle",0.16); blip(660,0.10,"triangle",0.14, (ctx?ctx.currentTime+0.07:0)); },
+    chime(){ if(!ctx)return; const t=ctx.currentTime; [523.25,659.25,783.99].forEach((f,i)=>blip(f,0.5,"sine",0.14,t+i*0.09)); },
+    train(){ if(!ctx)return; const t=ctx.currentTime; blip(196,0.5,"sawtooth",0.16,t,180); blip(147,0.6,"sawtooth",0.14,t+0.18,140); },
+    press(){ blip(120,0.18,"square",0.2,0,70); noise(0.16,0.1); },
+    coin(){ if(!ctx)return; const t=ctx.currentTime; blip(880,0.09,"square",0.18,t); blip(1320,0.16,"square",0.16,t+0.07); },
+    neighbour(){ blip(740,0.06,"sine",0.06); },
+    fanfare(){ if(!ctx)return; const t=ctx.currentTime; [392,523.25,659.25,783.99].forEach((f,i)=>blip(f,0.45,"triangle",0.16,t+i*0.12)); },
+  };
+  function sfx(name){ if(SFX[name]) SFX[name](); }
+
+  function schedule(){
+    if(!music.on || !ctx) return;
+    while(music.next < ctx.currentTime + 0.12){
+      const bar = Math.floor(music.step/8) % 4;
+      const s = music.step % 8;
+      const t = music.next;
+      if(s===0) blip(BASS[bar], STEP*3.4, "sawtooth", 0.10, t, BASS[bar]*0.98); // bass on the 1
+      if(s===4) blip(BASS[bar]*1.5, STEP*1.6, "triangle", 0.07, t);             // mid pulse
+      const m = MEL[bar][s];
+      if(m) blip(m, STEP*0.9, "square", 0.06, t);
+      if(s%2===0) noise(0.03, 0.03, t);                                          // soft hat
+      music.next += STEP; music.step = (music.step+1) % 32;
+    }
+    music.timer = setTimeout(schedule, 30);
+  }
+  function startMusic(){ if(!enabled || !ensure()) return; if(ctx.state==="suspended") ctx.resume();
+    if(music.on) return; music.on=true; music.step=0; music.next=ctx.currentTime+0.08; schedule(); }
+  function stopMusic(){ music.on=false; if(music.timer){ clearTimeout(music.timer); music.timer=null; } }
+
+  return { init, setEnabled, isEnabled, sfx, startMusic, stopMusic };
+})();
+
+/* =====================================================================
+   SAVE / CONTINUE  (localStorage)
+   ===================================================================== */
+const SAVE_KEY = "groveandpress_save_v1";
+const MUTE_KEY = "groveandpress_muted";
+function saveGame(){ try{ if(G) localStorage.setItem(SAVE_KEY, JSON.stringify(G)); }catch(e){} }
+function loadSave(){ try{ const s=localStorage.getItem(SAVE_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function hasSave(){ return !!loadSave(); }
 
 // ---------- dom helpers ----------
 const $ = id => document.getElementById(id);
@@ -302,8 +410,10 @@ function enterGrove(){
     return gameOver();
   }
   G.planting = false;
+  G.phase = "grove";
   renderGrove();
   refreshHUD();
+  saveGame();
   $("groveMsg").textContent = trees ? "Grow the season to ripen your olives, then harvest." :
     "Plant some trees to get started!";
 }
@@ -340,7 +450,8 @@ function plotClick(i){
     if(G.money < PLANT_COST){ $("groveMsg").textContent = "Not enough money to plant."; return; }
     G.money -= PLANT_COST;
     G.plots[i] = makeTree(0);
-    refreshHUD(); renderGrove();
+    AU.sfx("plant");
+    refreshHUD(); renderGrove(); saveGame();
     $("groveMsg").textContent = "Planted a sapling 🌱 — it'll bear fruit in a couple of seasons.";
   } else if(t && t.crop > 0){
     harvestTree(i);
@@ -352,15 +463,16 @@ function harvestTree(i){
   G.olives += t.crop;
   $("groveMsg").textContent = `Harvested ${t.crop} olives 🫒`;
   t.crop = 0;
-  refreshHUD(); renderGrove();
+  AU.sfx("harvest");
+  refreshHUD(); renderGrove(); saveGame();
 }
 $("harvestBtn").onclick = ()=>{
   let total=0;
   G.plots.forEach((t)=>{ if(t&&t.crop>0){ total+=t.crop; G.olives+=t.crop; t.crop=0; } });
-  if(total){ $("groveMsg").textContent = `Harvested ${total} olives 🫒`; refreshHUD(); renderGrove(); }
+  if(total){ AU.sfx("harvest"); $("groveMsg").textContent = `Harvested ${total} olives 🫒`; refreshHUD(); renderGrove(); saveGame(); }
   else $("groveMsg").textContent = "Nothing ripe to harvest yet.";
 };
-$("plantBtn").onclick = ()=>{ G.planting = !G.planting; renderGrove(); };
+$("plantBtn").onclick = ()=>{ G.planting = !G.planting; AU.sfx("click"); renderGrove(); };
 
 $("seasonBtn").onclick = ()=>{
   if(seasonBusy) return;
@@ -378,6 +490,7 @@ $("seasonBtn").onclick = ()=>{
   const seq = ()=>{
     G.seasonIdx = steps[s];
     renderGrove(); refreshHUD();
+    AU.sfx("click");
     s++;
     if(s < steps.length){ setTimeout(seq, 420); }
     else {
@@ -403,7 +516,8 @@ function ripen(){
     }
   });
   G.seasonIdx = 2; // Autumn = harvest time
-  renderGrove(); refreshHUD();
+  if(bearers) AU.sfx("chime");
+  renderGrove(); refreshHUD(); saveGame();
   $("groveMsg").textContent = bearers
     ? `🍂 Autumn harvest! ${bearers} tree${bearers>1?"s":""} bore ${produced} olives ${yearLuck>1.1?"— a bumper year!":yearLuck<0.85?"— a lean year.":"."}  Click trees or “Harvest all”.`
     : "Your young trees aren't bearing fruit yet — grow another season.";
@@ -416,6 +530,7 @@ $("shipBtn").onclick = ()=>{
   const fare = Math.min(G.money, FREIGHT);
   G.money -= fare;
   if(fare < FREIGHT) $("groveMsg").textContent = "🚂 The rail co-op spotted you the fare this time.";
+  AU.sfx("train");
   refreshHUD();
   enterRefinery();
 };
@@ -425,6 +540,7 @@ $("shipBtn").onclick = ()=>{
    ===================================================================== */
 function enterRefinery(){
   showStage("refinery");
+  G.phase = "refinery";
   G.planning = { evoo:0, virgin:0, pomace:0 };
   setText("refOlives", G.olives);
   buildGradeList();
@@ -432,6 +548,7 @@ function enterRefinery(){
   $("refMsg").textContent = "";
   // auto-suggest a sensible default split
   autoPlan();
+  saveGame();
 }
 function buildGradeList(){
   const list = $("gradeList");
@@ -463,6 +580,7 @@ function changeQty(grade, dir){
   } else {
     G.planning[grade] = Math.max(0, G.planning[grade]-1);
   }
+  AU.sfx("click");
   $("refMsg").textContent = "";
   updateRefinery();
 }
@@ -509,9 +627,10 @@ $("pressBtn").onclick = ()=>{
   const total = cost + FREIGHT;
   const paid = Math.min(G.money, total);
   G.money -= paid;
+  AU.sfx("press");
   refreshHUD();
   if(paid < total){ $("refMsg").textContent = "🚂 The rail co-op covered part of the press & freight — sell well!"; setTimeout(enterMarket, 700); }
-  else enterMarket();
+  else setTimeout(enterMarket, 350);
 };
 
 /* =====================================================================
@@ -530,6 +649,8 @@ function fitCanvas(){
 
 function enterMarket(){
   showStage("market");
+  G.phase = "market";
+  saveGame();
   fitCanvas();
   marketActive = true; marketTime = MARKET_SECS; spawnAcc = 0;
   customers = []; floats = []; G.earned = 0;
@@ -537,6 +658,7 @@ function enterMarket(){
   $("returnBtn").style.display = "none";
   buildStalls();
   renderStock();
+  AU.startMusic(); // upbeat music plays only in the market
   let last = performance.now();
   const tick = (now)=>{
     const dt = Math.min(0.05, (now-last)/1000); last = now;
@@ -568,13 +690,18 @@ function spawnCustomer(){
     speed: 38 + Math.random()*26,
     emoji: ["🧑","👩","🧓","👨","🧕","👵","🧔","👱"][ (Math.random()*8)|0 ],
     wantsOil, pref: prefOrder, state:"wander", patience: 2+Math.random()*3,
+    neighbourIdx: wantsOil ? -1 : (1 + ((Math.random()*NEIGHBOURS.length)|0)),
     bought:false, wait:0, tint:`hsl(${(Math.random()*360)|0} 45% 60%)`
   });
 }
 function pickTarget(c){
-  if(c.wantsOil && !c.bought && Math.random()<0.7){
+  if(c.bought){ c.tx = (c.x<MW/2)?-30:MW+30; c.ty = 150+Math.random()*150; c.state = "leaving"; return; }
+  if(c.wantsOil && Math.random()<0.72){
     const s = playerStall();
     c.tx = s.x + s.w/2 + (Math.random()*40-20); c.ty = s.y - 18; c.state = "toStall";
+  } else if(!c.wantsOil && Math.random()<0.72){
+    const s = stalls[c.neighbourIdx] || stalls[1];
+    c.tx = s.x + s.w/2 + (Math.random()*30-15); c.ty = s.y + s.h + 16; c.state = "toNeighbour";
   } else {
     c.tx = 60 + Math.random()*(MW-120); c.ty = 130 + Math.random()*170; c.state = "wander";
   }
@@ -587,6 +714,7 @@ function sellTo(c){
       const tip = Math.round(g.price * (0.9 + Math.random()*0.3)); // small price variation
       G.bottles[k]--; G.money += tip; G.earned += tip;
       floats.push({ x:c.x, y:c.y-14, t:1, txt:"+$"+tip, color:g.color });
+      AU.sfx("coin");
       refreshHUD(); setText("earned", G.earned); renderStock();
       return true;
     }
@@ -612,6 +740,17 @@ function updateMarket(dt){
           const ok = sellTo(c);
           c.bought = ok || c.bought;
           c.wait = 0; c.state="leaving";
+          c.tx = (c.x<MW/2)? -30 : MW+30; c.ty = 150+Math.random()*150;
+        }
+      } else if(c.state==="toNeighbour"){
+        c.wait += dt;
+        if(c.wait > 0.5){
+          // the customer spends money at a neighbouring stall — show it
+          const s = stalls[c.neighbourIdx] || stalls[1];
+          const spend = 3 + ((Math.random()*9)|0);
+          floats.push({ x:s.x+s.w/2, y:s.y-6, t:1.1, txt:`${s.emoji} +$${spend}`, color:s.color });
+          AU.sfx("neighbour");
+          c.bought = true; c.wait = 0; c.state="leaving";
           c.tx = (c.x<MW/2)? -30 : MW+30; c.ty = 150+Math.random()*150;
         }
       } else if(c.state==="leaving"){
@@ -683,9 +822,12 @@ function endMarket(){
   if(!marketActive) return;
   marketActive = false;
   cancelAnimationFrame(raf);
+  AU.sfx("fanfare");
   $("returnBtn").style.display = "inline-block";
 }
 $("returnBtn").onclick = ()=>{
+  AU.stopMusic();
+  AU.sfx("click");
   G.year++;
   G.seasonIdx = 0;
   // leftover bottles are kept and can be sold next market too
@@ -703,11 +845,45 @@ function gameOver(){
   $("overScreen").classList.remove("hidden");
 }
 
+function resumePhase(){
+  if(G.phase === "refinery") enterRefinery();
+  else if(G.phase === "market") enterMarket();
+  else enterGrove();
+}
+
 /* =====================================================================
    BOOT
    ===================================================================== */
-$("startBtn").onclick = ()=>{ newGame(); $("startScreen").classList.add("hidden"); enterGrove(); };
-$("restartBtn").onclick = ()=>{ newGame(); $("overScreen").classList.add("hidden"); enterGrove(); };
+// mute toggle (persisted)
+let muted = false;
+try{ muted = localStorage.getItem(MUTE_KEY) === "1"; }catch(e){}
+function applyMute(){ AU.setEnabled(!muted); $("muteBtn").textContent = muted ? "🔇" : "🔊"; $("muteBtn").classList.toggle("off", muted); }
+applyMute();
+$("muteBtn").onclick = ()=>{
+  muted = !muted;
+  try{ localStorage.setItem(MUTE_KEY, muted ? "1" : "0"); }catch(e){}
+  AU.init(); applyMute();
+  if(!muted && G && G.phase === "market" && marketActive) AU.startMusic();
+};
+
+// show Continue if a save exists
+if(hasSave()){
+  const s = loadSave();
+  $("continueBtn").style.display = "inline-flex";
+  $("continueInfo").textContent = s ? `(Year ${s.year}, $${s.money})` : "";
+}
+
+$("startBtn").onclick = ()=>{ AU.init(); AU.stopMusic(); newGame(); $("startScreen").classList.add("hidden"); enterGrove(); };
+$("continueBtn").onclick = ()=>{
+  const s = loadSave(); if(!s) return;
+  AU.init(); G = s;
+  // tolerate older saves missing fields
+  if(!G.phase) G.phase = "grove";
+  if(!G.planning) G.planning = { evoo:0, virgin:0, pomace:0 };
+  $("startScreen").classList.add("hidden");
+  resumePhase();
+};
+$("restartBtn").onclick = ()=>{ AU.init(); AU.stopMusic(); newGame(); $("overScreen").classList.add("hidden"); enterGrove(); };
 })();
 </script>
 </body>
