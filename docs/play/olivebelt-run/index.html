@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="description" content="Olivebelt Run — a tiny arcade demo from Wild Olive Studios. Pilot your salvage ship through the asteroid belt and collect olives." />
+<title>Olivebelt Run — Wild Olive Studios</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg" />
+<style>
+  :root{
+    --neon:#c98bdb; --neon2:#6c3a86; --olive:#9fcf6b; --gold:#e7b75f;
+    --ink:#eef3ea; --bg:#0a0612;
+    --font:"Space Grotesk",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font); color:var(--ink); background:var(--bg);
+    display:grid; place-items:center; min-height:100dvh; overflow:hidden;
+    user-select:none; touch-action:none;
+  }
+  #wrap{ position:relative; width:min(100vw,560px); aspect-ratio:9/16; max-height:100dvh; }
+  canvas{ display:block; width:100%; height:100%; border-radius:14px;
+    box-shadow:0 0 0 1px rgba(201,139,219,.3), 0 30px 80px -20px rgba(108,58,134,.6);
+    background:#0a0612; }
+
+  /* overlay screens */
+  .screen{
+    position:absolute; inset:0; display:grid; place-items:center; text-align:center;
+    padding:1.5rem; border-radius:14px;
+    background:radial-gradient(120% 100% at 50% 0%, rgba(108,58,134,.45), rgba(10,6,18,.92));
+    backdrop-filter:blur(3px); transition:opacity .35s; z-index:5;
+  }
+  .screen.hidden{ opacity:0; pointer-events:none; }
+  .screen__inner{ max-width:90%; }
+  h1{ font-size:clamp(2rem,9vw,3.2rem); line-height:1; letter-spacing:-.02em;
+      background:linear-gradient(135deg,var(--neon),var(--olive),var(--gold));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      font-weight:800; margin-bottom:.4rem;}
+  .tag{ color:var(--olive); font-size:.8rem; letter-spacing:.18em; text-transform:uppercase; margin-bottom:1.2rem;}
+  .how{ color:#cdbfe0; font-size:.95rem; line-height:1.6; margin-bottom:1.4rem;}
+  .how b{ color:var(--ink); }
+  .big{ font-size:clamp(2.4rem,12vw,4rem); font-weight:800; color:var(--gold); line-height:1;}
+  .lbl{ color:#cdbfe0; font-size:.85rem; letter-spacing:.12em; text-transform:uppercase; }
+  .btn{
+    display:inline-block; cursor:pointer; border:0; font-family:var(--font);
+    font-weight:700; font-size:1.05rem; color:#170a1f; margin-top:.4rem;
+    padding:.85rem 2.2rem; border-radius:999px;
+    background:linear-gradient(135deg,var(--neon),var(--olive));
+    box-shadow:0 10px 30px -8px rgba(201,139,219,.7); transition:transform .2s;
+  }
+  .btn:hover{ transform:translateY(-2px); }
+  .row{ display:flex; gap:2rem; justify-content:center; margin-bottom:1.2rem; }
+  .back{ position:absolute; top:10px; left:12px; z-index:6; font-size:.8rem; color:#cdbfe0;
+    text-decoration:none; background:rgba(0,0,0,.35); padding:.35rem .8rem; border-radius:999px;
+    border:1px solid rgba(201,139,219,.3); }
+  .back:hover{ color:#fff; }
+  .credit{ margin-top:1.4rem; font-size:.72rem; color:#8f7fa6; }
+  .credit a{ color:var(--olive); text-decoration:none; }
+  @media (prefers-reduced-motion: reduce){ .btn{transition:none;} }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <a class="back" href="../../index.html#games">← Back to studio</a>
+  <canvas id="game"></canvas>
+
+  <!-- Start screen -->
+  <div class="screen" id="startScreen">
+    <div class="screen__inner">
+      <h1>Olivebelt&nbsp;Run</h1>
+      <div class="tag">Wild Olive Studios · demo</div>
+      <p class="how">
+        Pilot your salvage ship through the asteroid belt.<br>
+        <b>Dodge the rocks</b> 🪨 &nbsp;·&nbsp; <b>grab the olives</b> 🫒<br><br>
+        <b>Move:</b> arrow keys / WASD,<br>or drag &amp; move your finger / mouse.<br>
+        <b>Pause:</b> P
+      </p>
+      <button class="btn" id="startBtn">Launch ▸</button>
+      <div class="credit">A tiny playable demo · <a href="../../index.html">wildolivestudios.com</a></div>
+    </div>
+  </div>
+
+  <!-- Game over screen -->
+  <div class="screen hidden" id="overScreen">
+    <div class="screen__inner">
+      <h1>Belt Cleared?</h1>
+      <div class="tag" id="overSub">Your ship was salvaged…</div>
+      <div class="row">
+        <div><div class="big" id="finalScore">0</div><div class="lbl">Score</div></div>
+        <div><div class="big" id="bestScore">0</div><div class="lbl">Best</div></div>
+      </div>
+      <button class="btn" id="againBtn">Run it again ▸</button>
+      <div class="credit"><a href="../../index.html#games">← Other Wild Olive games</a></div>
+    </div>
+  </div>
+
+  <!-- Pause screen -->
+  <div class="screen hidden" id="pauseScreen">
+    <div class="screen__inner">
+      <h1>Paused</h1>
+      <div class="tag">Catch your breath</div>
+      <button class="btn" id="resumeBtn">Resume ▸</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// logical resolution (portrait); scaled to fit
+const W = 360, H = 640;
+function fit(){
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+fit();
+window.addEventListener("resize", fit);
+
+// ---------- state ----------
+const STATE = { MENU:0, PLAY:1, OVER:2, PAUSE:3 };
+let state = STATE.MENU;
+let score = 0, lives = 3, t = 0, spawnT = 0, oliveT = 0, shake = 0;
+let best = +(localStorage.getItem("olivebelt_best")||0);
+
+const ship = { x:W/2, y:H-90, r:15, tx:W/2, ty:H-90, inv:0, thrust:0 };
+let rocks = [], olives = [], particles = [], stars = [];
+
+// starfield
+for(let i=0;i<70;i++) stars.push({x:Math.random()*W, y:Math.random()*H, z:Math.random()*0.8+0.2});
+
+// ---------- input ----------
+const keys = {};
+addEventListener("keydown", e=>{
+  if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key)) e.preventDefault();
+  keys[e.key.toLowerCase()] = true;
+  if(e.key.toLowerCase()==="p" && (state===STATE.PLAY||state===STATE.PAUSE)) togglePause();
+  if((e.key===" "||e.key==="Enter")){
+    if(state===STATE.MENU) start();
+    else if(state===STATE.OVER) start();
+  }
+});
+addEventListener("keyup", e=>{ keys[e.key.toLowerCase()] = false; });
+
+// pointer / touch — ship follows
+let pointing = false;
+function pointTo(clientX, clientY){
+  const r = canvas.getBoundingClientRect();
+  ship.tx = (clientX - r.left) / r.width * W;
+  ship.ty = (clientY - r.top) / r.height * H;
+}
+canvas.addEventListener("pointerdown", e=>{ pointing=true; pointTo(e.clientX,e.clientY); });
+addEventListener("pointermove", e=>{ if(pointing) pointTo(e.clientX,e.clientY); });
+addEventListener("pointerup", ()=>{ pointing=false; });
+
+// ---------- buttons ----------
+const startScreen=document.getElementById("startScreen");
+const overScreen=document.getElementById("overScreen");
+const pauseScreen=document.getElementById("pauseScreen");
+document.getElementById("startBtn").onclick = start;
+document.getElementById("againBtn").onclick = start;
+document.getElementById("resumeBtn").onclick = togglePause;
+
+function show(el,on){ el.classList.toggle("hidden", !on); }
+
+function start(){
+  score=0; lives=3; t=0; spawnT=0; oliveT=0; shake=0;
+  rocks=[]; olives=[]; particles=[];
+  ship.x=ship.tx=W/2; ship.y=ship.ty=H-90; ship.inv=60;
+  state=STATE.PLAY;
+  show(startScreen,false); show(overScreen,false); show(pauseScreen,false);
+}
+function togglePause(){
+  if(state===STATE.PLAY){ state=STATE.PAUSE; show(pauseScreen,true); }
+  else if(state===STATE.PAUSE){ state=STATE.PLAY; show(pauseScreen,false); }
+}
+addEventListener("blur", ()=>{ if(state===STATE.PLAY) togglePause(); });
+
+function gameOver(){
+  state=STATE.OVER;
+  best=Math.max(best,score);
+  localStorage.setItem("olivebelt_best", best);
+  document.getElementById("finalScore").textContent=score;
+  document.getElementById("bestScore").textContent=best;
+  document.getElementById("overSub").textContent =
+    score>=best && score>0 ? "★ New personal best! ★" : "Your ship was salvaged…";
+  show(overScreen,true);
+}
+
+// ---------- spawning ----------
+function spawnRock(){
+  const r = 12 + Math.random()*22;
+  rocks.push({ x: r + Math.random()*(W-2*r), y:-r, r,
+    vy: 1.6 + Math.random()*1.4 + t*0.0009,
+    vx:(Math.random()-0.5)*0.8, spin:(Math.random()-0.5)*0.08, a:Math.random()*6 });
+}
+function spawnOlive(){
+  const r=10;
+  olives.push({ x:r+Math.random()*(W-2*r), y:-r, r, vy:2 + Math.random()*1, bob:Math.random()*6 });
+}
+function burst(x,y,color,n){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, s=Math.random()*3+1;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,color});
+  }
+}
+
+// ---------- update ----------
+function update(){
+  t++;
+  // difficulty: spawn interval shrinks
+  const interval = Math.max(20, 52 - t*0.02);
+  if(++spawnT >= interval){ spawnT=0; spawnRock(); if(Math.random()<0.25) spawnRock(); }
+  if(++oliveT >= 70){ oliveT=0; spawnOlive(); }
+
+  // ship control via keys
+  const sp = 5.2;
+  if(keys["arrowleft"]||keys["a"]) ship.tx -= sp*2, pointing=false;
+  if(keys["arrowright"]||keys["d"]) ship.tx += sp*2, pointing=false;
+  if(keys["arrowup"]||keys["w"]) ship.ty -= sp*2, pointing=false;
+  if(keys["arrowdown"]||keys["s"]) ship.ty += sp*2, pointing=false;
+  ship.tx = Math.max(ship.r, Math.min(W-ship.r, ship.tx));
+  ship.ty = Math.max(ship.r, Math.min(H-ship.r, ship.ty));
+  // smooth follow
+  ship.x += (ship.tx-ship.x)*0.25;
+  ship.y += (ship.ty-ship.y)*0.25;
+  if(ship.inv>0) ship.inv--;
+
+  // stars
+  for(const s of stars){ s.y += s.z*2 + t*0.0004; if(s.y>H){ s.y=0; s.x=Math.random()*W; } }
+
+  // rocks
+  for(let i=rocks.length-1;i>=0;i--){
+    const o=rocks[i]; o.y+=o.vy; o.x+=o.vx; o.a+=o.spin;
+    if(o.x<o.r||o.x>W-o.r) o.vx*=-1;
+    if(o.y-o.r>H){ rocks.splice(i,1); if(state===STATE.PLAY) score+=1; continue; }
+    const dx=o.x-ship.x, dy=o.y-ship.y;
+    if(ship.inv<=0 && dx*dx+dy*dy < (o.r+ship.r*0.8)**2){
+      rocks.splice(i,1); burst(ship.x,ship.y,"#ff5d73",18); shake=12; ship.inv=90;
+      if(--lives<=0){ gameOver(); }
+    }
+  }
+  // olives
+  for(let i=olives.length-1;i>=0;i--){
+    const o=olives[i]; o.y+=o.vy; o.bob+=0.1;
+    if(o.y-o.r>H){ olives.splice(i,1); continue; }
+    const dx=o.x-ship.x, dy=o.y-ship.y;
+    if(dx*dx+dy*dy < (o.r+ship.r)**2){
+      olives.splice(i,1); score+=10; burst(o.x,o.y,"#9fcf6b",12);
+    }
+  }
+  // particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.04; p.life-=0.03;
+    if(p.life<=0) particles.splice(i,1);
+  }
+  if(shake>0) shake*=0.85;
+}
+
+// ---------- draw ----------
+function drawShip(){
+  ctx.save();
+  ctx.translate(ship.x, ship.y);
+  if(ship.inv>0 && Math.floor(t/4)%2) ctx.globalAlpha=0.4;
+  // thruster flame
+  const fl = 8 + Math.sin(t*0.6)*4;
+  const g = ctx.createLinearGradient(0,ship.r,0,ship.r+fl+10);
+  g.addColorStop(0,"#e7b75f"); g.addColorStop(1,"rgba(201,139,219,0)");
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.moveTo(-6,ship.r-2); ctx.lineTo(6,ship.r-2); ctx.lineTo(0,ship.r+fl+10); ctx.closePath(); ctx.fill();
+  // body
+  ctx.fillStyle="#c98bdb"; ctx.strokeStyle="#f0d9fb"; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(0,-ship.r-4);
+  ctx.lineTo(ship.r,ship.r);
+  ctx.lineTo(0,ship.r*0.5);
+  ctx.lineTo(-ship.r,ship.r);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // cockpit
+  ctx.fillStyle="#9fcf6b"; ctx.beginPath(); ctx.arc(0,-2,4,0,7); ctx.fill();
+  ctx.restore();
+}
+function rockPath(o){
+  ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(o.a);
+  ctx.fillStyle="#5b4a6b"; ctx.strokeStyle="#8a76a0"; ctx.lineWidth=2;
+  ctx.beginPath();
+  const sides=7;
+  for(let i=0;i<sides;i++){
+    const ang=i/sides*Math.PI*2;
+    const rad=o.r*(0.78+((i*53)%10)/22);
+    const x=Math.cos(ang)*rad, y=Math.sin(ang)*rad;
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.arc(o.r*0.2,o.r*0.1,o.r*0.22,0,7); ctx.fill();
+  ctx.restore();
+}
+function drawOlive(o){
+  const yo=Math.sin(o.bob)*2;
+  ctx.save(); ctx.translate(o.x,o.y+yo);
+  ctx.shadowColor="#9fcf6b"; ctx.shadowBlur=12;
+  const g=ctx.createRadialGradient(-3,-3,1,0,0,o.r);
+  g.addColorStop(0,"#cfe8b0"); g.addColorStop(1,"#5a6e2f");
+  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(0,0,o.r*0.8,o.r,0,0,7); ctx.fill();
+  ctx.restore();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if(shake>0.5) ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
+
+  // bg gradient
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,"#160a26"); bg.addColorStop(1,"#0a0612");
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  // stars
+  for(const s of stars){ ctx.globalAlpha=s.z; ctx.fillStyle="#cdbfe0";
+    ctx.fillRect(s.x, s.y, s.z*2, s.z*2); }
+  ctx.globalAlpha=1;
+
+  for(const o of olives) drawOlive(o);
+  for(const o of rocks) rockPath(o);
+  for(const p of particles){ ctx.globalAlpha=Math.max(0,p.life); ctx.fillStyle=p.color;
+    ctx.fillRect(p.x,p.y,3,3); }
+  ctx.globalAlpha=1;
+
+  if(state===STATE.PLAY||state===STATE.PAUSE||state===STATE.OVER) drawShip();
+  ctx.restore();
+
+  // HUD
+  if(state!==STATE.MENU){
+    ctx.fillStyle="#eef3ea"; ctx.font="700 20px "+getComputedStyle(document.body).fontFamily;
+    ctx.textAlign="left"; ctx.fillText(score, 14, 30);
+    ctx.textAlign="right";
+    ctx.fillText("♥".repeat(Math.max(0,lives)), W-14, 30);
+    ctx.font="600 11px "+getComputedStyle(document.body).fontFamily;
+    ctx.fillStyle="#9fcf6b"; ctx.textAlign="left"; ctx.fillText("SCORE", 14, 44);
+  }
+}
+
+// ---------- loop ----------
+function loop(){
+  if(state===STATE.PLAY) update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+})();
+</script>
+</body>
+</html>
