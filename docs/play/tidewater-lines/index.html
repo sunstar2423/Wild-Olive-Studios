@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="description" content="Tidewater Lines — a cozy transit-network tycoon from Wild Olive Studios. Build electric bus, light rail and ferry routes across a coastal city, carry real passengers, collect fares, and grow a beautiful, profitable network." />
+<title>Tidewater Lines — Wild Olive Studios</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg" />
+<style>
+  :root{
+    --teal:#2bb3a3; --teal2:#1d6f6a; --olive:#9fcf6b; --gold:#e7b75f;
+    --ink:#0d2b2a; --paper:#f3f7f2; --bg:#0a1f1e;
+    --bus:#e7b75f; --rail:#5b8def; --ferry:#36c2c9;
+    --good:#7fcf6b; --bad:#e76f6f; --warn:#e7b75f;
+    --panel:#11302e; --panel2:#0d2624; --line:#1f4a47;
+    --font:"Space Grotesk",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font); color:var(--paper); background:var(--bg);
+    overflow:hidden; user-select:none; -webkit-user-select:none;
+  }
+  /* ---------- layout ---------- */
+  #app{ display:grid; grid-template-rows:auto 1fr; height:100dvh; }
+  #topbar{
+    display:flex; align-items:center; gap:.4rem; flex-wrap:wrap;
+    padding:.45rem .7rem; background:linear-gradient(180deg,#0e2b29,#0a201f);
+    border-bottom:1px solid var(--line); z-index:30;
+  }
+  .brand{ display:flex; align-items:center; gap:.45rem; margin-right:.4rem;}
+  .brand b{ font-size:1.02rem; letter-spacing:-.01em;
+    background:linear-gradient(135deg,var(--teal),var(--olive),var(--gold));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .brand span{ font-size:.62rem; color:#7fa7a2; letter-spacing:.14em; text-transform:uppercase;}
+  .back{ font-size:.72rem; color:#9ec7c2; text-decoration:none; background:rgba(0,0,0,.25);
+    padding:.3rem .65rem; border-radius:999px; border:1px solid var(--line); }
+  .back:hover{ color:#fff; }
+  .stat{ display:flex; flex-direction:column; align-items:flex-start; line-height:1.05;
+    padding:.18rem .55rem; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid var(--line);}
+  .stat .k{ font-size:.55rem; letter-spacing:.1em; text-transform:uppercase; color:#7fa7a2;}
+  .stat .v{ font-size:.95rem; font-weight:700; }
+  .stat .v.money{ color:var(--gold);}
+  .spacer{ flex:1; }
+  .speed{ display:flex; gap:.18rem; }
+  .speed button{ font-family:var(--font); cursor:pointer; border:1px solid var(--line);
+    background:rgba(255,255,255,.04); color:#cfe7e3; border-radius:8px; padding:.32rem .55rem;
+    font-weight:700; font-size:.8rem; min-width:34px; }
+  .speed button.active{ background:linear-gradient(135deg,var(--teal),var(--teal2)); color:#04201e; border-color:transparent;}
+  .speed button:hover{ color:#fff; }
+  .savebtn{ font-family:var(--font); cursor:pointer; border:1px solid var(--line);
+    background:rgba(255,255,255,.04); color:#cfe7e3; border-radius:8px; padding:.32rem .5rem;
+    font-size:.92rem; }
+  .savebtn:hover{ color:#fff; }
+  .savebtn.flash{ background:linear-gradient(135deg,var(--olive),var(--teal)); border-color:transparent; }
+
+  #main{ position:relative; display:grid; grid-template-columns:1fr 320px; min-height:0; }
+  #stage{ position:relative; min-width:0; background:#0a201f; }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; }
+
+  /* mode/build toolbar floating on canvas */
+  #buildbar{ position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+    display:flex; gap:.4rem; background:rgba(10,32,30,.88); border:1px solid var(--line);
+    padding:.4rem; border-radius:14px; backdrop-filter:blur(6px); z-index:10; flex-wrap:wrap; justify-content:center;}
+  .tool{ cursor:pointer; border:1px solid var(--line); background:rgba(255,255,255,.04);
+    color:#cfe7e3; border-radius:10px; padding:.45rem .7rem; font-family:var(--font); font-weight:700;
+    font-size:.82rem; display:flex; align-items:center; gap:.35rem; }
+  .tool small{ font-weight:500; color:#8fb6b1; font-size:.66rem; }
+  .tool:hover{ color:#fff; }
+  .tool.active{ box-shadow:0 0 0 2px currentColor inset; }
+  .tool.bus.active{ color:var(--bus);} .tool.rail.active{ color:var(--rail);} .tool.ferry.active{ color:var(--ferry);}
+  .tool.tool--util.active{ color:var(--olive);}
+
+  /* the build hint / confirm strip */
+  #drawhint{ position:absolute; left:50%; top:12px; transform:translateX(-50%);
+    background:rgba(10,32,30,.92); border:1px solid var(--line); padding:.5rem .8rem;
+    border-radius:12px; font-size:.82rem; z-index:11; display:none; align-items:center; gap:.7rem; max-width:92%;}
+  #drawhint.show{ display:flex; }
+  #drawhint b{ color:var(--gold); }
+  #drawhint .mini{ cursor:pointer; border:0; font-family:var(--font); font-weight:700; font-size:.78rem;
+    padding:.34rem .7rem; border-radius:8px; }
+  .mini.go{ background:linear-gradient(135deg,var(--olive),var(--teal)); color:#06231f; }
+  .mini.cancel{ background:rgba(255,255,255,.08); color:#cfe7e3; }
+  .mini:disabled{ opacity:.4; cursor:not-allowed; }
+
+  /* toast */
+  #toasts{ position:absolute; right:12px; bottom:70px; display:flex; flex-direction:column; gap:.4rem; z-index:20; align-items:flex-end;}
+  .toast{ background:rgba(10,32,30,.94); border:1px solid var(--line); border-left:3px solid var(--teal);
+    padding:.5rem .8rem; border-radius:10px; font-size:.8rem; max-width:280px; animation:tin .3s ease;}
+  .toast.bad{ border-left-color:var(--bad);} .toast.good{ border-left-color:var(--good);} .toast.warn{ border-left-color:var(--warn);}
+  @keyframes tin{ from{opacity:0; transform:translateY(8px);} to{opacity:1;} }
+
+  /* ---------- side panel ---------- */
+  #panel{ background:var(--panel); border-left:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
+  .tabs{ display:flex; border-bottom:1px solid var(--line); }
+  .tabs button{ flex:1; cursor:pointer; background:transparent; border:0; color:#8fb6b1; font-family:var(--font);
+    font-weight:700; font-size:.74rem; padding:.6rem .2rem; border-bottom:2px solid transparent;}
+  .tabs button.active{ color:#fff; border-bottom-color:var(--teal); }
+  .tabwrap{ overflow:auto; padding:.7rem; flex:1; min-height:0; }
+  .tabview{ display:none; } .tabview.active{ display:block; }
+
+  h4.sec{ font-size:.66rem; letter-spacing:.13em; text-transform:uppercase; color:#7fa7a2; margin:.2rem 0 .5rem;}
+  .card{ background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:.6rem .7rem; margin-bottom:.55rem; }
+  .card .row{ display:flex; align-items:center; gap:.4rem; }
+  .card .title{ font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:.4rem;}
+  .dot{ width:11px; height:11px; border-radius:50%; flex:none; }
+  .muted{ color:#8fb6b1; font-size:.74rem; }
+  .pill{ font-size:.62rem; padding:.1rem .42rem; border-radius:999px; background:rgba(255,255,255,.06); color:#bfe0db; border:1px solid var(--line);}
+  .kv{ display:flex; justify-content:space-between; font-size:.78rem; padding:.12rem 0; }
+  .kv span:last-child{ font-weight:700; }
+  .btnrow{ display:flex; gap:.35rem; margin-top:.5rem; flex-wrap:wrap; }
+  .b{ cursor:pointer; border:0; font-family:var(--font); font-weight:700; font-size:.76rem; padding:.4rem .65rem; border-radius:8px;
+    background:rgba(255,255,255,.07); color:#dff0ec; }
+  .b:hover{ filter:brightness(1.12); }
+  .b.primary{ background:linear-gradient(135deg,var(--olive),var(--teal)); color:#06231f; }
+  .b.danger{ background:rgba(231,111,111,.16); color:#f3b6b6; }
+  .b:disabled{ opacity:.4; cursor:not-allowed; }
+  .b.small{ padding:.3rem .5rem; font-size:.7rem; }
+
+  .bar{ height:7px; border-radius:6px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:.25rem;}
+  .bar > i{ display:block; height:100%; border-radius:6px; }
+
+  .modechooser{ display:flex; gap:.4rem; margin-bottom:.6rem; }
+  .modechooser .b{ flex:1; text-align:center; }
+
+  table.mini{ width:100%; border-collapse:collapse; font-size:.74rem; }
+  table.mini th{ text-align:left; color:#7fa7a2; font-weight:600; font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; padding:.2rem .25rem; border-bottom:1px solid var(--line);}
+  table.mini td{ padding:.26rem .25rem; border-bottom:1px solid rgba(255,255,255,.04); }
+  table.mini td:last-child, table.mini th:last-child{ text-align:right; }
+
+  .goal{ display:flex; align-items:center; gap:.5rem; padding:.4rem 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:.8rem;}
+  .goal .tick{ width:20px; height:20px; border-radius:50%; flex:none; display:grid; place-items:center; font-size:.7rem;
+    border:1px solid var(--line); color:#7fa7a2;}
+  .goal.done .tick{ background:var(--good); color:#06231f; border-color:transparent;}
+  .goal.done .txt{ color:#bfe0db; }
+
+  /* ---------- overlay screens (start / day / win) ---------- */
+  .screen{ position:absolute; inset:0; display:grid; place-items:center; text-align:center; z-index:50;
+    background:radial-gradient(120% 100% at 50% 0%, rgba(43,179,163,.30), rgba(8,28,27,.96));
+    backdrop-filter:blur(4px); padding:1.2rem; }
+  .screen.hidden{ display:none; }
+  .sheet{ max-width:620px; width:100%; background:rgba(9,30,28,.96); border:1px solid var(--line);
+    border-radius:18px; padding:1.6rem 1.6rem 1.4rem; max-height:90dvh; overflow:auto; }
+  .sheet h1{ font-size:clamp(1.9rem,6vw,2.8rem); line-height:1; letter-spacing:-.02em; margin-bottom:.3rem;
+    background:linear-gradient(135deg,var(--teal),var(--olive),var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800;}
+  .sheet .kick{ color:var(--olive); font-size:.74rem; letter-spacing:.18em; text-transform:uppercase; margin-bottom:1rem;}
+  .sheet p{ color:#cfe7e3; line-height:1.6; font-size:.92rem; margin-bottom:.8rem; text-align:left;}
+  .sheet ul{ text-align:left; color:#cfe7e3; font-size:.86rem; line-height:1.7; margin:.2rem 0 1rem 1.1rem;}
+  .sheet ul b{ color:#fff; }
+  .bigbtn{ cursor:pointer; border:0; font-family:var(--font); font-weight:800; font-size:1.05rem; color:#06231f;
+    padding:.85rem 2.2rem; border-radius:999px; background:linear-gradient(135deg,var(--olive),var(--teal));
+    box-shadow:0 12px 34px -10px rgba(43,179,163,.7); margin-top:.4rem; }
+  .bigbtn:hover{ transform:translateY(-2px); }
+  .startbtns{ display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; }
+  #continueBtn{ background:linear-gradient(135deg,var(--gold),var(--teal2)); }
+  .legend{ display:flex; gap:1rem; justify-content:center; margin:.6rem 0 0; flex-wrap:wrap; font-size:.78rem; color:#bfe0db;}
+  .legend i{ display:inline-block; width:14px; height:8px; border-radius:3px; margin-right:.3rem; vertical-align:middle;}
+
+  .reportgrid{ display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin:.6rem 0 1rem; }
+  .rstat{ background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:11px; padding:.6rem .7rem; text-align:left;}
+  .rstat .k{ font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:#7fa7a2;}
+  .rstat .v{ font-size:1.35rem; font-weight:800; }
+  .v.pos{ color:var(--good);} .v.neg{ color:var(--bad);} .v.money{ color:var(--gold);}
+
+  /* mobile */
+  @media (max-width:880px){
+    #main{ grid-template-columns:1fr; grid-template-rows:1fr auto; }
+    #panel{ border-left:0; border-top:1px solid var(--line); max-height:42dvh; }
+    #buildbar{ bottom:8px; }
+    .stat.hideSm{ display:none; }
+  }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+  .tiny{ font-size:.68rem; color:#7fa7a2; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ===================== TOP BAR ===================== -->
+  <header id="topbar">
+    <a class="back" href="../../#games">← Studio</a>
+    <div class="brand"><b>Tidewater&nbsp;Lines</b><span>Wild Olive</span></div>
+    <div class="stat"><span class="k">Funds</span><span class="v money" id="uiMoney">£0</span></div>
+    <div class="stat hideSm"><span class="k">Net worth</span><span class="v" id="uiWorth">£0</span></div>
+    <div class="stat"><span class="k" id="uiDayK">Day · Time</span><span class="v" id="uiDay">1 · 06:00</span></div>
+    <div class="stat hideSm"><span class="k">Riders today</span><span class="v" id="uiRiders">0</span></div>
+    <div class="stat"><span class="k">Happiness</span><span class="v" id="uiHappy">75%</span></div>
+    <div class="spacer"></div>
+    <div class="speed" id="speed">
+      <button data-s="0" title="Pause">⏸</button>
+      <button data-s="1" class="active">1×</button>
+      <button data-s="2">2×</button>
+      <button data-s="4">4×</button>
+    </div>
+    <button class="savebtn" id="saveBtn" title="Save game now">💾</button>
+  </header>
+
+  <!-- ===================== MAIN ===================== -->
+  <div id="main">
+    <div id="stage">
+      <canvas id="cv"></canvas>
+
+      <div id="drawhint">
+        <span id="drawhintText">Pick stops…</span>
+        <button class="mini go" id="drawGo" disabled>Build line</button>
+        <button class="mini cancel" id="drawCancel">Cancel</button>
+      </div>
+
+      <div id="buildbar">
+        <button class="tool bus" data-mode="bus">🚌 Bus <small id="costBus">£6k</small></button>
+        <button class="tool rail" data-mode="rail">🚊 Rail <small id="costRail">track</small></button>
+        <button class="tool ferry" data-mode="ferry">⛴️ Ferry <small id="costFerry">£14k</small></button>
+        <button class="tool tool--util" data-mode="heat">🔥 Demand</button>
+      </div>
+
+      <div id="toasts"></div>
+    </div>
+
+    <!-- ===================== PANEL ===================== -->
+    <aside id="panel">
+      <div class="tabs">
+        <button data-tab="lines" class="active">Lines</button>
+        <button data-tab="report">Report</button>
+        <button data-tab="goals">Goals</button>
+        <button data-tab="help">Help</button>
+      </div>
+      <div class="tabwrap">
+        <div class="tabview active" id="tab-lines">
+          <div id="linesHost"></div>
+          <div class="card" id="noLines">
+            <div class="title">No lines yet 🌊</div>
+            <p class="muted" style="margin-top:.3rem">Pick a mode below the map (Bus, Rail or Ferry), click two or more stops to trace a route, then <b>Build line</b>. Your first vehicle comes with the line.</p>
+          </div>
+        </div>
+
+        <div class="tabview" id="tab-report">
+          <h4 class="sec">Today so far</h4>
+          <div class="card">
+            <div class="kv"><span>Fares collected</span><span id="rFare">£0</span></div>
+            <div class="kv"><span>Operating cost (proj.)</span><span id="rOp">£0</span></div>
+            <div class="kv"><span>Maintenance spend</span><span id="rMaint">£0</span></div>
+            <div class="kv"><span>Riders carried</span><span id="rRiders">0</span></div>
+            <div class="kv"><span>Gave up waiting</span><span id="rLost">0</span></div>
+          </div>
+          <h4 class="sec">Busiest journeys (today)</h4>
+          <table class="mini"><thead><tr><th>From → To</th><th>Riders</th></tr></thead><tbody id="rTop"></tbody></table>
+          <h4 class="sec">Network</h4>
+          <div class="card">
+            <div class="kv"><span>Stops connected</span><span id="rConn">0 / 18</span></div>
+            <div class="kv"><span>Interchange hubs</span><span id="rHubs">0</span></div>
+            <div class="kv"><span>Vehicles owned</span><span id="rVeh">0</span></div>
+          </div>
+        </div>
+
+        <div class="tabview" id="tab-goals">
+          <h4 class="sec">Build the city's network</h4>
+          <p class="muted" style="margin-bottom:.5rem">Hit each milestone to grow your reputation. Clear them all to become the city's official Transit Authority.</p>
+          <div id="goalsHost"></div>
+        </div>
+
+        <div class="tabview" id="tab-help">
+          <h4 class="sec">How to play</h4>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">1. Trace a line.</b> Choose Bus, Rail or Ferry under the map, then click stops in order. Ferries only link waterside stops. Hit <b>Build line</b>.
+          </p></div>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">2. Carry passengers.</b> People appear at stops wanting to reach another place. They board your vehicles, transfer at shared <b>interchange</b> stops, and pay a fare on arrival — longer trips and ferries pay more.
+          </p></div>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">3. Grow & maintain.</b> Add vehicles to busy lines, open new routes, and <b>Service</b> vehicles before wear gets high — neglected vehicles break down, costing money and happiness.
+          </p></div>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">4. Watch the numbers.</b> Toggle <b>🔥 Demand</b> to see where people want to travel but can't yet. Each night you get a profit/loss report. Keep funds above zero and riders happy.
+          </p></div>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">5. Saving.</b> Your city <b>auto-saves every night</b>. Tap <b>💾</b> (or press <b>S</b>) to save any time, and pick <b>Continue</b> on the title screen to return to it. Shortcuts: <b>1/2/3</b> pick a mode, <b>H</b> toggles demand, <b>Space</b> pauses.
+          </p></div>
+          <div class="legend">
+            <span><i style="background:var(--bus)"></i>Bus</span>
+            <span><i style="background:var(--rail)"></i>Rail</span>
+            <span><i style="background:var(--ferry)"></i>Ferry</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ===================== START SCREEN ===================== -->
+<div class="screen" id="startScreen">
+  <div class="sheet">
+    <p class="kick">Wild Olive Studios · Transit Tycoon</p>
+    <h1>Tidewater Lines</h1>
+    <p>The coastal city of <b>Olivehaven</b> is growing, and its people need a way to move. You've been handed the keys to a brand-new clean-transit authority and a modest budget.</p>
+    <p>Stitch the city together with <b>electric buses</b>, sleek <b>light rail</b>, and breezy <b>ferries</b>. Carry real passengers from the university to the beach, from the business district to the opera house. Collect fares, reinvest, and build the network this bay deserves.</p>
+    <ul>
+      <li>🚌 <b>Trace routes</b> between 18 unique destinations — libraries, an opera house, beaches, a forest park, the harbour and more.</li>
+      <li>👥 <b>Watch live passengers</b> board, transfer at interchanges, and ride to their stops.</li>
+      <li>💷 <b>Balance profit & happiness</b> — expand smartly, maintain your fleet, and keep riders smiling.</li>
+    </ul>
+    <div class="legend">
+      <span><i style="background:var(--bus)"></i>Electric bus</span>
+      <span><i style="background:var(--rail)"></i>Light rail</span>
+      <span><i style="background:var(--ferry)"></i>Ferry</span>
+    </div>
+    <div class="startbtns">
+      <button class="bigbtn" id="continueBtn" style="display:none">Continue ▸</button>
+      <button class="bigbtn" id="startBtn">Start the network ▸</button>
+    </div>
+    <p class="tiny" style="margin-top:.8rem">Tip: start with one short, busy bus route, then reinvest the fares. Your city auto-saves each night.</p>
+  </div>
+</div>
+
+<!-- ===================== DAY REPORT SCREEN ===================== -->
+<div class="screen hidden" id="dayScreen">
+  <div class="sheet">
+    <p class="kick" id="daySub">End of day</p>
+    <h1 id="dayTitle">Day 1</h1>
+    <div class="reportgrid">
+      <div class="rstat"><div class="k">Fares collected</div><div class="v money" id="dFare">£0</div></div>
+      <div class="rstat"><div class="k">Running costs</div><div class="v neg" id="dCost">£0</div></div>
+      <div class="rstat"><div class="k">Net profit</div><div class="v" id="dProfit">£0</div></div>
+      <div class="rstat"><div class="k">Riders carried</div><div class="v" id="dRiders">0</div></div>
+    </div>
+    <p id="dNote" class="muted"></p>
+    <button class="bigbtn" id="dayBtn">Open next day ▸</button>
+  </div>
+</div>
+
+<!-- ===================== END / WIN SCREEN ===================== -->
+<div class="screen hidden" id="endScreen">
+  <div class="sheet">
+    <p class="kick" id="endKick">The network</p>
+    <h1 id="endTitle">Well played</h1>
+    <p id="endBody"></p>
+    <div class="reportgrid">
+      <div class="rstat"><div class="k">Days run</div><div class="v" id="eDays">0</div></div>
+      <div class="rstat"><div class="k">Net worth</div><div class="v money" id="eWorth">£0</div></div>
+      <div class="rstat"><div class="k">Total riders</div><div class="v" id="eRiders">0</div></div>
+      <div class="rstat"><div class="k">Happiness</div><div class="v" id="eHappy">0%</div></div>
+    </div>
+    <button class="bigbtn" id="endBtn">Play again ▸</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+   TIDEWATER LINES — a transit-network tycoon
+   Wild Olive Studios · single-file HTML5 (vanilla JS + Canvas 2D)
+   ----------------------------------------------------------------------------
+   Sections:  CONFIG · WORLD DATA · STATE · GEOMETRY HELPERS · GRAPH/ROUTING
+              PASSENGERS · VEHICLES · ECONOMY · DAY CYCLE · BUILDING/INPUT
+              RENDER · UI PANELS · GOALS · MAIN LOOP
+   ========================================================================== */
+
+/* ----------------------------- CONFIG ------------------------------------ */
+const CFG = {
+  WORLD_W: 1280, WORLD_H: 800,
+  START_MONEY: 30000,
+  DAY_MIN: 1440,                 // sim-minutes per day
+  SIM_MIN_PER_SEC: 34,           // at 1× speed: ~42s per day
+  DAY_START: 360, DAY_END: 1320, // service runs 06:00 → 22:00; spawns taper off after
+  FARE_BASE: 1.25, FARE_PER_UNIT: 0.010, FERRY_PREMIUM: 1.35, RAIL_PREMIUM: 1.08,
+  MAX_PASSENGERS: 420,           // perf cap on concurrent agents
+  PATIENCE_MIN: 36,              // sim-min a rider will wait at a stop before giving up
+  TRANSFER_PENALTY: 9,          // min-equivalent cost added per transfer in routing
+  MAX_TRANSFERS: 2,
+  HAPPY_START: 75,
+  WIN_WORTH: 220000,             // net worth needed for the final goal
+};
+
+const MODES = {
+  bus:  { name:"Electric Bus", color:"#e7b75f", buy:6000,  cap:28,  speed:21, dailyOp:70,
+          water:false, wearRate:0.00026, infraPerUnit:0,  stopCost:600,  premium:1.0 },
+  rail: { name:"Light Rail",   color:"#5b8def", buy:17000, cap:80,  speed:34, dailyOp:170,
+          water:false, wearRate:0.00018, infraPerUnit:26, stopCost:3200, premium:CFG.RAIL_PREMIUM },
+  ferry:{ name:"Ferry",        color:"#36c2c9", buy:14000, cap:120, speed:16, dailyOp:150,
+          water:true,  wearRate:0.00020, infraPerUnit:0,  stopCost:4200, premium:CFG.FERRY_PREMIUM },
+};
+
+const SERVICE_BASE = 200;   // £ to service a vehicle (preventive) + wear factor
+const REPAIR_COST  = 480;   // £ when a vehicle breaks down
+const BREAKDOWN_FLOOR = 50; // wear below this never breaks down
+const ADD_VEHICLE_DISCOUNT = 1.0;
+
+/* --------------------------- WORLD DATA ---------------------------------- */
+/* Each location: id, name, emoji, x, y (in world coords), water (ferry access),
+   demand (relative rider weight), pull (how attractive as a destination),
+   peak: "am"|"pm"|"day"|"eve"|"flat" time-of-day flavour.                    */
+const LOCATIONS = [
+  { id:0,  name:"City Centre",        emoji:"🏙️", x:620, y:380, water:false, demand:1.5, pull:1.6, peak:"flat" },
+  { id:1,  name:"Business District",  emoji:"🏢", x:790, y:300, water:false, demand:1.6, pull:1.5, peak:"am"  },
+  { id:2,  name:"Old Town",           emoji:"🏰", x:470, y:520, water:true,  demand:1.0, pull:1.2, peak:"day" },
+  { id:3,  name:"University",         emoji:"🎓", x:840, y:520, water:false, demand:1.5, pull:1.2, peak:"am"  },
+  { id:4,  name:"Shopping Centre",    emoji:"🛍️", x:520, y:300, water:false, demand:1.3, pull:1.4, peak:"day" },
+  { id:5,  name:"Central Library",    emoji:"📚", x:660, y:250, water:false, demand:0.8, pull:0.9, peak:"day" },
+  { id:6,  name:"Opera House",        emoji:"🎶", x:380, y:380, water:false, demand:0.7, pull:1.1, peak:"eve" },
+  { id:7,  name:"Theatre Quarter",    emoji:"🎭", x:300, y:470, water:false, demand:0.7, pull:1.0, peak:"eve" },
+  { id:8,  name:"Art Gallery",        emoji:"🖼️", x:560, y:170, water:false, demand:0.7, pull:0.95,peak:"day" },
+  { id:9,  name:"Waterfront",         emoji:"🌅", x:600, y:640, water:true,  demand:1.0, pull:1.3, peak:"eve" },
+  { id:10, name:"North Beach",        emoji:"🏖️", x:300, y:650, water:true,  demand:1.0, pull:1.4, peak:"day" },
+  { id:11, name:"Forest Park",        emoji:"🌲", x:980, y:170, water:false, demand:0.8, pull:1.2, peak:"day" },
+  { id:12, name:"Harbour",            emoji:"⚓", x:760, y:680, water:true,  demand:0.9, pull:1.0, peak:"day" },
+  { id:13, name:"City Hospital",      emoji:"🏥", x:980, y:400, water:false, demand:1.0, pull:0.9, peak:"flat"},
+  { id:14, name:"Stadium",            emoji:"🏟️", x:1080,y:560, water:false, demand:0.8, pull:1.1, peak:"eve" },
+  { id:15, name:"Botanic Gardens",    emoji:"🌷", x:200, y:300, water:false, demand:0.6, pull:1.0, peak:"day" },
+  { id:16, name:"Airport",            emoji:"✈️", x:1140,y:250, water:false, demand:0.9, pull:1.1, peak:"flat"},
+  { id:17, name:"Marina Island",      emoji:"⛵", x:430, y:700, water:true,  demand:0.7, pull:1.1, peak:"day" },
+];
+
+/* Water polygons (world coords) — drawn as the bay & river. Ferry stops sit on/near these. */
+const WATER = [
+  // big bay across the bottom
+  [[120,560],[300,540],[470,560],[600,600],[760,620],[900,660],[1140,700],[1180,800],[80,800]],
+  // river snaking up to Old Town / Marina
+  [[420,560],[460,640],[430,720],[470,800],[560,800],[540,640],[520,560]],
+];
+
+/* --------------------------- STATE --------------------------------------- */
+const S = {
+  money: CFG.START_MONEY,
+  day: 1, time: CFG.DAY_START, speed: 1, running: false, paused:false,
+  happy: CFG.HAPPY_START,
+  lines: [],            // {id, mode, stops:[locId], color, vehicles:[], path:[{x,y}], len, segLen[]}
+  vehicles: [],         // global list (also referenced by lines)
+  passengers: [],       // active agents
+  stops: {},            // locId -> {wait:[passengers], all-time counts}
+  spawnAcc: 0,
+  ridersToday: 0, ridersTotal: 0, lostToday: 0,
+  breakdownsToday: 0, deniedToday: 0,
+  fareToday: 0, maintToday: 0,
+  odToday: {},          // "o-d" -> count
+  nextLineId: 1, nextVehId: 1,
+  autoService: true,
+  heatmap: false,
+  unmet: {},            // locId pair pulse intensities for demand overlay
+  goalsDone: {},
+  ended: false,
+};
+LOCATIONS.forEach(l => S.stops[l.id] = { wait:[] });
+
+/* --------------------------- GEOMETRY ------------------------------------ */
+const dist = (a,b)=>Math.hypot(a.x-b.x, a.y-b.y);
+const clamp = (v,lo,hi)=>v<lo?lo:v>hi?hi:v;
+const fmtMoney = v => (v<0?"-£":"£") + Math.abs(Math.round(v)).toLocaleString();
+const fmtTime = m => { m=((m%1440)+1440)%1440; const h=Math.floor(m/60), mm=Math.floor(m%60); return String(h).padStart(2,"0")+":"+String(mm).padStart(2,"0"); };
+
+function pointInPoly(px,py,poly){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+    if(((yi>py)!==(yj>py)) && (px < (xj-xi)*(py-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+const inWater = (x,y)=>WATER.some(p=>pointInPoly(x,y,p));
+const loc = id => LOCATIONS[id];
+
+/* straight-line journey fare (charged on completion) */
+function fareFor(oId,dId,usedFerry,usedRail){
+  const d = dist(loc(oId),loc(dId));
+  let f = CFG.FARE_BASE + d*CFG.FARE_PER_UNIT;
+  if(usedFerry) f *= CFG.FERRY_PREMIUM; else if(usedRail) f *= CFG.RAIL_PREMIUM;
+  return f;
+}
+
+/* build polyline + cumulative segment lengths for a line */
+function buildPath(stops){
+  const pts = stops.map(id=>({x:loc(id).x, y:loc(id).y}));
+  const segLen=[]; let len=0;
+  for(let i=0;i<pts.length-1;i++){ const d=dist(pts[i],pts[i+1]); segLen.push(d); len+=d; }
+  return { pts, segLen, len };
+}
+
+/* --------------------------- GRAPH / ROUTING ----------------------------- */
+/* Graph rebuilt whenever lines change. Nodes = location ids.
+   Edge = consecutive stops on a line. Routing = Dijkstra over time, with a
+   transfer penalty whenever the line changes, capped at MAX_TRANSFERS.       */
+let GRAPH = {};   // locId -> [{to, lineId, time}]
+function rebuildGraph(){
+  GRAPH = {}; LOCATIONS.forEach(l=>GRAPH[l.id]=[]);
+  for(const ln of S.lines){
+    const m = MODES[ln.mode];
+    for(let i=0;i<ln.stops.length-1;i++){
+      const a=ln.stops[i], b=ln.stops[i+1];
+      const t = dist(loc(a),loc(b))/m.speed;
+      GRAPH[a].push({to:b, lineId:ln.id, time:t});
+      GRAPH[b].push({to:a, lineId:ln.id, time:t});
+    }
+  }
+  recomputeInterchanges();
+}
+
+/* which locations are served by 2+ distinct lines → interchange hubs */
+const lineServes = {}; // locId -> Set(lineId)
+function recomputeInterchanges(){
+  for(const id in lineServes) delete lineServes[id];
+  LOCATIONS.forEach(l=>lineServes[l.id]=new Set());
+  for(const ln of S.lines) for(const s of ln.stops) lineServes[s].add(ln.id);
+}
+const isHub = id => lineServes[id] && lineServes[id].size>=2;
+
+/* Dijkstra returning a plan: array of legs {lineId, board, alight, dir} or null.
+   State key = location|lineId(currently riding). */
+function planTrip(oId,dId){
+  if(oId===dId) return null;
+  // priority queue (small graph → simple array)
+  const start = { loc:oId, line:-1, transfers:0 };
+  const pq = [{cost:0, st:start, prev:null}];
+  const best = {}; // key -> cost
+  const keyOf = st => st.loc+"|"+st.line;
+  best[keyOf(start)] = 0;
+  let goalNode = null;
+  while(pq.length){
+    // pop min
+    let bi=0; for(let i=1;i<pq.length;i++) if(pq[i].cost<pq[bi].cost) bi=i;
+    const cur = pq.splice(bi,1)[0];
+    if(cur.st.loc===dId){ goalNode=cur; break; }
+    if(cur.cost > (best[keyOf(cur.st)] ?? Infinity)) continue;
+    for(const e of GRAPH[cur.st.loc]){
+      const switching = cur.st.line!==-1 && cur.st.line!==e.lineId;
+      const transfers = cur.st.transfers + (switching?1:0);
+      if(transfers>CFG.MAX_TRANSFERS) continue;
+      const cost = cur.cost + e.time + (switching?CFG.TRANSFER_PENALTY:0);
+      const nst = { loc:e.to, line:e.lineId, transfers };
+      const k = keyOf(nst);
+      if(cost < (best[k] ?? Infinity)){
+        best[k]=cost;
+        pq.push({cost, st:nst, prev:cur, edge:e});
+      }
+    }
+  }
+  if(!goalNode) return null;
+  // reconstruct edge chain
+  const chain=[]; let n=goalNode;
+  while(n && n.edge){ chain.unshift({from:n.prev.st.loc, to:n.st.loc, lineId:n.edge.lineId}); n=n.prev; }
+  // collapse consecutive same-line edges into legs
+  const legs=[];
+  for(const c of chain){
+    const last=legs[legs.length-1];
+    if(last && last.lineId===c.lineId) last.alight=c.to;
+    else legs.push({lineId:c.lineId, board:c.from, alight:c.to});
+  }
+  // attach direction (+1/-1 along line stop array)
+  for(const leg of legs){
+    const ln = S.lines.find(l=>l.id===leg.lineId); if(!ln) return null;
+    leg.dir = ln.stops.indexOf(leg.alight) > ln.stops.indexOf(leg.board) ? 1 : -1;
+  }
+  return legs;
+}
+
+/* --------------------------- PASSENGERS ---------------------------------- */
+function timeFactor(peak){
+  const h = S.time/60;
+  // base bell over the service day plus peak shaping
+  let base = 0.55 + 0.45*Math.sin(((S.time-CFG.DAY_START)/(CFG.DAY_END-CFG.DAY_START))*Math.PI);
+  let mult = 1;
+  if(peak==="am")  mult = h<10 ? 1.7 : h>15 ? 0.7 : 1.0;
+  else if(peak==="pm") mult = (h>15&&h<19) ? 1.7 : 0.85;
+  else if(peak==="eve") mult = h>17 ? 1.8 : h<11 ? 0.5 : 0.9;
+  else if(peak==="day") mult = (h>10&&h<17) ? 1.3 : 0.8;
+  return Math.max(0.15, base*mult);
+}
+
+function pickDestination(oId){
+  let total=0; const w=[];
+  for(const l of LOCATIONS){
+    if(l.id===oId){ w.push(0); continue; }
+    const d = dist(loc(oId),l);
+    // gravity model: attraction / distance falloff
+    const val = l.pull * (1/(1+d/260));
+    w.push(val); total+=val;
+  }
+  let r=Math.random()*total;
+  for(let i=0;i<w.length;i++){ r-=w[i]; if(r<=0) return i; }
+  return (oId+1)%LOCATIONS.length;
+}
+
+function spawnPassengers(dtMin){
+  if(S.time<CFG.DAY_START || S.time>CFG.DAY_END) return;
+  if(S.passengers.length>=CFG.MAX_PASSENGERS) return;
+  const happyMult = 0.55 + (S.happy/100)*0.75; // happier city → more riders
+  let rate=0;
+  for(const l of LOCATIONS) rate += l.demand*timeFactor(l.peak);
+  rate *= 0.15 * happyMult;          // global tuning → passengers per sim-min
+  S.spawnAcc += rate*dtMin;
+  let guard=0;
+  while(S.spawnAcc>=1 && S.passengers.length<CFG.MAX_PASSENGERS && guard++<40){
+    S.spawnAcc-=1;
+    // choose origin weighted by demand*timefactor
+    let tot=0; const w=LOCATIONS.map(l=>{const v=l.demand*timeFactor(l.peak); tot+=v; return v;});
+    let r=Math.random()*tot, oId=0;
+    for(let i=0;i<w.length;i++){ r-=w[i]; if(r<=0){oId=i;break;} }
+    const dId = pickDestination(oId);
+    const plan = planTrip(oId,dId);
+    if(!plan){ // unmet demand → feed heatmap, no agent
+      const key=oId<dId?oId+"-"+dId:dId+"-"+oId;
+      S.unmet[key]=(S.unmet[key]||0)+1; continue;
+    }
+    const p = {
+      o:oId, d:dId, plan, leg:0, wait:0, onVeh:null,
+      x:loc(oId).x+(Math.random()*16-8), y:loc(oId).y+(Math.random()*16-8),
+      hue: 30+Math.random()*180,
+    };
+    S.passengers.push(p);
+    S.stops[oId].wait.push(p);
+  }
+}
+
+/* a passenger gives up if they wait too long at a stop */
+function tickWaiting(dtMin){
+  for(const id in S.stops){
+    const q=S.stops[id].wait;
+    for(let i=q.length-1;i>=0;i--){
+      const p=q[i];
+      p.wait += dtMin;
+      if(p.wait>CFG.PATIENCE_MIN){
+        q.splice(i,1);
+        removePassenger(p);
+        S.lostToday++;        // daily happiness model reacts to the give-up ratio
+      }
+    }
+  }
+}
+function removePassenger(p){
+  const idx=S.passengers.indexOf(p); if(idx>=0) S.passengers.splice(idx,1);
+}
+
+/* --------------------------- VEHICLES ------------------------------------ */
+function makeVehicle(line){
+  const m=MODES[line.mode];
+  return {
+    id:S.nextVehId++, lineId:line.id, mode:line.mode,
+    seg:0, t:0, dir:1, speed:m.speed, cap:m.cap,
+    load:[],            // passengers on board
+    // random initial wear desyncs the fleet so service/breakdown costs spread
+    // across days instead of clustering (and reads as a slightly-used vehicle)
+    wear:Math.random()*40, broken:false, breakTimer:0, dwell:0, x:0, y:0,
+  };
+}
+function vehiclePos(v,line){
+  const a=line.path.pts[v.seg], b=line.path.pts[v.seg+1];
+  if(!a||!b){ const p=line.path.pts[v.seg]||line.path.pts[0]; return {x:p.x,y:p.y}; }
+  const f=line.path.segLen[v.seg]?v.t/line.path.segLen[v.seg]:0;
+  return { x:a.x+(b.x-a.x)*f, y:a.y+(b.y-a.y)*f };
+}
+
+function tickVehicle(v,dtMin){
+  const line=S.lines.find(l=>l.id===v.lineId); if(!line) return;
+  const m=MODES[line.mode];
+  // breakdown handling
+  if(v.broken){
+    v.breakTimer-=dtMin;
+    if(v.breakTimer<=0){ v.broken=false; v.wear=clamp(v.wear-40,0,100); }
+    const p=vehiclePos(v,line); v.x=p.x; v.y=p.y; syncLoad(v); return;
+  }
+  if(v.dwell>0){ v.dwell-=dtMin; const p=vehiclePos(v,line); v.x=p.x; v.y=p.y; syncLoad(v); return; }
+
+  // t is the offset from stops[seg] (lower-index endpoint), 0..segLen[seg].
+  // Forward (dir>0): t grows toward stops[seg+1]. Backward: t shrinks toward stops[seg].
+  let move=v.speed*dtMin;
+  let safety=0;
+  while(move>0 && safety++<60){
+    const segL=line.path.segLen[v.seg]||0;
+    if(v.dir>0){
+      const remain=segL-v.t;
+      if(move<remain){ v.t+=move; move=0; }
+      else {
+        move-=remain;
+        const stopId=line.stops[v.seg+1];      // arrived here
+        if(v.seg+1>=line.stops.length-1){ v.dir=-1; v.t=segL; }   // terminus: turn around in place
+        else { v.seg++; v.t=0; }
+        onArrive(v,line,stopId,segL);
+        break;
+      }
+    } else {
+      const remain=v.t;                         // distance back to stops[seg]
+      if(move<remain){ v.t-=move; move=0; }
+      else {
+        move-=remain;
+        const stopId=line.stops[v.seg];         // arrived here
+        if(v.seg<=0){ v.dir=1; v.t=0; }         // start terminus: turn around
+        else { v.seg--; v.t=line.path.segLen[v.seg]||0; }
+        onArrive(v,line,stopId,segL);
+        break;
+      }
+    }
+  }
+  const p=vehiclePos(v,line); v.x=p.x; v.y=p.y;
+  syncLoad(v);
+}
+
+/* called once the vehicle has arrived at a stop and its seg/dir are updated for departure */
+function onArrive(v,line,stopId,segL){
+  const m=MODES[line.mode];
+  arriveStop(v,line,stopId);
+  v.dwell=0.55;
+  v.wear=clamp(v.wear+m.wearRate*segL,0,100);
+  maybeBreak(v);
+  if(S.autoService && v.wear>68 && !v.broken) doService(v,true);
+}
+
+function maybeBreak(v){
+  if(v.wear<=BREAKDOWN_FLOOR) return;
+  const chance=((v.wear-BREAKDOWN_FLOOR)/(100-BREAKDOWN_FLOOR))*0.045;
+  if(Math.random()<chance){
+    v.broken=true; v.breakTimer=10;  // out of service ~10 sim-min
+    S.money-=REPAIR_COST; S.maintToday+=REPAIR_COST;
+    S.breakdownsToday++;
+    toast(`A ${MODES[v.mode].name.toLowerCase()} broke down — repair £${REPAIR_COST}`,"bad");
+  }
+}
+
+/* handle alighting + boarding at the given stop. v.dir already reflects the
+   direction the vehicle will DEPART, so boarding matches travellers' leg.dir. */
+function arriveStop(v,line,stopLocId){
+  // --- ALIGHT ---
+  for(let i=v.load.length-1;i>=0;i--){
+    const p=v.load[i];
+    const leg=p.plan[p.leg];
+    if(leg.alight===stopLocId){
+      v.load.splice(i,1); p.onVeh=null;
+      if(p.leg>=p.plan.length-1){
+        // journey complete → collect fare
+        completeJourney(p,line);
+      } else {
+        // transfer: wait at this stop for next leg
+        p.leg++; p.wait=0;
+        p.x=loc(stopLocId).x+(Math.random()*16-8); p.y=loc(stopLocId).y+(Math.random()*16-8);
+        S.stops[stopLocId].wait.push(p);
+      }
+    }
+  }
+  // --- BOARD --- (riders whose next leg is this line, going this direction)
+  const q=S.stops[stopLocId].wait;
+  for(let i=q.length-1;i>=0;i--){
+    if(v.load.length>=v.cap){ // full → crowding (counts toward daily happiness)
+      S.deniedToday++; break;
+    }
+    const p=q[i];
+    const leg=p.plan[p.leg];
+    if(leg.lineId!==line.id) continue;
+    if(leg.board!==stopLocId) continue;
+    if(leg.dir!==v.dir) continue;       // must travel the right way
+    q.splice(i,1);
+    p.onVeh=v.id; v.load.push(p);
+  }
+}
+
+function completeJourney(p,line){
+  const usedFerry = p.plan.some(l=>{const ln=S.lines.find(x=>x.id===l.lineId); return ln&&ln.mode==="ferry";});
+  const usedRail  = p.plan.some(l=>{const ln=S.lines.find(x=>x.id===l.lineId); return ln&&ln.mode==="rail";});
+  const fare = fareFor(p.o,p.d,usedFerry,usedRail);
+  S.money+=fare; S.fareToday+=fare;
+  S.ridersToday++; S.ridersTotal++;
+  const key=loc(p.o).name+" → "+loc(p.d).name;
+  S.odToday[key]=(S.odToday[key]||0)+1;
+  removePassenger(p);
+}
+
+/* keep onboard passenger dots glued to their vehicle */
+function syncLoad(v){
+  for(const p of v.load){ p.x=v.x; p.y=v.y; }
+}
+
+/* --------------------------- ECONOMY / BUILD ----------------------------- */
+function lineInfraCost(mode,stops){
+  const m=MODES[mode];
+  let c = m.stopCost*stops.length;
+  if(m.infraPerUnit>0){
+    const {len}=buildPath(stops);
+    c += len*m.infraPerUnit;
+  }
+  return Math.round(c);
+}
+function lineBuildCost(mode,stops){ return lineInfraCost(mode,stops)+MODES[mode].buy; }
+
+function createLine(mode,stops){
+  const cost=lineBuildCost(mode,stops);
+  if(S.money<cost){ toast("Not enough funds for that line.","bad"); return false; }
+  S.money-=cost;
+  const path=buildPath(stops);
+  const line={ id:S.nextLineId++, mode, stops:stops.slice(), color:MODES[mode].color, vehicles:[], path };
+  const v=makeVehicle(line); line.vehicles.push(v); S.vehicles.push(v);
+  S.lines.push(line);
+  rebuildGraph();
+  toast(`${MODES[mode].name} line opened — ${stops.length} stops.`,"good");
+  renderPanels(); return true;
+}
+function addVehicle(line){
+  const cost=Math.round(MODES[line.mode].buy*ADD_VEHICLE_DISCOUNT);
+  if(S.money<cost){ toast("Not enough funds for another vehicle.","bad"); return; }
+  S.money-=cost;
+  const v=makeVehicle(line);
+  // stagger start so vehicles space out along the line
+  v.seg=Math.floor(Math.random()*Math.max(1,line.stops.length-1));
+  line.vehicles.push(v); S.vehicles.push(v);
+  toast(`Added a ${MODES[line.mode].name.toLowerCase()} to the line.`,"good");
+  renderPanels();
+}
+function doService(v,silent){
+  if(v.wear<2 && !v.broken){ if(!silent) toast("That vehicle is already in great shape.","warn"); return; }
+  const cost=Math.round(SERVICE_BASE + v.wear*5);
+  if(S.money<cost){ if(!silent) toast("Not enough funds to service that vehicle.","bad"); return; }
+  S.money-=cost; S.maintToday+=cost; v.wear=0; if(v.broken){v.broken=false; v.breakTimer=0;}
+  if(!silent) toast(`Serviced — £${cost}. Good as new.`,"good");
+}
+function serviceLine(line){
+  let total=0; for(const v of line.vehicles){ const c=Math.round(SERVICE_BASE+v.wear*5); if(v.wear>2){ total+=c; } }
+  if(total===0){ toast("This line is already well maintained.","warn"); return; }
+  if(S.money<total){ toast("Not enough funds to service the whole line.","bad"); return; }
+  for(const v of line.vehicles) doService(v,true);
+  toast(`Whole line serviced — £${total}.`,"good"); renderPanels();
+}
+function deleteLine(line){
+  // refund a little of infra
+  const refund=Math.round(lineInfraCost(line.mode,line.stops)*0.25 + line.vehicles.length*MODES[line.mode].buy*0.4);
+  S.money+=refund;
+  // free riders on/for this line
+  for(const v of line.vehicles){ for(const p of v.load) removePassenger(p); const gi=S.vehicles.indexOf(v); if(gi>=0)S.vehicles.splice(gi,1); }
+  S.lines=S.lines.filter(l=>l!==line);
+  // any waiting passenger whose plan uses this line → drop (network changed)
+  cleanupOrphanPassengers();
+  rebuildGraph();
+  toast(`Line closed. £${refund.toLocaleString()} recovered.`,"warn");
+  renderPanels();
+}
+function cleanupOrphanPassengers(){
+  for(const id in S.stops){
+    const q=S.stops[id].wait;
+    for(let i=q.length-1;i>=0;i--){
+      const p=q[i];
+      // re-plan from current stop to destination; drop if impossible
+      const fresh=planTrip(parseInt(id),p.d);
+      if(!fresh){ q.splice(i,1); removePassenger(p); }
+      else { p.plan=fresh; p.leg=0; }
+    }
+  }
+}
+
+function netWorth(){
+  let assets=0;
+  for(const ln of S.lines){
+    assets+=lineInfraCost(ln.mode,ln.stops)*0.5;
+    assets+=ln.vehicles.length*MODES[ln.mode].buy*0.6;
+  }
+  return S.money+assets;
+}
+function dailyOpCost(){ let c=0; for(const v of S.vehicles) c+=MODES[v.mode].dailyOp; return c; }
+
+/* --------------------------- DAY CYCLE ----------------------------------- */
+function advanceTime(dtMin){
+  S.time+=dtMin;
+  // decay unmet-demand pulses
+  for(const k in S.unmet){ S.unmet[k]*=Math.pow(0.5, dtMin/120); if(S.unmet[k]<0.05) delete S.unmet[k]; }
+  if(S.time>=CFG.DAY_MIN){ endOfDay(); }
+}
+
+function endOfDay(){
+  S.time-=CFG.DAY_MIN;
+  const op=dailyOpCost();
+  S.money-=op;
+  const profit = S.fareToday - op - S.maintToday;
+
+  // --- happiness: smooth drift toward a target set by today's service quality ---
+  const demandHandled = S.ridersToday + S.lostToday;
+  const servedRatio = demandHandled>0 ? S.ridersToday/demandHandled : (S.lines.length? 0.85 : 0.3);
+  const deniedRatio = S.ridersToday>0 ? S.deniedToday/(S.ridersToday+S.deniedToday) : 0;
+  let target = 40 + servedRatio*60;                 // reliability of service (40–100)
+  target -= Math.min(25, S.breakdownsToday*2.5);    // breakdowns sting
+  target -= deniedRatio*25;                          // overcrowding
+  if(S.lines.length===0) target = 28;
+  target = clamp(target,0,100);
+  S.happy = clamp(S.happy + (target - S.happy)*0.4, 0, 100);
+
+  // fill report screen
+  setText("dayTitle","Day "+S.day+" complete");
+  setText("daySub", profit>=0 ? "A profitable day on the bay" : "A tough day for the network");
+  setText("dFare", fmtMoney(S.fareToday));
+  setText("dCost", "−"+fmtMoney(op+S.maintToday));
+  const pe=$("dProfit"); pe.textContent=fmtMoney(profit); pe.className="v "+(profit>=0?"pos":"neg");
+  setText("dRiders", S.ridersToday.toLocaleString());
+  let note="";
+  if(S.lines.length===0) note="Trace your first line to start carrying passengers and earning fares.";
+  else if(profit<0 && S.fareToday<op) note="Running costs outweigh fares — focus vehicles on the busiest journeys, or trim idle routes.";
+  else if(S.lostToday>S.ridersToday*0.25) note="Lots of riders gave up waiting. Add vehicles or open new connections where the 🔥 demand glows.";
+  else if(S.breakdownsToday>2) note="Breakdowns cost you today. Service vehicles before their wear climbs past ~60%.";
+  else if(profit>0) note="Healthy profit — consider reinvesting in a new route or upgrading to light rail / ferries.";
+  setText("dNote", note);
+
+  showScreen("dayScreen");
+  S.paused=true;
+
+  // roll into next day
+  S.day++;
+  S.fareToday=0; S.maintToday=0; S.ridersToday=0; S.lostToday=0;
+  S.breakdownsToday=0; S.deniedToday=0;
+  S.odToday={};
+  checkGoals();
+  checkEnd();
+  if(!S.ended) saveGame(false);   // auto-save each night (after end check)
+}
+
+/* --------------------------- GOALS --------------------------------------- */
+const GOALS = [
+  { id:"firstline", txt:"Open your first line", test:()=>S.lines.length>=1 },
+  { id:"connect8",  txt:"Connect 8 different locations", test:()=>connectedCount()>=8 },
+  { id:"riders200", txt:"Carry 200 riders in a day", test:()=>S._peakRiders>=200 },
+  { id:"hub",       txt:"Create an interchange hub (2+ lines meet)", test:()=>LOCATIONS.some(l=>isHub(l.id)) },
+  { id:"threemodes",txt:"Run all three modes: bus, rail & ferry", test:()=>["bus","rail","ferry"].every(m=>S.lines.some(l=>l.mode===m)) },
+  { id:"happy90",   txt:"Reach 90% city happiness", test:()=>S.happy>=90 },
+  { id:"connectall",txt:"Connect every location (18)", test:()=>connectedCount()>=18 },
+  { id:"worth",     txt:"Reach £"+(CFG.WIN_WORTH/1000)+"k net worth", test:()=>netWorth()>=CFG.WIN_WORTH },
+];
+function connectedCount(){ const s=new Set(); for(const ln of S.lines) for(const id of ln.stops) s.add(id); return s.size; }
+function checkGoals(){
+  let newly=false;
+  for(const g of GOALS){
+    if(!S.goalsDone[g.id] && g.test()){ S.goalsDone[g.id]=true; newly=true; if(g.id!=="worth") toast("Goal complete: "+g.txt+" ✓","good"); }
+  }
+  renderGoals();
+  return newly;
+}
+
+/* --------------------------- INPUT / BUILDING ---------------------------- */
+const cv=$("cv"), ctx=cv.getContext("2d");
+let view={ scale:1, ox:0, oy:0 };       // world→screen
+let build={ active:false, mode:null, stops:[] };
+
+function resize(){
+  const r=cv.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr);
+  const s=Math.min(cv.width/CFG.WORLD_W, cv.height/CFG.WORLD_H);
+  view.scale=s;
+  view.ox=(cv.width - CFG.WORLD_W*s)/2;
+  view.oy=(cv.height - CFG.WORLD_H*s)/2;
+  view.dpr=dpr;
+}
+const w2s = (x,y)=>({ x:view.ox+x*view.scale, y:view.oy+y*view.scale });
+function s2w(cx,cy){
+  const dpr=view.dpr||1;
+  const px=cx*dpr, py=cy*dpr;
+  return { x:(px-view.ox)/view.scale, y:(py-view.oy)/view.scale };
+}
+function nearestStop(wx,wy){
+  let best=null,bd=1e9;
+  for(const l of LOCATIONS){ const d=Math.hypot(l.x-wx,l.y-wy); if(d<bd){bd=d;best=l;} }
+  return bd<46 ? best : null;
+}
+
+function setMode(mode){
+  if(mode==="heat"){ S.heatmap=!S.heatmap; refreshTools(); return; }
+  if(build.active && build.mode===mode){ cancelBuild(); return; }
+  build={ active:true, mode, stops:[] };
+  refreshTools(); updateDrawHint();
+}
+function cancelBuild(){ build={active:false,mode:null,stops:[]}; refreshTools(); updateDrawHint(); }
+function refreshTools(){
+  document.querySelectorAll(".tool").forEach(b=>{
+    const m=b.dataset.mode;
+    const on = m==="heat" ? S.heatmap : (build.active&&build.mode===m);
+    b.classList.toggle("active",on);
+  });
+}
+function canAddStop(mode,id){
+  if(build.stops.includes(id)) return false;
+  const m=MODES[mode];
+  if(m.water && !loc(id).water) return false;       // ferries only touch water stops
+  return true;
+}
+function onTapStop(l){
+  if(!build.active) return;
+  if(!canAddStop(build.mode,l.id)){
+    if(MODES[build.mode].water && !l.water) toast("Ferries can only serve waterside stops.","warn");
+    return;
+  }
+  build.stops.push(l.id);
+  updateDrawHint();
+}
+function updateDrawHint(){
+  const h=$("drawhint");
+  if(!build.active){ h.classList.remove("show"); return; }
+  h.classList.add("show");
+  const m=MODES[build.mode];
+  const stops=build.stops;
+  let txt=`<b>${m.name}</b> — `;
+  if(stops.length===0) txt+="click the first stop on the map.";
+  else if(stops.length===1) txt+="click the next stop.";
+  else {
+    const cost=lineBuildCost(build.mode,stops);
+    txt+=`${stops.length} stops · build cost <b>${fmtMoney(cost)}</b> (incl. 1 vehicle).`;
+  }
+  setHTML("drawhintText",txt);
+  $("drawGo").disabled = stops.length<2 || S.money<lineBuildCost(build.mode,stops);
+}
+function confirmBuild(){
+  if(build.stops.length<2) return;
+  if(createLine(build.mode,build.stops)) cancelBuild();
+}
+
+/* pointer handling */
+cv.addEventListener("pointerdown",e=>{
+  if(!S.running) return;
+  const rect=cv.getBoundingClientRect();
+  const w=s2w(e.clientX-rect.left, e.clientY-rect.top);
+  const l=nearestStop(w.x,w.y);
+  if(l){
+    if(build.active) onTapStop(l);
+    else selectStopInfo(l);
+  }
+});
+function selectStopInfo(l){
+  const served=lineServes[l.id]? [...lineServes[l.id]].length:0;
+  const waiting=S.stops[l.id].wait.length;
+  toast(`${l.emoji} ${l.name} — ${waiting} waiting · ${served} line${served===1?"":"s"}${isHub(l.id)?" · interchange":""}`,"good");
+}
+
+/* --------------------------- RENDER -------------------------------------- */
+let pulse=0;
+function render(){
+  pulse+=0.05;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // background land
+  const bg=ctx.createLinearGradient(0,0,0,cv.height);
+  bg.addColorStop(0,"#0e2c29"); bg.addColorStop(1,"#0a201f");
+  ctx.fillStyle=bg; ctx.fillRect(0,0,cv.width,cv.height);
+
+  ctx.save();
+  ctx.translate(view.ox,view.oy); ctx.scale(view.scale,view.scale);
+
+  drawWater();
+  drawGrid();
+  if(S.heatmap) drawHeat();
+  drawLines();
+  drawDrawing();
+  drawVehicles();
+  drawPassengers();
+  drawStops();
+
+  ctx.restore();
+}
+
+function drawWater(){
+  ctx.save();
+  for(const poly of WATER){
+    ctx.beginPath();
+    poly.forEach((p,i)=> i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
+    ctx.closePath();
+    const g=ctx.createLinearGradient(0,400,0,800);
+    g.addColorStop(0,"#15524f"); g.addColorStop(1,"#0c3a3c");
+    ctx.fillStyle=g; ctx.fill();
+    // shimmer lines
+    ctx.strokeStyle="rgba(120,210,205,0.10)"; ctx.lineWidth=2;
+    for(let y=560;y<800;y+=26){
+      ctx.beginPath();
+      for(let x=60;x<1220;x+=24){
+        const yy=y+Math.sin((x*0.03)+(pulse*0.6)+(y*0.05))*3;
+        if(pointInPoly(x,yy,poly)){ ctx.moveTo(x,yy); ctx.lineTo(x+12,yy); }
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+function drawGrid(){
+  ctx.strokeStyle="rgba(255,255,255,0.025)"; ctx.lineWidth=1;
+  for(let x=0;x<=CFG.WORLD_W;x+=80){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CFG.WORLD_H); ctx.stroke(); }
+  for(let y=0;y<=CFG.WORLD_H;y+=80){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CFG.WORLD_W,y); ctx.stroke(); }
+}
+function drawHeat(){
+  for(const key in S.unmet){
+    const [a,b]=key.split("-").map(Number);
+    const inten=Math.min(1,S.unmet[key]/8);
+    const A=loc(a), B=loc(b);
+    ctx.strokeStyle=`rgba(231,111,111,${0.12+inten*0.4})`;
+    ctx.lineWidth=2+inten*5; ctx.setLineDash([10,10]); ctx.lineDashOffset=-pulse*8;
+    ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+function laneOffset(line,i){
+  // small perpendicular offset so overlapping lines don't fully hide each other
+  const idx=S.lines.indexOf(line);
+  return (idx- (S.lines.length-1)/2)*3;
+}
+function drawLines(){
+  for(const line of S.lines){
+    const pts=line.path.pts;
+    ctx.lineJoin="round"; ctx.lineCap="round";
+    // casing
+    ctx.strokeStyle="rgba(0,0,0,0.35)"; ctx.lineWidth=(line.mode==="rail"?9:7);
+    strokePoly(pts);
+    // colour
+    ctx.strokeStyle=line.color; ctx.lineWidth=(line.mode==="rail"?6:4.5);
+    if(line.mode==="ferry"){ ctx.setLineDash([3,9]); } else ctx.setLineDash([]);
+    strokePoly(pts);
+    ctx.setLineDash([]);
+    // rail ties
+    if(line.mode==="rail"){
+      ctx.strokeStyle="rgba(255,255,255,0.25)"; ctx.lineWidth=1.5;
+      for(let s=0;s<pts.length-1;s++){
+        const a=pts[s],b=pts[s+1],d=dist(a,b),steps=Math.floor(d/16);
+        for(let k=0;k<steps;k++){
+          const f=k/steps, mx=a.x+(b.x-a.x)*f, my=a.y+(b.y-a.y)*f;
+          const ang=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2;
+          ctx.beginPath(); ctx.moveTo(mx+Math.cos(ang)*4,my+Math.sin(ang)*4); ctx.lineTo(mx-Math.cos(ang)*4,my-Math.sin(ang)*4); ctx.stroke();
+        }
+      }
+    }
+  }
+}
+function strokePoly(pts){ ctx.beginPath(); pts.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke(); }
+
+function drawDrawing(){
+  if(!build.active||build.stops.length===0) return;
+  const m=MODES[build.mode];
+  const pts=build.stops.map(id=>loc(id));
+  ctx.strokeStyle=m.color; ctx.globalAlpha=0.8; ctx.lineWidth=4; ctx.setLineDash([8,8]); ctx.lineDashOffset=-pulse*6;
+  strokePoly(pts); ctx.setLineDash([]); ctx.globalAlpha=1;
+  // highlight chosen stops
+  for(const l of pts){ ctx.beginPath(); ctx.arc(l.x,l.y,18,0,7); ctx.strokeStyle=m.color; ctx.lineWidth=2.5; ctx.stroke(); }
+}
+
+function drawVehicles(){
+  for(const line of S.lines){
+    for(const v of line.vehicles){
+      const m=MODES[v.mode];
+      ctx.save(); ctx.translate(v.x,v.y);
+      // heading
+      const a=line.path.pts[v.seg], b=line.path.pts[v.seg+1];
+      let ang=0; if(a&&b) ang=Math.atan2((b.y-a.y)*v.dir,(b.x-a.x)*v.dir);
+      ctx.rotate(ang);
+      const full=v.load.length/v.cap;
+      // body
+      let w=18,h=10;
+      if(v.mode==="rail"){ w=26; h=9; } else if(v.mode==="ferry"){ w=20; h=13; }
+      ctx.fillStyle=v.broken?"#777": m.color;
+      roundRect(-w/2,-h/2,w,h,3); ctx.fill();
+      // load fill (window glow)
+      ctx.fillStyle="rgba(255,255,255,0.5)";
+      ctx.fillRect(-w/2+2,-h/2+2, (w-4)*Math.min(1,full), h-4);
+      // outline
+      ctx.strokeStyle="rgba(0,0,0,0.5)"; ctx.lineWidth=1; roundRect(-w/2,-h/2,w,h,3); ctx.stroke();
+      ctx.restore();
+      // wear / broken indicator
+      if(v.broken){ floatIcon(v.x,v.y-14,"⚠️"); }
+      else if(v.wear>70){ ctx.fillStyle="#e7b75f"; ctx.beginPath(); ctx.arc(v.x+10,v.y-9,3,0,7); ctx.fill(); }
+    }
+  }
+}
+function floatIcon(x,y,em){ ctx.font="12px sans-serif"; ctx.textAlign="center"; ctx.fillText(em,x,y); }
+
+function drawPassengers(){
+  ctx.save();
+  for(const p of S.passengers){
+    ctx.beginPath();
+    ctx.fillStyle = p.onVeh? "rgba(255,255,255,0.0)" : `hsl(${p.hue},55%,70%)`;
+    if(p.onVeh) continue; // riding passengers are inside the vehicle
+    ctx.arc(p.x,p.y,2.4,0,7); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawStops(){
+  for(const l of LOCATIONS){
+    const hub=isHub(l.id);
+    const served=lineServes[l.id]&&lineServes[l.id].size>0;
+    const waiting=S.stops[l.id].wait.length;
+    // platform
+    ctx.beginPath(); ctx.arc(l.x,l.y,hub?15:12,0,7);
+    ctx.fillStyle = served? "rgba(243,247,242,0.96)" : "rgba(180,200,196,0.55)";
+    ctx.fill();
+    if(hub){ ctx.lineWidth=3; ctx.strokeStyle="#e7b75f"; ctx.beginPath(); ctx.arc(l.x,l.y,18+Math.sin(pulse)*1.2,0,7); ctx.stroke(); }
+    // water ring for ferry-capable
+    if(l.water){ ctx.lineWidth=2; ctx.strokeStyle="rgba(54,194,201,0.7)"; ctx.beginPath(); ctx.arc(l.x,l.y,(hub?15:12)+3,0,7); ctx.stroke(); }
+    // emoji
+    ctx.font="15px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(l.emoji,l.x,l.y+1);
+    // label
+    ctx.font="600 11px "+CFG.FONT_F; ctx.fillStyle="rgba(243,247,242,0.92)";
+    ctx.textBaseline="top";
+    const ly=l.y+ (hub?20:16);
+    ctx.fillStyle="rgba(8,28,27,0.6)";
+    const tw=ctx.measureText(l.name).width;
+    roundRect(l.x-tw/2-4, ly-1, tw+8, 14, 4); ctx.fill();
+    ctx.fillStyle="rgba(243,247,242,0.95)"; ctx.fillText(l.name,l.x,ly);
+    // waiting badge
+    if(waiting>0){
+      const bx=l.x+(hub?15:12), by=l.y-(hub?15:12);
+      ctx.beginPath(); ctx.arc(bx,by,8,0,7);
+      ctx.fillStyle = waiting>14?"#e76f6f":"#7fcf6b"; ctx.fill();
+      ctx.fillStyle="#06231f"; ctx.font="700 9px "+CFG.FONT_F; ctx.textBaseline="middle";
+      ctx.fillText(Math.min(99,waiting),bx,by+1);
+    }
+  }
+  ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+}
+CFG.FONT_F='"Space Grotesk",system-ui,sans-serif';
+
+function roundRect(x,y,w,h,r){ ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* --------------------------- UI PANELS ----------------------------------- */
+function $(id){ return document.getElementById(id); }
+function setText(id,t){ const e=$(id); if(e) e.textContent=t; }
+function setHTML(id,t){ const e=$(id); if(e) e.innerHTML=t; }
+
+function updateTopbar(){
+  setText("uiMoney",fmtMoney(S.money));
+  setText("uiWorth",fmtMoney(netWorth()));
+  setText("uiDay", S.day+" · "+fmtTime(S.time));
+  setText("uiRiders", S.ridersToday.toLocaleString());
+  const h=$("uiHappy"); h.textContent=Math.round(S.happy)+"%";
+  h.style.color = S.happy>=70?"#7fcf6b": S.happy>=45?"#e7b75f":"#e76f6f";
+}
+
+function renderPanels(){
+  renderLines(); renderReport(); renderGoals();
+  // update buildbar cost hints
+  setText("costBus","£"+(MODES.bus.buy/1000)+"k");
+  setText("costFerry","£"+(MODES.ferry.buy/1000)+"k");
+}
+function renderLines(){
+  const host=$("linesHost"); host.innerHTML="";
+  $("noLines").style.display = S.lines.length? "none":"block";
+  for(const line of S.lines){
+    const m=MODES[line.mode];
+    const load=line.vehicles.reduce((s,v)=>s+v.load.length,0);
+    const cap=line.vehicles.length*m.cap;
+    const avgWear=Math.round(line.vehicles.reduce((s,v)=>s+v.wear,0)/Math.max(1,line.vehicles.length));
+    const stopsTxt=line.stops.map(id=>loc(id).emoji).join(" ");
+    const div=document.createElement("div"); div.className="card";
+    div.innerHTML=`
+      <div class="row" style="justify-content:space-between">
+        <div class="title"><span class="dot" style="background:${m.color}"></span>${m.name}</div>
+        <span class="pill">${line.vehicles.length}×</span>
+      </div>
+      <div class="muted" style="margin:.25rem 0">${stopsTxt} <span class="tiny">(${line.stops.length} stops)</span></div>
+      <div class="kv"><span>On board / capacity</span><span>${load} / ${cap}</span></div>
+      <div class="kv"><span>Daily running cost</span><span>${fmtMoney(line.vehicles.length*m.dailyOp)}</span></div>
+      <div class="kv"><span>Avg. wear</span><span style="color:${avgWear>70?'#e76f6f':avgWear>45?'#e7b75f':'#7fcf6b'}">${avgWear}%</span></div>
+      <div class="bar"><i style="width:${avgWear}%; background:${avgWear>70?'#e76f6f':avgWear>45?'#e7b75f':'#7fcf6b'}"></i></div>
+      <div class="btnrow">
+        <button class="b primary small" data-act="add">+ Vehicle (£${(m.buy/1000)}k)</button>
+        <button class="b small" data-act="service">🔧 Service</button>
+        <button class="b danger small" data-act="del">Close</button>
+      </div>`;
+    div.querySelector('[data-act="add"]').onclick=()=>addVehicle(line);
+    div.querySelector('[data-act="service"]').onclick=()=>serviceLine(line);
+    div.querySelector('[data-act="del"]').onclick=()=>{ if(confirm("Close this line? You'll recover part of its value.")) deleteLine(line); };
+    host.appendChild(div);
+  }
+}
+function renderReport(){
+  setText("rFare",fmtMoney(S.fareToday));
+  setText("rOp","−"+fmtMoney(dailyOpCost()));
+  setText("rMaint","−"+fmtMoney(S.maintToday));
+  setText("rRiders",S.ridersToday.toLocaleString());
+  setText("rLost",S.lostToday.toLocaleString());
+  setText("rConn", connectedCount()+" / 18");
+  setText("rHubs", LOCATIONS.filter(l=>isHub(l.id)).length);
+  setText("rVeh", S.vehicles.length);
+  const top=Object.entries(S.odToday).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const tb=$("rTop"); tb.innerHTML = top.length? top.map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join("")
+    : `<tr><td class="muted" colspan="2">No completed journeys yet today.</td></tr>`;
+}
+function renderGoals(){
+  const host=$("goalsHost"); if(!host) return; host.innerHTML="";
+  for(const g of GOALS){
+    const done=!!S.goalsDone[g.id];
+    const d=document.createElement("div"); d.className="goal"+(done?" done":"");
+    d.innerHTML=`<span class="tick">${done?"✓":""}</span><span class="txt">${g.txt}</span>`;
+    host.appendChild(d);
+  }
+}
+
+function toast(msg,kind){
+  const host=$("toasts");
+  const t=document.createElement("div"); t.className="toast "+(kind||"");
+  t.textContent=msg; host.appendChild(t);
+  setTimeout(()=>{ t.style.opacity="0"; t.style.transition="opacity .4s"; setTimeout(()=>t.remove(),400); }, 3200);
+  while(host.children.length>4) host.removeChild(host.firstChild);
+}
+
+/* --------------------------- SCREENS ------------------------------------- */
+function showScreen(id){ ["startScreen","dayScreen","endScreen"].forEach(s=>$(s).classList.toggle("hidden",s!==id)); }
+function hideScreens(){ ["startScreen","dayScreen","endScreen"].forEach(s=>$(s).classList.add("hidden")); }
+
+function checkEnd(){
+  if(S.ended) return;
+  if(S.money< -5000){
+    endGame(false,"The authority ran out of money. The city has taken the network back into public hands.");
+  } else if(S.goalsDone["worth"]){
+    endGame(true,"You've grown Tidewater Lines into a thriving, beloved network and hit your net-worth target. The city names you its official Transit Authority. 🌿");
+  }
+}
+function endGame(win,body){
+  S.ended=true; S.running=false; S.paused=true;
+  clearSave();   // the run is over — don't offer to resume a finished game
+  setText("endKick", win?"Victory":"Game over");
+  setText("endTitle", win?"The city is yours":"End of the line");
+  setText("endBody", body);
+  setText("eDays", S.day);
+  setText("eWorth", fmtMoney(netWorth()));
+  setText("eRiders", S.ridersTotal.toLocaleString());
+  setText("eHappy", Math.round(S.happy)+"%");
+  showScreen("endScreen");
+}
+
+/* --------------------------- SAVE / RESTORE ------------------------------ */
+/* We persist only the durable shape of the city (funds, day, lines, per-vehicle
+   wear, counters, goals). Live passengers and exact vehicle positions are
+   transient — they re-seed within moments of loading. */
+const SAVE_KEY = "tidewater-lines-save-v1";
+function serialize(){
+  return {
+    v:1,
+    money:S.money, day:S.day, time:S.time, happy:S.happy,
+    ridersTotal:S.ridersTotal, ridersToday:S.ridersToday, lostToday:S.lostToday,
+    breakdownsToday:S.breakdownsToday, deniedToday:S.deniedToday,
+    fareToday:S.fareToday, maintToday:S.maintToday, odToday:S.odToday,
+    autoService:S.autoService, peakRiders:S._peakRiders||0,
+    goalsDone:S.goalsDone, nextLineId:S.nextLineId, nextVehId:S.nextVehId,
+    lines:S.lines.map(l=>({ id:l.id, mode:l.mode, stops:l.stops.slice(),
+      vehicles:l.vehicles.map(v=>({ id:v.id, wear:v.wear })) })),
+  };
+}
+function deserialize(d){
+  if(!d || d.v!==1 || !Array.isArray(d.lines)) return false;
+  S.passengers=[]; LOCATIONS.forEach(l=>S.stops[l.id]={wait:[]});
+  S.vehicles=[]; S.lines=[];
+  Object.assign(S,{
+    money:d.money, day:d.day, time:d.time, happy:d.happy,
+    ridersTotal:d.ridersTotal||0, ridersToday:d.ridersToday||0, lostToday:d.lostToday||0,
+    breakdownsToday:d.breakdownsToday||0, deniedToday:d.deniedToday||0,
+    fareToday:d.fareToday||0, maintToday:d.maintToday||0, odToday:d.odToday||{},
+    autoService:d.autoService!==false, _peakRiders:d.peakRiders||0,
+    goalsDone:d.goalsDone||{}, spawnAcc:0, heatmap:false, unmet:{},
+    ended:false, running:true, paused:false, speed:1,
+  });
+  for(const ld of d.lines){
+    if(!MODES[ld.mode] || !ld.stops || ld.stops.length<2) continue;
+    const line={ id:ld.id, mode:ld.mode, stops:ld.stops.slice(),
+                 color:MODES[ld.mode].color, vehicles:[], path:buildPath(ld.stops) };
+    for(const vd of (ld.vehicles||[])){
+      const v=makeVehicle(line);
+      v.id=vd.id; v.wear=clamp(vd.wear||0,0,100);
+      v.seg=Math.floor(Math.random()*Math.max(1,line.stops.length-1)); v.t=0; v.dir=1;
+      line.vehicles.push(v); S.vehicles.push(v);
+    }
+    S.lines.push(line);
+  }
+  // restore id counters AFTER building (makeVehicle bumps nextVehId)
+  S.nextLineId=d.nextLineId||(S.lines.reduce((m,l)=>Math.max(m,l.id),0)+1);
+  S.nextVehId =d.nextVehId ||(S.vehicles.reduce((m,v)=>Math.max(m,v.id),0)+1);
+  rebuildGraph();
+  return true;
+}
+function saveGame(manual){
+  try{
+    localStorage.setItem(SAVE_KEY, JSON.stringify(serialize()));
+    if(manual){ toast("Game saved 💾","good"); flashSave(); }
+    return true;
+  }catch(e){ if(manual) toast("Couldn't save — storage is blocked here.","bad"); return false; }
+}
+function hasSave(){ try{ return !!localStorage.getItem(SAVE_KEY); }catch(e){ return false; } }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function loadGame(){
+  let raw=null; try{ raw=localStorage.getItem(SAVE_KEY); }catch(e){}
+  if(!raw){ toast("No saved city found.","warn"); return false; }
+  let ok=false;
+  try{ ok=deserialize(JSON.parse(raw)); }catch(e){ ok=false; }
+  if(!ok){ toast("That save couldn't be read — start a new city.","bad"); clearSave(); return false; }
+  hideScreens(); resize(); renderPanels(); updateTopbar(); setSpeed(1);
+  toast("Welcome back — city restored.","good");
+  return true;
+}
+function flashSave(){
+  const b=$("saveBtn"); if(!b) return;
+  b.classList.add("flash"); setTimeout(()=>b.classList.remove("flash"),450);
+}
+function refreshContinueBtn(){
+  const c=$("continueBtn"); if(!c) return;
+  c.style.display = hasSave() ? "" : "none";
+}
+
+/* --------------------------- MAIN LOOP ----------------------------------- */
+let lastT=performance.now();
+function frame(now){
+  const dtReal=Math.min(0.05,(now-lastT)/1000); lastT=now;
+  if(S.running && !S.paused && S.speed>0){
+    const dtMin=dtReal*CFG.SIM_MIN_PER_SEC*S.speed;
+    // track per-day peak riders for goal
+    spawnPassengers(dtMin);
+    tickWaiting(dtMin);
+    for(const v of S.vehicles) tickVehicle(v,dtMin);
+    advanceTime(dtMin);
+    S._lastDayRiders=S.ridersToday;
+    S._peakRiders=Math.max(S._peakRiders||0,S.ridersToday);
+    // periodic UI refresh (not every frame to save work)
+    uiAcc+=dtReal; if(uiAcc>0.25){ uiAcc=0; updateTopbar(); renderReport(); renderLines(); checkGoals(); }
+  }
+  render();
+  requestAnimationFrame(frame);
+}
+let uiAcc=0;
+
+/* --------------------------- WIRING -------------------------------------- */
+function startGame(){
+  // reset
+  Object.assign(S,{
+    money:CFG.START_MONEY, day:1, time:CFG.DAY_START, speed:1, running:true, paused:false,
+    happy:CFG.HAPPY_START, lines:[], vehicles:[], passengers:[], spawnAcc:0,
+    ridersToday:0, ridersTotal:0, lostToday:0, breakdownsToday:0, deniedToday:0,
+    fareToday:0, maintToday:0, odToday:{},
+    nextLineId:1, nextVehId:1, autoService:true, heatmap:false, unmet:{}, goalsDone:{}, ended:false,
+    _peakRiders:0,_lastDayRiders:0,
+  });
+  LOCATIONS.forEach(l=>S.stops[l.id]={wait:[]});
+  clearSave();   // a fresh city replaces any previous save
+  rebuildGraph();
+  hideScreens();
+  resize();
+  renderPanels(); updateTopbar();
+  setSpeed(1);
+}
+function setSpeed(s){
+  S.speed=s; if(s>0){ S.paused=false; }
+  document.querySelectorAll("#speed button").forEach(b=>b.classList.toggle("active",+b.dataset.s===s));
+}
+
+$("startBtn").onclick=startGame;
+$("continueBtn").onclick=loadGame;
+$("dayBtn").onclick=()=>{ hideScreens(); S.paused=false; };
+$("endBtn").onclick=()=>{ refreshContinueBtn(); startGame(); };
+$("saveBtn").onclick=()=>{ if(S.running) saveGame(true); };
+$("drawGo").onclick=confirmBuild;
+$("drawCancel").onclick=cancelBuild;
+
+document.querySelectorAll("#buildbar .tool").forEach(b=> b.onclick=()=>setMode(b.dataset.mode));
+document.querySelectorAll("#speed button").forEach(b=> b.onclick=()=>setSpeed(+b.dataset.s));
+document.querySelectorAll(".tabs button").forEach(b=> b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tabview").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active"); $("tab-"+b.dataset.tab).classList.add("active");
+});
+
+window.addEventListener("resize",resize);
+// keyboard shortcuts
+window.addEventListener("keydown",e=>{
+  if(!S.running) return;
+  if(e.key==="1") setMode("bus");
+  else if(e.key==="2") setMode("rail");
+  else if(e.key==="3") setMode("ferry");
+  else if(e.key==="h"||e.key==="H") setMode("heat");
+  else if(e.key==="s"||e.key==="S") saveGame(true);
+  else if(e.key==="Escape") cancelBuild();
+  else if(e.key===" "){ e.preventDefault(); setSpeed(S.speed>0?0:1); }
+});
+
+rebuildGraph();   // populate interchange lookup so the idle map renders before start
+refreshContinueBtn();   // offer "Continue" on the start screen if a save exists
+resize();
+renderPanels();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

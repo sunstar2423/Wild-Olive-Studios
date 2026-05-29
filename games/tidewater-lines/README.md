@@ -1,0 +1,76 @@
+# 🚊 Tidewater Lines
+
+A cozy **transit-network tycoon** set in the coastal city of *Olivehaven*. Stitch
+the city together with **electric buses**, **light rail** and **ferries**, carry
+real passengers from stop to stop, collect fares, and grow a beautiful, profitable
+network — while keeping riders happy and your fleet maintained.
+
+## How it plays
+
+- **Trace routes.** Pick a mode (Bus 🚌 / Rail 🚊 / Ferry ⛴️) and click stops in
+  order to lay a line. Ferries only connect waterside stops; light rail lays track
+  (so it costs more up front but moves lots of people fast).
+- **Carry passengers.** People appear at stops wanting to reach somewhere else,
+  chosen by a gravity model (closer + more attractive places pull more trips).
+  They route across your network, **transfer at interchange hubs** where two or
+  more lines meet, and **pay a fare on arrival** — longer trips and ferries pay a
+  premium.
+- **Run the business.** Fares are income; vehicles cost money to buy and have a
+  **daily operating cost**. Vehicles **wear out** and will **break down** if you
+  don't **service** them. Watch out for over-provisioning — adding vehicles past
+  the demand sweet spot costs more to run than it earns.
+- **Keep the city happy.** Long waits, overcrowding and breakdowns lower the city's
+  happiness; reliable, well-covered service raises it — and a happier city rides
+  more.
+- **Read the daily report.** Each night you get fares, running costs, net profit,
+  riders carried and the busiest journeys. A **🔥 Demand** overlay shows trips
+  people want to make but can't yet — your cue to expand.
+- **Hit the goals.** Connect the city, run all three modes, build an interchange,
+  reach 90% happiness, and grow your net worth to become the official Transit
+  Authority.
+
+## Tech
+
+- **Single-file HTML5 game** — vanilla JavaScript + Canvas 2D, no engine, no build
+  step, no dependencies.
+- A tick-based simulation with live moving vehicles and individual passenger agents,
+  Dijkstra route-planning with transfer penalties, a gravity demand model, and a
+  wear/maintenance economy.
+- Mouse and touch controls; keyboard shortcuts (`1`/`2`/`3` modes, `H` demand,
+  `Space` pause).
+
+## Where the playable build lives
+
+Because this is a single self-contained file, the **source and the build are the
+same file**, and it lives in the published site folder so it's playable online:
+
+```
+docs/play/tidewater-lines/index.html
+```
+
+- **Play locally:** open that file in a browser, or run
+  `python3 -m http.server 8000 --directory docs` and visit
+  `http://localhost:8000/play/tidewater-lines/`.
+- **Play live:** `https://sunstar2423.github.io/Wild-Olive-Studios/play/tidewater-lines/`
+- **Linked from:** the *Tidewater Lines* card on the home page (`docs/index.html`).
+
+## Balance notes (for future tuning)
+
+All the knobs live in the `CFG`, `MODES` and the service/repair constants near the
+top of the `<script>`. The current numbers were tuned with a headless simulation so
+that:
+
+- A modest starter network (a couple of bus lines from the £30k starting fund) is
+  gently profitable and teaches the loop.
+- A well-run, **right-sized** network is clearly profitable, but **over-provisioning
+  vehicles shows diminishing returns** — the core optimisation decision.
+- **Maintenance is a real, manageable cost**; neglected fleets break down and cost
+  more.
+
+## Ideas to grow it
+
+- [ ] Save/restore via `localStorage`
+- [ ] Event days (festivals, match days) that spike demand at the Stadium / Opera
+- [ ] Weather affecting ferries and demand
+- [ ] Express vs. stopping services on a line
+- [ ] Sound: gentle ambient harbour loop + arrival chimes
