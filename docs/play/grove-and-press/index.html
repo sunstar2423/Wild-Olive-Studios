@@ -310,8 +310,52 @@ const CHATTER = [
   "Market's lively today.", "Just browsing, thanks.", "Beautiful weather for it.",
   "Is this cold-pressed?", "Mmm — any taste tests?", "Back next week for more!",
   "Tell your trees I said hi.", "Saving up for the good stuff.", "That's a bargain!",
-  "Heard this farm's the best.", "One of each, please!", "My salad will thank you."
+  "Heard this farm's the best.", "One of each, please!", "My salad will thank you.",
+  "Extra-virgin or nothing for me.", "Do you deliver?", "My doctor says it's good for me!",
+  "I came all this way for this.", "Peppery finish on that one — love it.", "Is it local?",
+  "I'll tell all my friends.", "Got any in a bigger bottle?", "Perfect for dipping bread.",
+  "Worth every penny.", "The queue says it all!", "You've outdone yourself.",
+  "What a gorgeous stall.", "I'll grab two — one's a gift.", "Treat yourself, I always say.",
+  "Better than the supermarket stuff.", "Could smell it from the gate!", "Keep the change."
 ];
+// extra lines that fit each themed market (mixed in with the general ones)
+const THEME_CHATTER = {
+  spring: [
+    "What a lovely spring day! 🌸", "The blossom is gorgeous this year.",
+    "Everything's blooming!", "Perfect picnic weather.", "Fresh starts all round.",
+    "Bees are busy today 🐝", "Love the flowers everywhere."
+  ],
+  fair: [
+    "The lambs are adorable! 🐑", "My kids love the animals.",
+    "Did you see the bunnies? 🐰", "That goat tried to eat my bag!",
+    "Cluck cluck — morning! 🐓", "The ducklings stole the show 🦆"
+  ],
+  summer: [
+    "Phew, it's a scorcher ☀️", "Ice cold lemonade, anyone?",
+    "Beach later, market now.", "Sun's out, wallets out!",
+    "Lovely day to be outside.", "Watermelon weather 🍉"
+  ],
+  autumn: [
+    "Harvest time — my favourite! 🍂", "Smells like autumn.",
+    "Pumpkin everything, please 🎃", "Cosy season is here.",
+    "The leaves are turning beautifully.", "Stocking up for winter."
+  ],
+  halloween: [
+    "Spooky season! 🎃", "Trick or treat? 👻", "Ooh, eerie vibes tonight.",
+    "Was that a bat? 🦇", "Olive oil for my potions 🧪", "Boo! …sorry. 💀",
+    "Love a haunted market.", "My costume took hours!"
+  ],
+  winter: [
+    "Brrr, freezing out! ❄️", "Snow's really coming down.",
+    "Warm me up with something nice.", "Wrapped up warm today ⛄",
+    "Hot soup needs good oil.", "Mind the ice on the way out!"
+  ],
+  christmas: [
+    "Merry one to you! 🎄", "Gathering gifts 🎁", "It's beginning to feel festive!",
+    "Oil makes a lovely present.", "Carollers are out tonight 🔔",
+    "Cosy and bright, isn't it?", "Stocking fillers, sorted!", "Season's greetings! ⛄"
+  ]
+};
 
 // grade: olives per bottle, sale price, press cost per bottle, color, name
 const GRADES = {
@@ -818,7 +862,12 @@ $("pressBtn").onclick = ()=>{
 const canvas = $("marketCanvas"), ctx = canvas.getContext("2d");
 const MW = 800, MH = 360;
 let customers = [], floats = [], stalls = [], marketActive = false, marketTime = 0, raf = 0, spawnAcc = 0;
-let weather = [], critters = [], theme = THEMES.standard, weatherAcc = 0;
+let weather = [], critters = [], theme = THEMES.standard, weatherAcc = 0, curThemeKey = "standard";
+function randomChat(){
+  const themed = THEME_CHATTER[curThemeKey] || [];
+  if(themed.length && Math.random() < 0.6) return themed[(Math.random()*themed.length)|0];
+  return CHATTER[(Math.random()*CHATTER.length)|0];
+}
 
 function fitCanvas(){
   const dpr = Math.min(window.devicePixelRatio||1, 2);
@@ -835,7 +884,7 @@ canvas.addEventListener("pointerdown", (e)=>{
   // 1) nearest shopper within reach -> casual chat
   let best=null, bd=1e9;
   for(const c of customers){ const d=Math.hypot(c.x-lx, c.y-ly); if(d<bd){ bd=d; best=c; } }
-  if(best && bd < 24){ best.say = { text: CHATTER[(Math.random()*CHATTER.length)|0], t:2.8 }; AU.sfx("click"); return; }
+  if(best && bd < 24){ best.say = { text: randomChat(), t:2.8 }; AU.sfx("click"); return; }
   // 2) clicked a neighbour stall -> offer to buy it out
   for(const s of stalls){
     if(s.kind==="npc" && lx>=s.x-6 && lx<=s.x+s.w+6 && ly>=s.y-12 && ly<=s.y+s.h+12){ tryBuyShop(s); return; }
@@ -867,6 +916,7 @@ function enterMarket(){
   $("returnBtn").style.display = "none";
   // this year's themed market (recurring calendar) and a matching backdrop
   const themeKey = themeForYear(G.year);
+  curThemeKey = themeKey;
   theme = THEMES[themeKey] || THEMES.standard;
   setText("marketTitle", "🏙️ " + theme.label);
   buildBackdrop();
