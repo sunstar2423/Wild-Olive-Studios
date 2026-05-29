@@ -28,9 +28,13 @@ network — while keeping riders happy and your fleet maintained.
   surge demand at specific venues, rewarding players who pre-position vehicles.
   **Weather** sways outdoor/leisure demand and, for **ferries**, scales speed and
   wear: storms and blustery days leave ferries slower and wearing out faster.
-- **Read the daily report.** Each night you get fares, running costs, net profit,
-  riders carried and the busiest journeys. A **🔥 Demand** overlay shows trips
-  people want to make but can't yet — your cue to expand.
+- **Use the bank.** Short on cash to expand? Take a **loan** (up to a credit limit)
+  to build a new line or fleet now, then **repay** as fares roll in. Interest
+  accrues daily on the outstanding balance, and debt counts against your net worth —
+  so borrow to grow, but clear it when you can.
+- **Read the daily report.** Each night you get fares, running costs (including loan
+  interest), net profit, riders carried and the busiest journeys. A **🔥 Demand**
+  overlay shows trips people want to make but can't yet — your cue to expand.
 - **Hit the goals.** Connect the city, run all three modes, build an interchange,
   reach 90% happiness, and grow your net worth to become the official Transit
   Authority.

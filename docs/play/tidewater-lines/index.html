@@ -227,6 +227,7 @@
       </div>
       <div class="tabwrap">
         <div class="tabview active" id="tab-lines">
+          <div id="financeHost"></div>
           <div id="linesHost"></div>
           <div class="card" id="noLines">
             <div class="title">No lines yet 🌊</div>
@@ -240,6 +241,7 @@
             <div class="kv"><span>Fares collected</span><span id="rFare">£0</span></div>
             <div class="kv"><span>Operating cost (proj.)</span><span id="rOp">£0</span></div>
             <div class="kv"><span>Maintenance spend</span><span id="rMaint">£0</span></div>
+            <div class="kv"><span>Loan interest (proj.)</span><span id="rInt">£0</span></div>
             <div class="kv"><span>Riders carried</span><span id="rRiders">0</span></div>
             <div class="kv"><span>Gave up waiting</span><span id="rLost">0</span></div>
           </div>
@@ -268,7 +270,7 @@
             <b style="color:#fff">2. Carry passengers.</b> People appear at stops wanting to reach another place. They board your vehicles, transfer at shared <b>interchange</b> stops, and pay a fare on arrival — longer trips and ferries pay more.
           </p></div>
           <div class="card"><p class="muted">
-            <b style="color:#fff">3. Grow & maintain.</b> Add vehicles to busy lines, open new routes, and <b>Service</b> vehicles before wear gets high — neglected vehicles break down, costing money and happiness.
+            <b style="color:#fff">3. Grow & maintain.</b> Add vehicles to busy lines, open new routes, and <b>Service</b> vehicles before wear gets high — neglected vehicles break down, costing money and happiness. Short on cash? The <b>🏦 Bank</b> (Lines tab) lets you <b>borrow</b> to expand and <b>repay</b> as fares roll in — interest accrues daily, so clear debt when you can.
           </p></div>
           <div class="card"><p class="muted">
             <b style="color:#fff">4. Watch the numbers.</b> Toggle <b>🔥 Demand</b> to see where people want to travel but can't yet. Each night you get a profit/loss report. Keep funds above zero and riders happy.
@@ -373,6 +375,8 @@ const CFG = {
   MAX_TRANSFERS: 2,
   HAPPY_START: 75,
   WIN_WORTH: 220000,             // net worth needed for the final goal
+  LOAN_MAX_DEBT: 60000,          // total outstanding debt the bank will allow
+  LOAN_DAILY_RATE: 0.011,        // daily interest on the outstanding balance (~1.1%)
 };
 
 const MODES = {
@@ -453,6 +457,7 @@ const EVENTS = [
 /* --------------------------- STATE --------------------------------------- */
 const S = {
   money: CFG.START_MONEY,
+  debt: 0, interestToday: 0,
   day: 1, time: CFG.DAY_START, speed: 1, running: false, paused:false,
   happy: CFG.HAPPY_START,
   lines: [],            // {id, mode, stops:[locId], color, vehicles:[], path:[{x,y}], len, segLen[]}
@@ -919,9 +924,30 @@ function netWorth(){
     assets+=lineInfraCost(ln.mode,ln.stops)*0.5;
     assets+=ln.vehicles.length*MODES[ln.mode].buy*0.6;
   }
-  return S.money+assets;
+  return S.money+assets-S.debt;   // outstanding debt counts against you
 }
 function dailyOpCost(){ let c=0; for(const v of S.vehicles) c+=MODES[v.mode].dailyOp; return c; }
+
+/* ----- loans: bridge financing with daily interest, capped credit limit ----- */
+function creditAvailable(){ return Math.max(0, CFG.LOAN_MAX_DEBT - S.debt); }
+function dailyInterest(){ return Math.round(S.debt*CFG.LOAN_DAILY_RATE); }
+function borrow(amount){
+  if(!S.running) return;
+  const amt=Math.min(amount, creditAvailable());
+  if(amt<=0){ toast("You've reached your credit limit — repay some debt first.","warn"); return; }
+  S.money+=amt; S.debt+=amt;
+  toast(`Borrowed ${fmtMoney(amt)}. Interest runs at ${(CFG.LOAN_DAILY_RATE*100).toFixed(1)}%/day.`,"good");
+  renderPanels(); updateTopbar();
+}
+function repay(amount){
+  if(!S.running) return;
+  if(S.debt<=0){ toast("You have no debt to repay. 🎉","warn"); return; }
+  const amt=Math.min(amount, S.debt, Math.max(0,S.money));
+  if(amt<=0){ toast("Not enough cash on hand to repay.","bad"); return; }
+  S.money-=amt; S.debt-=amt;
+  toast(`Repaid ${fmtMoney(amt)}.${S.debt<=0?" Debt cleared!":""}`,"good");
+  renderPanels(); updateTopbar();
+}
 
 /* --------------------------- DAY CYCLE ----------------------------------- */
 function advanceTime(dtMin){
@@ -935,7 +961,9 @@ function endOfDay(){
   S.time-=CFG.DAY_MIN;
   const op=dailyOpCost();
   S.money-=op;
-  const profit = S.fareToday - op - S.maintToday;
+  const interest=dailyInterest();   // interest on outstanding loans
+  S.money-=interest; S.interestToday=interest;
+  const profit = S.fareToday - op - S.maintToday - interest;
 
   // --- happiness: smooth drift toward a target set by today's service quality ---
   const demandHandled = S.ridersToday + S.lostToday;
@@ -952,14 +980,16 @@ function endOfDay(){
   setText("dayTitle","Day "+S.day+" complete");
   setText("daySub", profit>=0 ? "A profitable day on the bay" : "A tough day for the network");
   setText("dFare", fmtMoney(S.fareToday));
-  setText("dCost", "−"+fmtMoney(op+S.maintToday));
+  setText("dCost", "−"+fmtMoney(op+S.maintToday+interest));
   const pe=$("dProfit"); pe.textContent=fmtMoney(profit); pe.className="v "+(profit>=0?"pos":"neg");
   setText("dRiders", S.ridersToday.toLocaleString());
   let note="";
   if(S.lines.length===0) note="Trace your first line to start carrying passengers and earning fares.";
+  else if(S.debt>0 && interest>profit+interest && profit<0) note="Loan interest is eating your margins — repay debt once fares pick up.";
   else if(profit<0 && S.fareToday<op) note="Running costs outweigh fares — focus vehicles on the busiest journeys, or trim idle routes.";
   else if(S.lostToday>S.ridersToday*0.25) note="Lots of riders gave up waiting. Add vehicles or open new connections where the 🔥 demand glows.";
   else if(S.breakdownsToday>2) note="Breakdowns cost you today. Service vehicles before their wear climbs past ~60%.";
+  else if(S.debt>0 && profit>0) note="Turning a profit — consider repaying some debt to cut your daily interest.";
   else if(profit>0) note="Healthy profit — consider reinvesting in a new route or upgrading to light rail / ferries.";
   setText("dNote", note);
 
@@ -969,7 +999,7 @@ function endOfDay(){
   // roll into next day
   S.day++;
   S.fareToday=0; S.maintToday=0; S.ridersToday=0; S.lostToday=0;
-  S.breakdownsToday=0; S.deniedToday=0;
+  S.breakdownsToday=0; S.deniedToday=0; S.interestToday=0;
   S.odToday={};
   rollDailyConditions();
   announceConditions();
@@ -1326,10 +1356,38 @@ function updateTopbar(){
 }
 
 function renderPanels(){
-  renderLines(); renderReport(); renderGoals();
+  renderFinance(); renderLines(); renderReport(); renderGoals();
   // update buildbar cost hints
   setText("costBus","£"+(MODES.bus.buy/1000)+"k");
   setText("costFerry","£"+(MODES.ferry.buy/1000)+"k");
+}
+function renderFinance(){
+  const host=$("financeHost"); if(!host) return;
+  const avail=creditAvailable();
+  const interest=dailyInterest();
+  const debtPct=Math.round(S.debt/CFG.LOAN_MAX_DEBT*100);
+  host.innerHTML=`
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="title">🏦 Bank</div>
+        <span class="pill">${S.debt>0?"Owed "+fmtMoney(S.debt):"No debt"}</span>
+      </div>
+      <div class="kv"><span>Cash on hand</span><span>${fmtMoney(S.money)}</span></div>
+      <div class="kv"><span>Credit available</span><span>${fmtMoney(avail)}</span></div>
+      <div class="kv"><span>Interest (per day)</span><span style="color:${interest>0?'#e7b75f':'#8fb6b1'}">−${fmtMoney(interest)}</span></div>
+      <div class="bar"><i style="width:${debtPct}%; background:${debtPct>75?'#e76f6f':debtPct>40?'#e7b75f':'#7fcf6b'}"></i></div>
+      <div class="btnrow">
+        <button class="b small" data-b="b10" ${avail<1?'disabled':''}>Borrow £10k</button>
+        <button class="b small" data-b="b25" ${avail<1?'disabled':''}>Borrow £25k</button>
+        <button class="b small" data-b="r10" ${S.debt<=0||S.money<=0?'disabled':''}>Repay £10k</button>
+        <button class="b primary small" data-b="rall" ${S.debt<=0||S.money<=0?'disabled':''}>Repay all</button>
+      </div>
+      <p class="tiny" style="margin-top:.4rem">Borrow to expand faster — but interest runs at ${(CFG.LOAN_DAILY_RATE*100).toFixed(1)}%/day until you repay.</p>
+    </div>`;
+  host.querySelector('[data-b="b10"]').onclick=()=>borrow(10000);
+  host.querySelector('[data-b="b25"]').onclick=()=>borrow(25000);
+  host.querySelector('[data-b="r10"]').onclick=()=>repay(10000);
+  host.querySelector('[data-b="rall"]').onclick=()=>repay(Infinity);
 }
 function renderLines(){
   const host=$("linesHost"); host.innerHTML="";
@@ -1366,6 +1424,7 @@ function renderReport(){
   setText("rFare",fmtMoney(S.fareToday));
   setText("rOp","−"+fmtMoney(dailyOpCost()));
   setText("rMaint","−"+fmtMoney(S.maintToday));
+  setText("rInt","−"+fmtMoney(dailyInterest()));
   setText("rRiders",S.ridersToday.toLocaleString());
   setText("rLost",S.lostToday.toLocaleString());
   setText("rConn", connectedCount()+" / 18");
@@ -1519,7 +1578,7 @@ const SAVE_KEY = "tidewater-lines-save-v1";
 function serialize(){
   return {
     v:1,
-    money:S.money, day:S.day, time:S.time, happy:S.happy,
+    money:S.money, debt:S.debt, day:S.day, time:S.time, happy:S.happy,
     ridersTotal:S.ridersTotal, ridersToday:S.ridersToday, lostToday:S.lostToday,
     breakdownsToday:S.breakdownsToday, deniedToday:S.deniedToday,
     fareToday:S.fareToday, maintToday:S.maintToday, odToday:S.odToday,
@@ -1535,7 +1594,7 @@ function deserialize(d){
   S.passengers=[]; LOCATIONS.forEach(l=>S.stops[l.id]={wait:[]});
   S.vehicles=[]; S.lines=[];
   Object.assign(S,{
-    money:d.money, day:d.day, time:d.time, happy:d.happy,
+    money:d.money, debt:d.debt||0, interestToday:0, day:d.day, time:d.time, happy:d.happy,
     ridersTotal:d.ridersTotal||0, ridersToday:d.ridersToday||0, lostToday:d.lostToday||0,
     breakdownsToday:d.breakdownsToday||0, deniedToday:d.deniedToday||0,
     fareToday:d.fareToday||0, maintToday:d.maintToday||0, odToday:d.odToday||{},
@@ -1622,7 +1681,7 @@ function startGame(){
   SFX.init();   // kicked off by the Start button gesture (audio autoplay policy)
   // reset
   Object.assign(S,{
-    money:CFG.START_MONEY, day:1, time:CFG.DAY_START, speed:1, running:true, paused:false,
+    money:CFG.START_MONEY, debt:0, interestToday:0, day:1, time:CFG.DAY_START, speed:1, running:true, paused:false,
     happy:CFG.HAPPY_START, lines:[], vehicles:[], passengers:[], spawnAcc:0,
     ridersToday:0, ridersTotal:0, lostToday:0, breakdownsToday:0, deniedToday:0,
     fareToday:0, maintToday:0, odToday:{},
