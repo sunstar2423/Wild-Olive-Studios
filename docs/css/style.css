@@ -126,20 +126,37 @@ main, .nav, .footer, .marquee { position: relative; z-index: 1; }
 .hero {
   position: relative;
   min-height: 100vh;
+  min-height: 100svh;
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
   align-items: center;
-  gap: 2rem;
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 7rem clamp(1rem, 4vw, 3rem) 4rem;
+  padding: 8rem clamp(1rem, 4vw, 3rem) 5rem;
+}
+/* full-bleed forest background image */
+.hero__bg {
+  position: absolute; top: 0; bottom: 0; left: 50%;
+  transform: translateX(-50%); width: 100vw;
+  z-index: 0; overflow: hidden;
+}
+.hero__bg img {
+  width: 100%; height: 100%; object-fit: cover; object-position: 70% center;
+  animation: hero-drift 26s ease-in-out infinite alternate;
+}
+/* dark gradient overlay so the headline stays legible over the art */
+.hero__overlay {
+  position: absolute; top: 0; bottom: 0; left: 50%;
+  transform: translateX(-50%); width: 100vw; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(8,14,10,0.94) 0%, rgba(8,14,10,0.80) 32%, rgba(8,14,10,0.30) 64%, rgba(8,14,10,0.10) 100%),
+    linear-gradient(0deg, var(--bg) 1%, rgba(8,14,10,0.55) 18%, transparent 48%);
 }
 .hero__grain {
-  position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  position: absolute; inset: 0; pointer-events: none; opacity: .35; z-index: 1;
   background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
   background-size: 4px 4px;
 }
-.hero__inner { position: relative; z-index: 2; }
+.hero__inner { position: relative; z-index: 2; max-width: 640px; }
 .hero__eyebrow {
   display: inline-block;
   font-weight: 700; letter-spacing: .04em;
@@ -156,14 +173,16 @@ main, .nav, .footer, .marquee { position: relative; z-index: 1; }
   line-height: 1.02;
   letter-spacing: -0.02em;
   margin-bottom: 1.4rem;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.55);
 }
 .hero__word { color: var(--olive-br); font-style: italic; position: relative; }
 .hero__word--alt { color: var(--gold); }
 .hero__sub {
-  color: var(--ink-soft);
+  color: var(--ink);
   font-size: clamp(1.05rem, 1.6vw, 1.25rem);
-  max-width: 46ch;
+  max-width: 44ch;
   margin-bottom: 2rem;
+  text-shadow: 0 1px 12px rgba(0,0,0,0.6);
 }
 .hero__actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2.6rem; }
 .hero__stats { display: flex; gap: 2.4rem; list-style: none; padding: 0; flex-wrap: wrap; }
@@ -209,6 +228,7 @@ main, .nav, .footer, .marquee { position: relative; z-index: 1; }
   position: absolute; bottom: 1.6rem; left: 50%; transform: translateX(-50%);
   width: 26px; height: 42px; border: 2px solid var(--line); border-radius: 14px;
   display: grid; place-items: start center; padding-top: 7px;
+  z-index: 2;
 }
 .hero__scroll span { width: 4px; height: 8px; border-radius: 4px; background: var(--olive-br); animation: scroll-dot 1.6s ease-in-out infinite; }
 
@@ -382,11 +402,18 @@ main, .nav, .footer, .marquee { position: relative; z-index: 1; }
 @keyframes marquee { from { transform: translateX(0);} to { transform: translateX(-50%);} }
 @keyframes scroll-dot { 0%{ transform: translateY(0); opacity:1;} 70%{ transform: translateY(14px); opacity:0;} 100%{opacity:0;} }
 @keyframes wiggle { 0%,100%{transform:rotate(0);} 25%{transform:rotate(-12deg);} 75%{transform:rotate(12deg);} }
+@keyframes hero-drift { from { transform: scale(1.06) translate(0,0); } to { transform: scale(1.12) translate(-1.5%, -1.5%); } }
 
 /* ---------- responsive ---------- */
 @media (max-width: 880px) {
-  .hero { grid-template-columns: 1fr; padding-top: 6rem; text-align: left; }
-  .hero__scene { height: 320px; order: -1; }
+  .hero { padding-top: 7rem; }
+  /* on tall/narrow screens, frame the glowing tree and darken more for text */
+  .hero__bg img { object-position: 76% center; }
+  .hero__overlay {
+    background:
+      linear-gradient(180deg, rgba(8,14,10,0.55) 0%, rgba(8,14,10,0.30) 30%, rgba(8,14,10,0.80) 100%),
+      linear-gradient(0deg, var(--bg) 1%, transparent 55%);
+  }
   .studio__grid { grid-template-columns: 1fr; }
   .nav__links, .nav__cta { display: none; }
   .nav__menu { display: flex; }
