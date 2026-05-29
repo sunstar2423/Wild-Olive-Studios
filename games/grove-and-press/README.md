@@ -44,6 +44,11 @@ lean years, so just replant and try again.
   its product at the farm once a year, and keep its market sales.
 - **A growing market:** more shoppers and new stall types appear in later years.
 - **Chatter:** tap a shopper to hear a casual line — the market feels alive.
+- **Themed markets:** each visit may be standard, spring, a spring animal fair
+  (animals wander about), summer, harvest, Halloween, winter (snow) or Christmas
+  — each with its own sky, decor and weather.
+- **Juice & tea stand:** buy one ($250) for passive income — a share of shoppers
+  stop by for a drink every market.
 
 ## Where it lives
 
@@ -61,6 +66,8 @@ lean years, so just replant and try again.
 - [x] Buy out a neighbouring shop and run a side business (make + sell its product)
 - [x] Market grows over the years (more shoppers, more stall types)
 - [x] Tap shoppers for casual chatter
+- [x] Themed markets (winter/Christmas/spring/Halloween/harvest/animal fair…)
+- [x] Buy a juice & tea stand for passive income
 - [ ] Reputation that grows your premium customer base over the years
 - [x] Sound effects + upbeat market music
 - [x] Save/continue across sessions (localStorage)

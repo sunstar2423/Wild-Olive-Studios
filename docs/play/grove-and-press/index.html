@@ -194,7 +194,7 @@
     <!-- MARKET -->
     <section class="panel" id="marketStage">
       <div class="panel__head">
-        <h2>🏙️ City Farmers Market</h2>
+        <h2 id="marketTitle">🏙️ City Farmers Market</h2>
         <p>Price your oil below (🔥 cheaper sells faster). <b>Tap a shopper to chat</b>, or <b>tap a neighbour's stall to buy it out</b> ($300) and run it yourself.</p>
       </div>
       <canvas id="marketCanvas"></canvas>
@@ -207,6 +207,7 @@
       <div class="panel__foot">
         <div class="stock" id="marketStock"></div>
         <button class="btn btn--gold btn--sm" id="buyStallBtn" style="display:none;">🏪 Buy a 2nd stall</button>
+        <button class="btn btn--gold btn--sm" id="buyDrinksBtn" style="display:none;">🧃 Buy juice &amp; tea stand</button>
         <button class="btn btn--primary" id="returnBtn" style="margin-left:auto; display:none;">🚜 Return to the grove →</button>
       </div>
     </section>
@@ -263,6 +264,22 @@ const LOAN_INTEREST = 0.18;   // interest charged on the co-op loan each grow se
 const LOAN_RESERVE  = 30;     // cash kept back before auto-repaying the loan
 const DEBT_LIMIT    = 500;    // if the loan grows past this, the co-op calls it in (game over)
 const BUYOUT_COST   = 300;    // buy out a neighbouring shop and run it yourself
+const DRINKS_COST   = 250;    // buy a juice & tea stand for passive market income
+const DRINK_PRICE   = 5;      // per drink (small variation applied)
+
+// Occasional themed markets. sky/ground are gradient stops; decor scatters on the
+// ground; particle is the falling weather; creatures wander about.
+const THEMES = {
+  standard:  { label:"Market Day",            sky:["#3a4a6b","#6b6e8e","#c98f6a"], ground:["#586a3a","#3c4a26"], particle:null,     decor:[],                          creatures:[] },
+  spring:    { label:"🌷 Spring Market",       sky:["#6fa8d6","#bfe0f0","#dcefc4"], ground:["#6a8e38","#4c6a26"], particle:"petals", decor:["🌷","🌼","🌸","💐","🌿"],   creatures:["🦋","🐝"] },
+  fair:      { label:"🐣 Spring Animal Fair",  sky:["#7fb4da","#cfe8f0","#dcefc4"], ground:["#6a8e38","#4c6a26"], particle:"petals", decor:["🌼","🌷","🌿"],            creatures:["🐤","🐰","🐑","🐐","🦆","🐓"] },
+  summer:    { label:"☀️ Summer Market",       sky:["#4a86c8","#9fc8e8","#ead8a0"], ground:["#6a8a30","#4c6a20"], particle:null,     decor:["🌻","🍉","🍓"],            creatures:["🦋"] },
+  autumn:    { label:"🍂 Harvest Market",      sky:["#8a6a3a","#c89a5a","#e6b070"], ground:["#6a5a28","#4a3c18"], particle:"leaves", decor:["🎃","🌽","🍎","🌾","🍂"],   creatures:[] },
+  halloween: { label:"🎃 Halloween Market",    sky:["#1a1230","#37264c","#5a3a2a"], ground:["#2a2438","#171322"], particle:"leaves", decor:["🎃","👻","🦇","🕸️","💀"],  creatures:["🦇","🐈‍⬛"] },
+  winter:    { label:"❄️ Winter Market",       sky:["#5a6a8a","#9aa8c0","#d4dce4"], ground:["#b4bec6","#8a96a2"], particle:"snow",   decor:["⛄","🌲","❄️"],            creatures:[] },
+  christmas: { label:"🎄 Christmas Market",     sky:["#1f3050","#3a4a6a","#6a4a4a"], ground:["#bcc4cc","#94a2aa"], particle:"snow",   decor:["🎄","🎁","⛄","🔔","🕯️"],  creatures:[] },
+};
+const THEME_KEYS = Object.keys(THEMES);
 const CHATTER = [
   "Lovely oil this year!", "How much for the green one?", "Smells like home 🌿",
   "My nonna swears by olive oil.", "Bit pricey today, no?", "I'll take a bottle!",
@@ -312,6 +329,7 @@ function newGame(){
     ownedShop: null,             // key of a SHOPS shop you've bought out
     sideStock: 0,                // units of your side-shop product, ready to sell
     producedSideThisYear: false, // one side-business batch per year
+    drinksStand: false,          // own a juice & tea stand (passive market income)
   };
   // start with three mature trees in the first row
   G.plots[0] = makeTree(MATURE_AGE);
@@ -728,6 +746,12 @@ $("pressBtn").onclick = ()=>{
 const canvas = $("marketCanvas"), ctx = canvas.getContext("2d");
 const MW = 800, MH = 360;
 let customers = [], floats = [], stalls = [], marketActive = false, marketTime = 0, raf = 0, spawnAcc = 0;
+let weather = [], critters = [], theme = THEMES.standard, weatherAcc = 0;
+function pickTheme(){
+  if(Math.random() < 0.42) return "standard";
+  const themed = THEME_KEYS.filter(k=>k!=="standard");
+  return themed[(Math.random()*themed.length)|0];
+}
 
 function fitCanvas(){
   const dpr = Math.min(window.devicePixelRatio||1, 2);
@@ -767,10 +791,15 @@ function enterMarket(){
   G.phase = "market";
   saveGame();
   fitCanvas();
-  marketActive = true; marketTime = MARKET_SECS; spawnAcc = 0;
-  customers = []; floats = []; G.earned = 0;
+  marketActive = true; marketTime = MARKET_SECS; spawnAcc = 0; weatherAcc = 0;
+  customers = []; floats = []; weather = []; critters = []; G.earned = 0;
   setText("earned", 0);
   $("returnBtn").style.display = "none";
+  // pick an occasional themed market and build a matching backdrop
+  theme = THEMES[pickTheme()] || THEMES.standard;
+  setText("marketTitle", "🏙️ " + theme.label);
+  buildBackdrop();
+  spawnCritters();
   buildStalls();
   buildPriceRow();
   renderStock();
@@ -795,6 +824,8 @@ function buildStalls(){
   // your olive-oil stall(s) along the bottom
   stalls.push({ kind:"oil", x:78, y:248, w:138, h:82, emoji:"🫒", color:"#3f6b35", label:"Olive Oil", earned:0 });
   if(G.extraStall) stalls.push({ kind:"oil", x:584, y:248, w:138, h:82, emoji:"🫒", color:"#3f6b35", label:"Olive Oil", earned:0 });
+  // your juice & tea stand (passive drink sales) sits between the oil stalls
+  if(G.drinksStand) stalls.push({ kind:"drinks", x:331, y:252, w:138, h:78, emoji:"🧃", color:"#d2643f", label:"Juice & Tea", earned:0 });
   // neighbouring shops along the middle row (count grows with the years)
   const keys = currentShopKeys();
   const n = keys.length, margin = 18, slot = (MW - margin*2) / n;
@@ -808,19 +839,33 @@ function buildStalls(){
 }
 function playerStalls(){ return stalls.filter(s=>s.kind==="oil"); }
 function neighbourStalls(){ return stalls.filter(s=>s.kind==="npc" || s.kind==="side"); }
+function drinksStall(){ return stalls.find(s=>s.kind==="drinks"); }
 function randOf(arr){ return arr[(Math.random()*arr.length)|0]; }
 function updateStallButton(){
   const b = $("buyStallBtn");
-  if(!b) return;
-  if(G.extraStall){ b.style.display = "none"; return; }
-  b.style.display = "inline-flex";
-  b.disabled = G.money < EXTRA_STALL_COST;
-  b.textContent = `🏪 Buy a 2nd stall ($${EXTRA_STALL_COST})`;
+  if(b){
+    if(G.extraStall){ b.style.display = "none"; }
+    else { b.style.display = "inline-flex"; b.disabled = G.money < EXTRA_STALL_COST; b.textContent = `🏪 Buy a 2nd stall ($${EXTRA_STALL_COST})`; }
+  }
+  const d = $("buyDrinksBtn");
+  if(d){
+    if(G.drinksStand){ d.style.display = "none"; }
+    else { d.style.display = "inline-flex"; d.disabled = G.money < DRINKS_COST; d.textContent = `🧃 Juice & tea stand ($${DRINKS_COST})`; }
+  }
 }
+$("buyDrinksBtn") && ($("buyDrinksBtn").onclick = ()=>{
+  if(G.drinksStand || G.money < DRINKS_COST) return;
+  G.money -= DRINKS_COST; G.drinksStand = true;
+  AU.sfx("coin");
+  buildStalls(); refreshHUD(); updateStallButton(); saveGame();
+});
 
 function spawnCustomer(){
   const fromLeft = Math.random()<0.5;
-  const wantsOil = Math.random() < 0.6;           // 60% are here for oil
+  // if you run a drinks stand, ~22% pop by for a drink; the rest split oil/other 60/40
+  let goal;
+  if(G.drinksStand && Math.random() < 0.22) goal = "drink";
+  else goal = (Math.random() < 0.6) ? "oil" : "other";
   const prefOrder = (()=>{
     const r = Math.random();
     if(r<0.4) return ["evoo","virgin","pomace"];   // foodie
@@ -832,7 +877,7 @@ function spawnCustomer(){
     tx: 80+Math.random()*(MW-160), ty: 195+Math.random()*120,
     speed: 38 + Math.random()*26,
     emoji: ["🧑","👩","🧓","👨","🧕","👵","🧔","👱","🧑‍🦱","👩‍🦰"][ (Math.random()*10)|0 ],
-    goal: wantsOil ? "oil" : "other", pref: prefOrder,
+    goal, pref: prefOrder,
     // foodies (prefer EVOO) pay up; bargain-hunters (prefer pomace) are price-sensitive
     priceTol: prefOrder[0]==="evoo" ? 0.12 : prefOrder[0]==="pomace" ? -0.12 : 0,
     state:"wander", patience: 1.5+Math.random()*2.5, target:null,
@@ -847,6 +892,11 @@ function buyProb(c, k){
 }
 function pickTarget(c){
   if(c.bought){ c.tx = (c.x<MW/2)?-30:MW+30; c.ty = 200+Math.random()*110; c.state = "leaving"; return; }
+  if(c.goal==="drink"){
+    const s = drinksStall();
+    if(s){ c.target = s; c.tx = s.x + s.w/2 + (Math.random()*40-20); c.ty = s.y - 16; c.state = "toDrinks"; return; }
+    c.goal = "oil"; // stand gone (shouldn't happen) — fall back
+  }
   if(c.goal==="oil" && Math.random()<0.72){
     const s = randOf(playerStalls()); c.target = s;
     c.tx = s.x + s.w/2 + (Math.random()*50-25); c.ty = s.y - 16; c.state = "toStall";
@@ -943,7 +993,7 @@ function updateMarket(dt){
               G.sideStock--; G.money += price; G.earned += price; s.earned += price;
               floats.push({ x:s.x+s.w/2, y:s.y-4, t:1.1, txt:"+$"+price, color:s.color });
               AU.sfx("coin");
-              refreshHUD(); setText("earned", G.earned); renderStock();
+              refreshHUD(); setText("earned", G.earned); renderStock(); updateStallButton();
             } else {
               floats.push({ x:s.x+s.w/2, y:s.y-4, t:0.8, txt:"—", color:"#caa" });
             }
@@ -953,6 +1003,20 @@ function updateMarket(dt){
             s.earned += spend;
             floats.push({ x:s.x+s.w/2, y:s.y-4, t:1.1, txt:`+$${spend}`, color:s.color });
             AU.sfx("neighbour");
+          }
+          c.bought = true; c.wait = 0; c.state="leaving";
+          c.tx = (c.x<MW/2)? -30 : MW+30; c.ty = 200+Math.random()*110;
+        }
+      } else if(c.state==="toDrinks"){
+        c.wait += dt;
+        if(c.wait > 0.4){
+          const s = drinksStall();
+          if(s){
+            const price = Math.round(DRINK_PRICE * (0.8 + Math.random()*0.6));
+            G.money += price; G.earned += price; s.earned += price;
+            floats.push({ x:s.x+s.w/2, y:s.y-6, t:1.0, txt:"+$"+price, color:"#ffd28a" });
+            AU.sfx("coin");
+            refreshHUD(); setText("earned", G.earned); updateStallButton();
           }
           c.bought = true; c.wait = 0; c.state="leaving";
           c.tx = (c.x<MW/2)? -30 : MW+30; c.ty = 200+Math.random()*110;
@@ -971,9 +1035,11 @@ function updateMarket(dt){
   // floats + speech-bubble timers
   for(let i=floats.length-1;i>=0;i--){ const f=floats[i]; f.y-=24*dt; f.t-=dt*0.8; if(f.t<=0) floats.splice(i,1); }
   for(const c of customers){ if(c.say){ c.say.t -= dt; if(c.say.t<=0) c.say=null; } }
+  updateWeather(dt);
+  updateCritters(dt);
 
-  const nothingToSell = bottlesTotal()===0 && (!G.ownedShop || G.sideStock===0);
-  const ourBuyerActive = customers.some(c=> c.state==="toStall" || (c.state==="toNeighbour" && c.target && c.target.kind==="side"));
+  const nothingToSell = bottlesTotal()===0 && (!G.ownedShop || G.sideStock===0) && !G.drinksStand;
+  const ourBuyerActive = customers.some(c=> c.state==="toStall" || c.state==="toDrinks" || (c.state==="toNeighbour" && c.target && c.target.kind==="side"));
   if(marketTime <= 0 || (nothingToSell && !ourBuyerActive)){
     endMarket();
   }
@@ -985,34 +1051,109 @@ function buildBackdrop(){
   backdrop = document.createElement("canvas");
   backdrop.width = MW; backdrop.height = MH;
   const b = backdrop.getContext("2d");
+  const night = theme.sky[0] === THEMES.halloween.sky[0] || theme.sky[0] === THEMES.christmas.sky[0];
   // sky
   const sky = b.createLinearGradient(0,0,0,MH);
-  sky.addColorStop(0,"#3a4a6b"); sky.addColorStop(0.45,"#6b6e8e"); sky.addColorStop(0.62,"#c98f6a");
+  sky.addColorStop(0, theme.sky[0]); sky.addColorStop(0.45, theme.sky[1]); sky.addColorStop(0.62, theme.sky[2]);
   b.fillStyle=sky; b.fillRect(0,0,MW,170);
+  // a moon for night themes
+  if(night){ b.fillStyle="rgba(245,240,210,.85)"; b.beginPath(); b.arc(680,46,22,0,7); b.fill(); }
   // distant city skyline silhouette
   let x=0; let seed=7;
   const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
   while(x < MW){
     const w = 26+rnd()*46, h = 50+rnd()*80, y = 170-h;
-    b.fillStyle = "#27304a"; b.fillRect(x, y, w, h);
-    // windows
+    b.fillStyle = night ? "#171326" : "#27304a"; b.fillRect(x, y, w, h);
     b.fillStyle = "rgba(231,183,95,.5)";
-    for(let wy=y+8; wy<170-6; wy+=12) for(let wx=x+5; wx<x+w-5; wx+=11){ if(rnd()>0.4) b.fillRect(wx,wy,4,5); }
+    for(let wy=y+8; wy<170-6; wy+=12) for(let wx=x+5; wx<x+w-5; wx+=11){ if(rnd()>(night?0.25:0.4)) b.fillRect(wx,wy,4,5); }
     x += w + 6;
   }
-  // ground (cobbles)
+  // ground
   const gr = b.createLinearGradient(0,150,0,MH);
-  gr.addColorStop(0,"#586a3a"); gr.addColorStop(1,"#3c4a26");
+  gr.addColorStop(0, theme.ground[0]); gr.addColorStop(1, theme.ground[1]);
   b.fillStyle=gr; b.fillRect(0,150,MW,MH-150);
   b.strokeStyle="rgba(0,0,0,.10)"; b.lineWidth=2;
   for(let yy=170; yy<MH; yy+=20){ const sc=(yy-150)/(MH-150);
     for(let xx=((yy/20)%2)*22; xx<MW; xx+=44){ b.beginPath(); b.ellipse(xx, yy, 14*(0.6+sc), 6*(0.6+sc), 0,0,7); b.stroke(); } }
-  // bunting flags across the very top
-  const cols=["#e7b75f","#9fcf6b","#c98bdb","#e88","#7fb0e0"];
+  // bunting / festive lights across the top
+  const cols = (theme===THEMES.christmas) ? ["#e23b3b","#3bbf4a","#e7b75f","#f5f1e4"]
+             : (theme===THEMES.halloween) ? ["#e7831f","#7a3bbf","#e7b75f","#444"]
+             : ["#e7b75f","#9fcf6b","#c98bdb","#e88","#7fb0e0"];
   b.strokeStyle="rgba(0,0,0,.3)"; b.beginPath(); b.moveTo(0,10); b.quadraticCurveTo(MW/2,26,MW,10); b.stroke();
   for(let i=0;i<MW;i+=34){ const dip=Math.sin(i/MW*Math.PI)*16;
     b.fillStyle=cols[(i/34|0)%cols.length];
     b.beginPath(); b.moveTo(i,10+dip*0.6); b.lineTo(i+26,10+dip*0.6); b.lineTo(i+13,28+dip*0.6); b.closePath(); b.fill(); }
+  // scatter themed decorations along the back and front of the ground
+  if(theme.decor && theme.decor.length){
+    const place = (yBand, count, sizeMin, sizeMax)=>{
+      for(let i=0;i<count;i++){
+        const em = theme.decor[(rnd()*theme.decor.length)|0];
+        const px = 16 + rnd()*(MW-32), py = yBand[0] + rnd()*(yBand[1]-yBand[0]);
+        b.font = ((sizeMin + rnd()*(sizeMax-sizeMin))|0)+"px "+bodyFont();
+        b.textAlign="center"; b.globalAlpha = 0.95;
+        b.fillText(em, px, py);
+      }
+      b.globalAlpha = 1;
+    };
+    place([166, 182], 9, 16, 22);   // back row (smaller, further away)
+    place([336, 356], 8, 22, 30);   // front row (bigger, nearer)
+  }
+}
+// --- weather particles (snow / leaves / petals) ---
+function spawnWeatherParticle(top){
+  const kind = theme.particle;
+  if(kind==="snow") weather.push({ x:Math.random()*MW, y: top? -4 : Math.random()*MH, vy:18+Math.random()*26, vx:(Math.random()-0.5)*10, em:null, r:1.5+Math.random()*2.5, rot:0, vr:0 });
+  else weather.push({ x:Math.random()*MW, y: top? -10 : Math.random()*MH, vy:14+Math.random()*22, vx:(Math.random()-0.5)*16, em: kind==="leaves"?(Math.random()<0.5?"🍂":"🍁"):"🌸", r:0, rot:Math.random()*6, vr:(Math.random()-0.5)*3, size:11+Math.random()*8 });
+}
+function updateWeather(dt){
+  if(theme.particle){
+    weatherAcc += dt;
+    const target = theme.particle==="snow" ? 70 : 34;
+    while(weather.length < target && weatherAcc>0){ spawnWeatherParticle(false); if(weather.length>=target) break; }
+  }
+  for(const p of weather){
+    p.y += p.vy*dt; p.x += (p.vx + Math.sin((p.y+p.x)*0.02)*8)*dt; p.rot += p.vr*dt;
+    if(p.y > MH+8){ p.y = -8; p.x = Math.random()*MW; }
+    if(p.x < -12) p.x = MW+12; else if(p.x > MW+12) p.x = -12;
+  }
+}
+function drawWeather(){
+  for(const p of weather){
+    if(p.em){ ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.font=p.size.toFixed(0)+"px "+bodyFont(); ctx.textAlign="center"; ctx.fillText(p.em,0,0); ctx.restore(); }
+    else { ctx.fillStyle="rgba(255,255,255,.85)"; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill(); }
+  }
+}
+// --- ambient animals/critters ---
+function spawnCritters(){
+  critters = [];
+  const list = theme.creatures || [];
+  if(!list.length) return;
+  const n = (theme===THEMES.fair) ? 6 : 3;
+  for(let i=0;i<n;i++){
+    const em = list[(Math.random()*list.length)|0];
+    const flying = em==="🦋"||em==="🐝"||em==="🦇"||em==="🦆";
+    critters.push({ x:Math.random()*MW, y: flying? 60+Math.random()*120 : 300+Math.random()*48,
+      tx:Math.random()*MW, ty:0, speed: flying?40+Math.random()*30:16+Math.random()*16,
+      em, flying, bob:Math.random()*6 });
+  }
+}
+function updateCritters(dt){
+  for(const c of critters){
+    const dx = c.tx - c.x;
+    c.x += Math.sign(dx) * c.speed * dt;
+    if(c.flying){ const dy = c.ty - c.y; c.y += Math.sign(dy) * c.speed * 0.6 * dt; }
+    c.bob += dt*6;
+    if(Math.abs(dx) < 6){ c.tx = 30 + Math.random()*(MW-60); if(c.flying) c.ty = 40 + Math.random()*150; }
+    if(c.x < -16) c.x = MW+16; else if(c.x > MW+16) c.x = -16;
+  }
+}
+function drawCritters(onlyFlying){
+  for(const c of critters){
+    if(!!c.flying !== !!onlyFlying) continue;
+    const yy = c.y + (c.flying? Math.sin(c.bob)*4 : Math.sin(c.bob)*1.5);
+    if(!c.flying){ ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(c.x, c.y+8, 9,3.5,0,0,7); ctx.fill(); }
+    ctx.font="20px "+bodyFont(); ctx.textAlign="center"; ctx.fillText(c.em, c.x, yy);
+  }
 }
 function drawStall(s){
   const cx = s.x + s.w/2;
@@ -1040,8 +1181,8 @@ function drawStall(s){
   // big emoji on the awning face
   ctx.font="20px "+bodyFont(); ctx.fillText(s.emoji, cx, s.y+18);
   // sign board with the name
-  const yours = s.kind==="oil" || s.kind==="side";
-  const label = s.kind==="oil" ? "Your Olive Oil" : s.kind==="side" ? "Yours: "+s.label.split(" ")[0] : s.label;
+  const yours = s.kind==="oil" || s.kind==="side" || s.kind==="drinks";
+  const label = s.kind==="oil" ? "Your Olive Oil" : s.kind==="drinks" ? "Juice & Tea" : s.kind==="side" ? "Yours: "+s.label.split(" ")[0] : s.label;
   ctx.font="700 11px "+bodyFont(); const tw = Math.min(s.w+10, ctx.measureText(label).width + 14);
   roundRect(cx-tw/2, s.y+s.h-50, tw, 16, 4); ctx.fillStyle = yours ? "rgba(45,70,25,.92)" : "rgba(18,28,16,.82)"; ctx.fill();
   ctx.fillStyle="#f5f1e4"; ctx.fillText(label, cx, s.y+s.h-38);
@@ -1050,6 +1191,10 @@ function drawStall(s){
     ctx.font="700 11px "+bodyFont();
     ctx.fillStyle = stockEmpty()? "#f0a3a3" : "#cdeaa6";
     ctx.fillText(stockEmpty()? "SOLD OUT" : (bottlesTotal()+" bottles"), cx, s.y+s.h-1);
+  } else if(s.kind==="drinks"){
+    ctx.font="700 11px "+bodyFont(); ctx.fillStyle="#cdeaa6"; ctx.fillText("open ☕", cx, s.y+s.h-1);
+    roundRect(cx-26, s.y+s.h+8, 52, 17, 9); ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fill();
+    ctx.font="700 12px "+bodyFont(); ctx.fillStyle="#ffe49a"; ctx.fillText("💰$"+(s.earned|0), cx, s.y+s.h+20);
   } else if(s.kind==="side"){
     ctx.font="700 11px "+bodyFont();
     ctx.fillStyle = G.sideStock>0 ? "#cdeaa6" : "#f0a3a3";
@@ -1098,11 +1243,14 @@ function drawMarket(){
   if(!backdrop) buildBackdrop();
   ctx.clearRect(0,0,MW,MH);
   ctx.drawImage(backdrop, 0, 0);
-  // stalls back-to-front (neighbours behind, players in front)
-  neighbourStalls().forEach(drawStall);
-  playerStalls().forEach(drawStall);
-  // customers sorted by depth
+  // all stalls back-to-front
+  stalls.slice().sort((a,b)=>a.y-b.y).forEach(drawStall);
+  // ground critters, then shoppers, by depth
+  drawCritters(false);
   customers.slice().sort((a,b)=>a.y-b.y).forEach(drawCustomer);
+  // flying critters and weather sit on top
+  drawCritters(true);
+  drawWeather();
   // floating earnings (with a soft shadow behind)
   ctx.font="700 14px "+bodyFont(); ctx.textAlign="center";
   for(const f of floats){ const a=Math.max(0,f.t);
@@ -1207,6 +1355,7 @@ $("continueBtn").onclick = ()=>{
   if(G.ownedShop === undefined) G.ownedShop = null;
   if(typeof G.sideStock !== "number") G.sideStock = 0;
   if(typeof G.producedSideThisYear !== "boolean") G.producedSideThisYear = false;
+  if(typeof G.drinksStand !== "boolean") G.drinksStand = false;
   if(G.ownedShop && !SHOPS[G.ownedShop]) G.ownedShop = null; // guard against unknown keys
   $("startScreen").classList.add("hidden");
   resumePhase();
