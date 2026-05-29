@@ -281,14 +281,14 @@ const GRADES = {
 // Neighbouring market shops you can eventually buy out and run yourself.
 // price = sale price/unit; makeCost/makeYield = the side-business batch you run at the farm.
 const SHOPS = {
-  honey:   { name:"Bramble Honey",  emoji:"🍯", color:"#e0a92e", price:13, makeCost:45, makeYield:9,  verb:"Collect honey" },
-  cheese:  { name:"Hilltop Cheese", emoji:"🧀", color:"#e8cf6a", price:17, makeCost:60, makeYield:8,  verb:"Make cheese" },
-  bread:   { name:"Riverbread",     emoji:"🥖", color:"#cc9a5c", price:9,  makeCost:32, makeYield:10, verb:"Bake bread" },
-  wine:    { name:"Old Vine Wine",  emoji:"🍷", color:"#8e3b5a", price:24, makeCost:85, makeYield:7,  verb:"Press wine" },
-  jam:     { name:"Sunfield Jam",   emoji:"🍓", color:"#c0476a", price:12, makeCost:40, makeYield:9,  verb:"Boil jam" },
-  flowers: { name:"Meadow Flowers", emoji:"💐", color:"#d98fb0", price:11, makeCost:36, makeYield:9,  verb:"Cut flowers" },
-  cider:   { name:"Orchard Cider",  emoji:"🍎", color:"#b5532f", price:14, makeCost:48, makeYield:9,  verb:"Press cider" },
-  eggs:    { name:"Hen & Co Eggs",  emoji:"🥚", color:"#d8c98a", price:8, makeCost:26, makeYield:11, verb:"Gather eggs" },
+  honey:   { name:"Bramble Honey",  emoji:"🍯", color:"#e0a92e", price:14, makeCost:40, makeYield:7, verb:"Collect honey" },
+  cheese:  { name:"Hilltop Cheese", emoji:"🧀", color:"#e8cf6a", price:18, makeCost:56, makeYield:6, verb:"Make cheese" },
+  bread:   { name:"Riverbread",     emoji:"🥖", color:"#cc9a5c", price:10, makeCost:30, makeYield:8, verb:"Bake bread" },
+  wine:    { name:"Old Vine Wine",  emoji:"🍷", color:"#8e3b5a", price:26, makeCost:80, makeYield:5, verb:"Press wine" },
+  jam:     { name:"Sunfield Jam",   emoji:"🍓", color:"#c0476a", price:13, makeCost:38, makeYield:7, verb:"Boil jam" },
+  flowers: { name:"Meadow Flowers", emoji:"💐", color:"#d98fb0", price:12, makeCost:34, makeYield:7, verb:"Cut flowers" },
+  cider:   { name:"Orchard Cider",  emoji:"🍎", color:"#b5532f", price:15, makeCost:45, makeYield:7, verb:"Press cider" },
+  eggs:    { name:"Hen & Co Eggs",  emoji:"🥚", color:"#d8c98a", price:9,  makeCost:25, makeYield:9, verb:"Gather eggs" },
 };
 const SHOP_ORDER = ["honey","cheese","bread","wine","jam","flowers","cider","eggs"];
 
@@ -854,7 +854,10 @@ function pickTarget(c){
     const s = randOf(playerStalls()); c.target = s;
     c.tx = s.x + s.w/2 + (Math.random()*50-25); c.ty = s.y - 16; c.state = "toStall";
   } else if(c.goal==="other" && Math.random()<0.72){
-    const s = randOf(neighbourStalls()); c.target = s;
+    // your own shop pulls a healthy share of the "other goods" crowd
+    const sideStalls = stalls.filter(st=>st.kind==="side");
+    const s = (sideStalls.length && Math.random()<0.45) ? sideStalls[0] : randOf(neighbourStalls());
+    c.target = s;
     c.tx = s.x + s.w/2 + (Math.random()*30-15); c.ty = s.y + s.h + 18; c.state = "toNeighbour";
   } else {
     c.tx = 70 + Math.random()*(MW-140); c.ty = 195 + Math.random()*120; c.state = "wander";
