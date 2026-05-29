@@ -107,7 +107,7 @@
   .overlay p{ color:#cdd8c5; font-size:.92rem; line-height:1.6; margin-bottom:.6rem; }
   .overlay .loop{ display:flex; flex-wrap:wrap; gap:.4rem; justify-content:center; margin:1rem 0 1.4rem; font-size:.8rem; }
   .overlay .loop span{ background:rgba(0,0,0,.3); border:1px solid var(--line); border-radius:999px; padding:.3rem .7rem; }
-  .back{ position:absolute; top:8px; left:10px; z-index:25; font-size:.72rem; color:#a9b8a2; text-decoration:none;
+  .back{ font-size:.72rem; color:#a9b8a2; text-decoration:none; white-space:nowrap;
     background:rgba(0,0,0,.4); padding:.3rem .7rem; border-radius:999px; border:1px solid var(--line); }
   .back:hover{ color:#fff; }
   .credit{ margin-top:1rem; font-size:.7rem; color:#7d8a76; }
@@ -120,10 +120,10 @@
 </head>
 <body>
 <div id="app">
-  <a class="back" href="../../index.html#games">← Studio</a>
 
   <!-- HUD -->
   <div class="hud">
+    <a class="back" href="../../index.html#games">← Studio</a>
     <span class="pill money">💰 $<b id="money">0</b></span>
     <span class="pill">📅 Year <b id="year">1</b> · <span id="season">Spring</span></span>
     <span class="pill">🫒 <b id="invOlives">0</b> olives</span>
@@ -412,8 +412,10 @@ $("shipBtn").onclick = ()=>{
   // auto-harvest anything still ripe
   G.plots.forEach(t=>{ if(t&&t.crop>0){ G.olives+=t.crop; t.crop=0; } });
   if(G.olives <= 0){ $("groveMsg").textContent = "No olives to ship — grow & harvest first."; refreshHUD(); renderGrove(); return; }
-  if(G.money < FREIGHT){ $("groveMsg").textContent = `Need $${FREIGHT} for freight to the press.`; return; }
-  G.money -= FREIGHT;
+  // freight safety net: you pay the fare, but it can never strand you
+  const fare = Math.min(G.money, FREIGHT);
+  G.money -= fare;
+  if(fare < FREIGHT) $("groveMsg").textContent = "🚂 The rail co-op spotted you the fare this time.";
   refreshHUD();
   enterRefinery();
 };
@@ -457,7 +459,6 @@ function changeQty(grade, dir){
   const g = GRADES[grade];
   if(dir>0){
     if(olivesUsed() + g.olives > G.olives){ $("refMsg").textContent = "Not enough olives for another bottle."; return; }
-    if(pressCost() + g.press > G.money){ $("refMsg").textContent = "Not enough money for more press fees."; return; }
     G.planning[grade]++;
   } else {
     G.planning[grade] = Math.max(0, G.planning[grade]-1);
@@ -481,7 +482,7 @@ function updateRefinery(){
 function autoPlan(){
   // greedy: make EVOO while possible, then virgin, then pomace, leaving money for freight
   G.planning = { evoo:0, virgin:0, pomace:0 };
-  let budget = G.money - FREIGHT; // keep freight for the city trip
+  let budget = G.money; // suggest a plan you can afford; you can push further by hand
   const order = ["evoo","virgin","pomace"];
   let guard = 0;
   let progressed = true;
@@ -500,16 +501,17 @@ $("pressBtn").onclick = ()=>{
   const bottles = plannedBottles();
   if(bottles === 0) return;
   const cost = pressCost();
-  if(cost + FREIGHT > G.money){ $("refMsg").textContent = `Keep $${FREIGHT} aside for the rail trip to the city.`; return; }
-  G.money -= cost;
   G.olives -= olivesUsed();
   G.bottles.evoo += G.planning.evoo;
   G.bottles.virgin += G.planning.virgin;
   G.bottles.pomace += G.planning.pomace;
-  // freight to city
-  G.money -= FREIGHT;
+  // press fee + freight to the city — paid in full when you can, never a dead-end
+  const total = cost + FREIGHT;
+  const paid = Math.min(G.money, total);
+  G.money -= paid;
   refreshHUD();
-  enterMarket();
+  if(paid < total){ $("refMsg").textContent = "🚂 The rail co-op covered part of the press & freight — sell well!"; setTimeout(enterMarket, 700); }
+  else enterMarket();
 };
 
 /* =====================================================================
