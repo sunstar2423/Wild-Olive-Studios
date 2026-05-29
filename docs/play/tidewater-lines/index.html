@@ -48,6 +48,11 @@
     font-weight:700; font-size:.8rem; min-width:34px; }
   .speed button.active{ background:linear-gradient(135deg,var(--teal),var(--teal2)); color:#04201e; border-color:transparent;}
   .speed button:hover{ color:#fff; }
+  .savebtn{ font-family:var(--font); cursor:pointer; border:1px solid var(--line);
+    background:rgba(255,255,255,.04); color:#cfe7e3; border-radius:8px; padding:.32rem .5rem;
+    font-size:.92rem; }
+  .savebtn:hover{ color:#fff; }
+  .savebtn.flash{ background:linear-gradient(135deg,var(--olive),var(--teal)); border-color:transparent; }
 
   #main{ position:relative; display:grid; grid-template-columns:1fr 320px; min-height:0; }
   #stage{ position:relative; min-width:0; background:#0a201f; }
@@ -146,6 +151,8 @@
     padding:.85rem 2.2rem; border-radius:999px; background:linear-gradient(135deg,var(--olive),var(--teal));
     box-shadow:0 12px 34px -10px rgba(43,179,163,.7); margin-top:.4rem; }
   .bigbtn:hover{ transform:translateY(-2px); }
+  .startbtns{ display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; }
+  #continueBtn{ background:linear-gradient(135deg,var(--gold),var(--teal2)); }
   .legend{ display:flex; gap:1rem; justify-content:center; margin:.6rem 0 0; flex-wrap:wrap; font-size:.78rem; color:#bfe0db;}
   .legend i{ display:inline-block; width:14px; height:8px; border-radius:3px; margin-right:.3rem; vertical-align:middle;}
 
@@ -184,6 +191,7 @@
       <button data-s="2">2×</button>
       <button data-s="4">4×</button>
     </div>
+    <button class="savebtn" id="saveBtn" title="Save game now">💾</button>
   </header>
 
   <!-- ===================== MAIN ===================== -->
@@ -263,6 +271,9 @@
           <div class="card"><p class="muted">
             <b style="color:#fff">4. Watch the numbers.</b> Toggle <b>🔥 Demand</b> to see where people want to travel but can't yet. Each night you get a profit/loss report. Keep funds above zero and riders happy.
           </p></div>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">5. Saving.</b> Your city <b>auto-saves every night</b>. Tap <b>💾</b> (or press <b>S</b>) to save any time, and pick <b>Continue</b> on the title screen to return to it. Shortcuts: <b>1/2/3</b> pick a mode, <b>H</b> toggles demand, <b>Space</b> pauses.
+          </p></div>
           <div class="legend">
             <span><i style="background:var(--bus)"></i>Bus</span>
             <span><i style="background:var(--rail)"></i>Rail</span>
@@ -291,8 +302,11 @@
       <span><i style="background:var(--rail)"></i>Light rail</span>
       <span><i style="background:var(--ferry)"></i>Ferry</span>
     </div>
-    <button class="bigbtn" id="startBtn">Start the network ▸</button>
-    <p class="tiny" style="margin-top:.8rem">Tip: start with one short, busy bus route, then reinvest the fares.</p>
+    <div class="startbtns">
+      <button class="bigbtn" id="continueBtn" style="display:none">Continue ▸</button>
+      <button class="bigbtn" id="startBtn">Start the network ▸</button>
+    </div>
+    <p class="tiny" style="margin-top:.8rem">Tip: start with one short, busy bus route, then reinvest the fares. Your city auto-saves each night.</p>
   </div>
 </div>
 
@@ -884,6 +898,7 @@ function endOfDay(){
   S.odToday={};
   checkGoals();
   checkEnd();
+  if(!S.ended) saveGame(false);   // auto-save each night (after end check)
 }
 
 /* --------------------------- GOALS --------------------------------------- */
@@ -1284,6 +1299,7 @@ function checkEnd(){
 }
 function endGame(win,body){
   S.ended=true; S.running=false; S.paused=true;
+  clearSave();   // the run is over — don't offer to resume a finished game
   setText("endKick", win?"Victory":"Game over");
   setText("endTitle", win?"The city is yours":"End of the line");
   setText("endBody", body);
@@ -1292,6 +1308,83 @@ function endGame(win,body){
   setText("eRiders", S.ridersTotal.toLocaleString());
   setText("eHappy", Math.round(S.happy)+"%");
   showScreen("endScreen");
+}
+
+/* --------------------------- SAVE / RESTORE ------------------------------ */
+/* We persist only the durable shape of the city (funds, day, lines, per-vehicle
+   wear, counters, goals). Live passengers and exact vehicle positions are
+   transient — they re-seed within moments of loading. */
+const SAVE_KEY = "tidewater-lines-save-v1";
+function serialize(){
+  return {
+    v:1,
+    money:S.money, day:S.day, time:S.time, happy:S.happy,
+    ridersTotal:S.ridersTotal, ridersToday:S.ridersToday, lostToday:S.lostToday,
+    breakdownsToday:S.breakdownsToday, deniedToday:S.deniedToday,
+    fareToday:S.fareToday, maintToday:S.maintToday, odToday:S.odToday,
+    autoService:S.autoService, peakRiders:S._peakRiders||0,
+    goalsDone:S.goalsDone, nextLineId:S.nextLineId, nextVehId:S.nextVehId,
+    lines:S.lines.map(l=>({ id:l.id, mode:l.mode, stops:l.stops.slice(),
+      vehicles:l.vehicles.map(v=>({ id:v.id, wear:v.wear })) })),
+  };
+}
+function deserialize(d){
+  if(!d || d.v!==1 || !Array.isArray(d.lines)) return false;
+  S.passengers=[]; LOCATIONS.forEach(l=>S.stops[l.id]={wait:[]});
+  S.vehicles=[]; S.lines=[];
+  Object.assign(S,{
+    money:d.money, day:d.day, time:d.time, happy:d.happy,
+    ridersTotal:d.ridersTotal||0, ridersToday:d.ridersToday||0, lostToday:d.lostToday||0,
+    breakdownsToday:d.breakdownsToday||0, deniedToday:d.deniedToday||0,
+    fareToday:d.fareToday||0, maintToday:d.maintToday||0, odToday:d.odToday||{},
+    autoService:d.autoService!==false, _peakRiders:d.peakRiders||0,
+    goalsDone:d.goalsDone||{}, spawnAcc:0, heatmap:false, unmet:{},
+    ended:false, running:true, paused:false, speed:1,
+  });
+  for(const ld of d.lines){
+    if(!MODES[ld.mode] || !ld.stops || ld.stops.length<2) continue;
+    const line={ id:ld.id, mode:ld.mode, stops:ld.stops.slice(),
+                 color:MODES[ld.mode].color, vehicles:[], path:buildPath(ld.stops) };
+    for(const vd of (ld.vehicles||[])){
+      const v=makeVehicle(line);
+      v.id=vd.id; v.wear=clamp(vd.wear||0,0,100);
+      v.seg=Math.floor(Math.random()*Math.max(1,line.stops.length-1)); v.t=0; v.dir=1;
+      line.vehicles.push(v); S.vehicles.push(v);
+    }
+    S.lines.push(line);
+  }
+  // restore id counters AFTER building (makeVehicle bumps nextVehId)
+  S.nextLineId=d.nextLineId||(S.lines.reduce((m,l)=>Math.max(m,l.id),0)+1);
+  S.nextVehId =d.nextVehId ||(S.vehicles.reduce((m,v)=>Math.max(m,v.id),0)+1);
+  rebuildGraph();
+  return true;
+}
+function saveGame(manual){
+  try{
+    localStorage.setItem(SAVE_KEY, JSON.stringify(serialize()));
+    if(manual){ toast("Game saved 💾","good"); flashSave(); }
+    return true;
+  }catch(e){ if(manual) toast("Couldn't save — storage is blocked here.","bad"); return false; }
+}
+function hasSave(){ try{ return !!localStorage.getItem(SAVE_KEY); }catch(e){ return false; } }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function loadGame(){
+  let raw=null; try{ raw=localStorage.getItem(SAVE_KEY); }catch(e){}
+  if(!raw){ toast("No saved city found.","warn"); return false; }
+  let ok=false;
+  try{ ok=deserialize(JSON.parse(raw)); }catch(e){ ok=false; }
+  if(!ok){ toast("That save couldn't be read — start a new city.","bad"); clearSave(); return false; }
+  hideScreens(); resize(); renderPanels(); updateTopbar(); setSpeed(1);
+  toast("Welcome back — city restored.","good");
+  return true;
+}
+function flashSave(){
+  const b=$("saveBtn"); if(!b) return;
+  b.classList.add("flash"); setTimeout(()=>b.classList.remove("flash"),450);
+}
+function refreshContinueBtn(){
+  const c=$("continueBtn"); if(!c) return;
+  c.style.display = hasSave() ? "" : "none";
 }
 
 /* --------------------------- MAIN LOOP ----------------------------------- */
@@ -1327,6 +1420,7 @@ function startGame(){
     _peakRiders:0,_lastDayRiders:0,
   });
   LOCATIONS.forEach(l=>S.stops[l.id]={wait:[]});
+  clearSave();   // a fresh city replaces any previous save
   rebuildGraph();
   hideScreens();
   resize();
@@ -1339,8 +1433,10 @@ function setSpeed(s){
 }
 
 $("startBtn").onclick=startGame;
+$("continueBtn").onclick=loadGame;
 $("dayBtn").onclick=()=>{ hideScreens(); S.paused=false; };
-$("endBtn").onclick=startGame;
+$("endBtn").onclick=()=>{ refreshContinueBtn(); startGame(); };
+$("saveBtn").onclick=()=>{ if(S.running) saveGame(true); };
 $("drawGo").onclick=confirmBuild;
 $("drawCancel").onclick=cancelBuild;
 
@@ -1360,11 +1456,13 @@ window.addEventListener("keydown",e=>{
   else if(e.key==="2") setMode("rail");
   else if(e.key==="3") setMode("ferry");
   else if(e.key==="h"||e.key==="H") setMode("heat");
+  else if(e.key==="s"||e.key==="S") saveGame(true);
   else if(e.key==="Escape") cancelBuild();
   else if(e.key===" "){ e.preventDefault(); setSpeed(S.speed>0?0:1); }
 });
 
 rebuildGraph();   // populate interchange lookup so the idle map renders before start
+refreshContinueBtn();   // offer "Continue" on the start screen if a save exists
 resize();
 renderPanels();
 requestAnimationFrame(frame);
