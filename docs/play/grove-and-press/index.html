@@ -195,7 +195,7 @@
     <section class="panel" id="marketStage">
       <div class="panel__head">
         <h2 id="marketTitle">🏙️ City Farmers Market</h2>
-        <p>Price your oil below (🔥 cheaper sells faster). <b>Tap a shopper to chat</b>, or <b>tap a neighbour's stall to buy it out</b> ($300) and run it yourself.</p>
+        <p>Price your oil below (🔥 cheaper sells faster). <b>Tap a shopper to chat</b>, or <b>tap a neighbour's stall to buy it out</b> (from $300) and run it yourself.</p>
       </div>
       <canvas id="marketCanvas"></canvas>
       <div class="price-row" id="priceRow"></div>
@@ -462,6 +462,7 @@ const $ = id => document.getElementById(id);
 function setText(id,v){ $(id).textContent = v; }
 function bottlesTotal(){ return G.bottles.evoo + G.bottles.virgin + G.bottles.pomace; }
 function sideStockTotal(){ return Object.values(G.sideStock).reduce((a,b)=>a+b,0); }
+function buyoutCost(){ return BUYOUT_COST + G.ownedShops.length * 150; } // each shop you own makes the next dearer
 // pay an amount from cash; whatever you can't cover becomes co-op debt. returns amount borrowed.
 function chargeOrBorrow(amount){
   const pay = Math.min(G.money, amount);
@@ -801,9 +802,10 @@ canvas.addEventListener("pointerdown", (e)=>{
 function floatMsg(txt, s){ floats.push({ x:s.x+s.w/2, y:s.y-22, t:1.6, txt, color:"#f0d090" }); }
 function tryBuyShop(s){
   const sh = SHOPS[s.key];
-  if(G.money < BUYOUT_COST){ floatMsg("Need $"+BUYOUT_COST, s); return; }
-  if(window.confirm(`Buy ${sh.name} for $${BUYOUT_COST}?\n\nYou'll run this stall and keep its sales. Make ${sh.name.split(" ")[0].toLowerCase()} back at the farm each year, then sell it here.`)){
-    G.money -= BUYOUT_COST;
+  const cost = buyoutCost();
+  if(G.money < cost){ floatMsg("Need $"+cost, s); return; }
+  if(window.confirm(`Buy ${sh.name} for $${cost}?\n\nYou'll run this stall and keep its sales. Make ${sh.name.split(" ")[0].toLowerCase()} back at the farm each year, then sell it here.`)){
+    G.money -= cost;
     G.ownedShops.push(s.key);
     if(!(s.key in G.sideStock)) G.sideStock[s.key] = 0;
     G.producedSide[s.key] = false;
@@ -928,9 +930,10 @@ function pickTarget(c){
     const s = randOf(playerStalls()); c.target = s;
     c.tx = s.x + s.w/2 + (Math.random()*50-25); c.ty = s.y - 16; c.state = "toStall";
   } else if(c.goal==="other" && Math.random()<0.72){
-    // your own shops pull a healthy share of the "other goods" crowd
+    // your own shops pull a growing share of the "other goods" crowd
     const sideStalls = stalls.filter(st=>st.kind==="side");
-    const s = (sideStalls.length && Math.random()<0.5) ? randOf(sideStalls) : randOf(neighbourStalls());
+    const bias = Math.min(0.78, 0.45 + sideStalls.length*0.07);
+    const s = (sideStalls.length && Math.random()<bias) ? randOf(sideStalls) : randOf(neighbourStalls());
     c.target = s;
     c.tx = s.x + s.w/2 + (Math.random()*30-15); c.ty = s.y + s.h + 18; c.state = "toNeighbour";
   } else {
@@ -1232,10 +1235,10 @@ function drawStall(s){
   } else {
     roundRect(cx-26, s.y+s.h+8, 52, 17, 9); ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fill();
     ctx.font="700 12px "+bodyFont(); ctx.fillStyle="#ffe49a"; ctx.fillText("💰$"+(s.earned|0), cx, s.y+s.h+20);
-    // a 'buy this shop' tag whenever you can afford it (you can own several)
-    if(G.money >= BUYOUT_COST){
+    // a 'buy this shop' tag whenever you can afford the (escalating) price
+    if(G.money >= buyoutCost()){
       roundRect(cx-32, s.y-26, 64, 16, 8); ctx.fillStyle="rgba(231,183,95,.94)"; ctx.fill();
-      ctx.fillStyle="#2a1c05"; ctx.font="700 10px "+bodyFont(); ctx.fillText("🛒 Buy $"+BUYOUT_COST, cx, s.y-14);
+      ctx.fillStyle="#2a1c05"; ctx.font="700 10px "+bodyFont(); ctx.fillText("🛒 Buy $"+buyoutCost(), cx, s.y-14);
     }
   }
 }
