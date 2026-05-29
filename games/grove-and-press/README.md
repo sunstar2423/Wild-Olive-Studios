@@ -50,7 +50,7 @@ lean years, so just replant and try again.
 
 - [ ] Weather/blight events and irrigation upgrades
 - [x] Buy a second market stall (more selling points)
-- [ ] Set your own prices per grade
+- [x] Set your own prices per grade (price elasticity: cheaper sells faster)
 - [ ] Reputation that grows your premium customer base over the years
 - [x] Sound effects + upbeat market music
 - [x] Save/continue across sessions (localStorage)

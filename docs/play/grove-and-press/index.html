@@ -95,6 +95,16 @@
   .timer > i{ display:block; height:100%; width:100%; background:linear-gradient(90deg,var(--gold),var(--olive-br)); transition:width .2s linear; }
   .stock{ display:flex; gap:.5rem; font-size:.8rem; flex-wrap:wrap; }
   .stock .s{ background:rgba(0,0,0,.3); border:1px solid var(--line); border-radius:999px; padding:.15rem .55rem; }
+  .price-row{ display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; align-items:center;
+    padding:.4rem 1rem; border-top:1px solid var(--line); background:rgba(0,0,0,.18); }
+  .price-row > small{ color:#a9b8a2; font-size:.72rem; }
+  .pc{ display:inline-flex; align-items:center; gap:.25rem; background:rgba(0,0,0,.3);
+    border:1px solid var(--line); border-radius:999px; padding:.1rem .3rem; font-size:.8rem; }
+  .pc button{ width:24px; height:24px; border-radius:50%; border:1px solid var(--line);
+    background:rgba(255,255,255,.05); color:#eef3ea; cursor:pointer; font-size:.95rem; line-height:1; padding:0; }
+  .pc button:hover{ border-color:var(--olive); }
+  .pc b{ min-width:30px; text-align:center; color:var(--gold); }
+  .pc .dem{ font-size:.72rem; width:1.1em; text-align:center; }
 
   /* ---------- overlays ---------- */
   .overlay{ position:absolute; inset:0; z-index:20; display:grid; place-items:center; text-align:center; padding:1.5rem;
@@ -182,9 +192,10 @@
     <section class="panel" id="marketStage">
       <div class="panel__head">
         <h2>🏙️ City Farmers Market</h2>
-        <p>Customers wander the market. They'll stop by your stall and buy oil while stock lasts.</p>
+        <p>Set your prices below — <b>cheaper sells faster 🔥, pricier sells slower 🐢</b>. Customers wander in and buy while stock lasts.</p>
       </div>
       <canvas id="marketCanvas"></canvas>
+      <div class="price-row" id="priceRow"></div>
       <div class="market-bars">
         <span style="font-size:.8rem;">⏱️</span>
         <div class="timer"><i id="timerFill"></i></div>
@@ -244,6 +255,7 @@ const MATURE_AGE   = 2;     // seasons to bear fruit
 const MARKET_SECS  = 45;
 const PLOTS        = 12;
 const EXTRA_STALL_COST = 220;  // buy a second market stall
+const PRICE_MIN = 0.6, PRICE_MAX = 1.4, PRICE_STEP = 0.1; // price range as a multiplier of base
 
 // grade: olives per bottle, sale price, press cost per bottle, color, name
 const GRADES = {
@@ -273,6 +285,7 @@ function newGame(){
     phase: "grove",
     grownThisYear: false,
     extraStall: false,
+    priceMul: { evoo:1, virgin:1, pomace:1 },
   };
   // start with two mature trees in the first row
   G.plots[0] = makeTree(MATURE_AGE);
@@ -665,6 +678,7 @@ function enterMarket(){
   setText("earned", 0);
   $("returnBtn").style.display = "none";
   buildStalls();
+  buildPriceRow();
   renderStock();
   updateStallButton();
   AU.startMusic(); // upbeat music plays only in the market
@@ -711,9 +725,17 @@ function spawnCustomer(){
     speed: 38 + Math.random()*26,
     emoji: ["🧑","👩","🧓","👨","🧕","👵","🧔","👱","🧑‍🦱","👩‍🦰"][ (Math.random()*10)|0 ],
     goal: wantsOil ? "oil" : "other", pref: prefOrder,
+    // foodies (prefer EVOO) pay up; bargain-hunters (prefer pomace) are price-sensitive
+    priceTol: prefOrder[0]==="evoo" ? 0.12 : prefOrder[0]==="pomace" ? -0.12 : 0,
     state:"wander", patience: 1.5+Math.random()*2.5, target:null,
     bought:false, wait:0
   });
+}
+function gradePrice(k){ return Math.round(GRADES[k].price * G.priceMul[k]); }
+function buyProb(c, k){
+  // base willingness drops as price rises above base, climbs as it falls below
+  let p = 0.88 - (G.priceMul[k]-1) * 1.25 + (c.priceTol||0);
+  return Math.max(0.05, Math.min(0.99, p));
 }
 function pickTarget(c){
   if(c.bought){ c.tx = (c.x<MW/2)?-30:MW+30; c.ty = 200+Math.random()*110; c.state = "leaving"; return; }
@@ -728,19 +750,53 @@ function pickTarget(c){
   }
 }
 function sellTo(c){
-  // sell the highest-pref grade we have stock of
+  // go down the customer's preference; for each in-stock grade, decide by price
   for(const k of c.pref){
     if(G.bottles[k] > 0){
-      const g = GRADES[k];
-      const tip = Math.round(g.price * (0.9 + Math.random()*0.3)); // small price variation
-      G.bottles[k]--; G.money += tip; G.earned += tip;
-      floats.push({ x:c.x, y:c.y-14, t:1, txt:"+$"+tip, color:g.color });
-      AU.sfx("coin");
-      refreshHUD(); setText("earned", G.earned); renderStock(); updateStallButton();
-      return true;
+      if(Math.random() < buyProb(c, k)){
+        const price = gradePrice(k);
+        G.bottles[k]--; G.money += price; G.earned += price;
+        floats.push({ x:c.x, y:c.y-14, t:1, txt:"+$"+price, color:GRADES[k].color });
+        AU.sfx("coin");
+        refreshHUD(); setText("earned", G.earned); renderStock(); updateStallButton();
+        return true;
+      }
+      // balked at this grade's price — they may still take a cheaper one below
     }
   }
+  // walked away without buying (prices too steep for this shopper)
+  floats.push({ x:c.x, y:c.y-16, t:0.85, txt:"🚫", color:"#caa" });
   return false;
+}
+function buildPriceRow(){
+  const row = $("priceRow"); if(!row) return;
+  row.innerHTML = '<small>Your prices:</small>';
+  Object.entries(GRADES).forEach(([k,g])=>{
+    const el = document.createElement("span"); el.className = "pc";
+    el.innerHTML = `<span>${g.emoji}</span>
+      <button data-grade="${k}" data-dir="-1" aria-label="lower price">−</button>
+      <b>$<span id="price-${k}">${gradePrice(k)}</span></b>
+      <button data-grade="${k}" data-dir="1" aria-label="raise price">+</button>
+      <span class="dem" id="dem-${k}"></span>`;
+    row.appendChild(el);
+  });
+  row.querySelectorAll("button[data-grade]").forEach(b=> b.onclick = ()=>changePrice(b.dataset.grade, +b.dataset.dir));
+  updatePriceRow();
+}
+function changePrice(k, dir){
+  const m = Math.round((G.priceMul[k] + dir*PRICE_STEP) * 10) / 10;
+  G.priceMul[k] = Math.max(PRICE_MIN, Math.min(PRICE_MAX, m));
+  AU.sfx("click"); updatePriceRow(); renderStock(); saveGame();
+}
+function updatePriceRow(){
+  Object.keys(GRADES).forEach(k=>{
+    setText("price-"+k, gradePrice(k));
+    const mul = G.priceMul[k], d = $("dem-"+k);
+    if(d){
+      d.textContent = mul < 0.95 ? "🔥" : mul > 1.05 ? "🐢" : "•";
+      d.title = mul < 0.95 ? "low price — sells fast" : mul > 1.05 ? "high price — sells slow" : "normal price";
+    }
+  });
 }
 function updateMarket(dt){
   marketTime -= dt;
@@ -902,7 +958,7 @@ function renderStock(){
   const el = $("marketStock"); el.innerHTML="";
   Object.entries(GRADES).forEach(([k,g])=>{
     const s = document.createElement("span"); s.className="s";
-    s.innerHTML = `${g.emoji} ${g.name.split(" ")[0]}: <b>${G.bottles[k]}</b>`;
+    s.innerHTML = `${g.emoji} ${g.name.split(" ")[0]}: <b>${G.bottles[k]}</b> @ $${gradePrice(k)}`;
     el.appendChild(s);
   });
 }
@@ -978,6 +1034,7 @@ $("continueBtn").onclick = ()=>{
   if(!G.planning) G.planning = { evoo:0, virgin:0, pomace:0 };
   if(typeof G.grownThisYear !== "boolean") G.grownThisYear = false;
   if(typeof G.extraStall !== "boolean") G.extraStall = false;
+  if(!G.priceMul) G.priceMul = { evoo:1, virgin:1, pomace:1 };
   $("startScreen").classList.add("hidden");
   resumePhase();
 };
