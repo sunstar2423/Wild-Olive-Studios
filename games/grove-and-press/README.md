@@ -49,7 +49,8 @@ lean years, so just replant and try again.
 ## Ideas to grow it
 
 - [ ] Weather/blight events and irrigation upgrades
-- [ ] Tunable market: hire a second stall, set your own prices
+- [x] Buy a second market stall (more selling points)
+- [ ] Set your own prices per grade
 - [ ] Reputation that grows your premium customer base over the years
 - [x] Sound effects + upbeat market music
 - [x] Save/continue across sessions (localStorage)

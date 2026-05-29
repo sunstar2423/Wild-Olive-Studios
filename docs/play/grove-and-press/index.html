@@ -192,6 +192,7 @@
       </div>
       <div class="panel__foot">
         <div class="stock" id="marketStock"></div>
+        <button class="btn btn--gold btn--sm" id="buyStallBtn" style="display:none;">🏪 Buy a 2nd stall</button>
         <button class="btn btn--primary" id="returnBtn" style="margin-left:auto; display:none;">🚜 Return to the grove →</button>
       </div>
     </section>
@@ -242,6 +243,7 @@ const FREIGHT       = 35;   // rail cost grove -> press, and press -> city
 const MATURE_AGE   = 2;     // seasons to bear fruit
 const MARKET_SECS  = 45;
 const PLOTS        = 12;
+const EXTRA_STALL_COST = 220;  // buy a second market stall
 
 // grade: olives per bottle, sale price, press cost per bottle, color, name
 const GRADES = {
@@ -270,6 +272,7 @@ function newGame(){
     earned: 0,
     phase: "grove",
     grownThisYear: false,
+    extraStall: false,
   };
   // start with two mature trees in the first row
   G.plots[0] = makeTree(MATURE_AGE);
@@ -663,6 +666,7 @@ function enterMarket(){
   $("returnBtn").style.display = "none";
   buildStalls();
   renderStock();
+  updateStallButton();
   AU.startMusic(); // upbeat music plays only in the market
   let last = performance.now();
   const tick = (now)=>{
@@ -672,13 +676,25 @@ function enterMarket(){
   raf = requestAnimationFrame(tick);
 }
 function buildStalls(){
-  // player stall on the left, neighbours along the top
   stalls = [];
-  stalls.push({ x:120, y:250, w:120, h:70, player:true, label:"Your Olive Oil", emoji:"🫒", color:"#3f6b35" });
-  const spots = [ {x:300,y:70},{x:430,y:70},{x:560,y:70},{x:680,y:70} ];
-  NEIGHBOURS.forEach((n,i)=> stalls.push({ ...spots[i], w:96, h:62, player:false, label:n.name, emoji:n.emoji, color:n.color }) );
+  // player stall(s) along the bottom
+  stalls.push({ x:78,  y:248, w:138, h:82, player:true, label:"Olive Oil", emoji:"🫒", color:"#3f6b35", earned:0 });
+  if(G.extraStall) stalls.push({ x:584, y:248, w:138, h:82, player:true, label:"Olive Oil", emoji:"🫒", color:"#3f6b35", earned:0 });
+  // neighbouring farms along the middle row
+  const spots = [ {x:58,y:118},{x:250,y:118},{x:452,y:118},{x:644,y:118} ];
+  NEIGHBOURS.forEach((n,i)=> stalls.push({ ...spots[i], w:112, h:60, player:false, label:n.name, emoji:n.emoji, color:n.color, earned:0 }) );
 }
-function playerStall(){ return stalls[0]; }
+function playerStalls(){ return stalls.filter(s=>s.player); }
+function neighbourStalls(){ return stalls.filter(s=>!s.player); }
+function randOf(arr){ return arr[(Math.random()*arr.length)|0]; }
+function updateStallButton(){
+  const b = $("buyStallBtn");
+  if(!b) return;
+  if(G.extraStall){ b.style.display = "none"; return; }
+  b.style.display = "inline-flex";
+  b.disabled = G.money < EXTRA_STALL_COST;
+  b.textContent = `🏪 Buy a 2nd stall ($${EXTRA_STALL_COST})`;
+}
 
 function spawnCustomer(){
   const fromLeft = Math.random()<0.5;
@@ -690,25 +706,25 @@ function spawnCustomer(){
     return ["pomace","virgin","evoo"];             // bargain
   })();
   customers.push({
-    x: fromLeft ? -20 : MW+20, y: 150 + Math.random()*150,
-    tx: 100+Math.random()*(MW-200), ty: 150+Math.random()*150,
+    x: fromLeft ? -20 : MW+20, y: 200 + Math.random()*110,
+    tx: 80+Math.random()*(MW-160), ty: 195+Math.random()*120,
     speed: 38 + Math.random()*26,
-    emoji: ["🧑","👩","🧓","👨","🧕","👵","🧔","👱"][ (Math.random()*8)|0 ],
-    wantsOil, pref: prefOrder, state:"wander", patience: 2+Math.random()*3,
-    neighbourIdx: wantsOil ? -1 : (1 + ((Math.random()*NEIGHBOURS.length)|0)),
-    bought:false, wait:0, tint:`hsl(${(Math.random()*360)|0} 45% 60%)`
+    emoji: ["🧑","👩","🧓","👨","🧕","👵","🧔","👱","🧑‍🦱","👩‍🦰"][ (Math.random()*10)|0 ],
+    goal: wantsOil ? "oil" : "other", pref: prefOrder,
+    state:"wander", patience: 1.5+Math.random()*2.5, target:null,
+    bought:false, wait:0
   });
 }
 function pickTarget(c){
-  if(c.bought){ c.tx = (c.x<MW/2)?-30:MW+30; c.ty = 150+Math.random()*150; c.state = "leaving"; return; }
-  if(c.wantsOil && Math.random()<0.72){
-    const s = playerStall();
-    c.tx = s.x + s.w/2 + (Math.random()*40-20); c.ty = s.y - 18; c.state = "toStall";
-  } else if(!c.wantsOil && Math.random()<0.72){
-    const s = stalls[c.neighbourIdx] || stalls[1];
-    c.tx = s.x + s.w/2 + (Math.random()*30-15); c.ty = s.y + s.h + 16; c.state = "toNeighbour";
+  if(c.bought){ c.tx = (c.x<MW/2)?-30:MW+30; c.ty = 200+Math.random()*110; c.state = "leaving"; return; }
+  if(c.goal==="oil" && Math.random()<0.72){
+    const s = randOf(playerStalls()); c.target = s;
+    c.tx = s.x + s.w/2 + (Math.random()*50-25); c.ty = s.y - 16; c.state = "toStall";
+  } else if(c.goal==="other" && Math.random()<0.72){
+    const s = randOf(neighbourStalls()); c.target = s;
+    c.tx = s.x + s.w/2 + (Math.random()*30-15); c.ty = s.y + s.h + 18; c.state = "toNeighbour";
   } else {
-    c.tx = 60 + Math.random()*(MW-120); c.ty = 130 + Math.random()*170; c.state = "wander";
+    c.tx = 70 + Math.random()*(MW-140); c.ty = 195 + Math.random()*120; c.state = "wander";
   }
 }
 function sellTo(c){
@@ -720,7 +736,7 @@ function sellTo(c){
       G.bottles[k]--; G.money += tip; G.earned += tip;
       floats.push({ x:c.x, y:c.y-14, t:1, txt:"+$"+tip, color:g.color });
       AU.sfx("coin");
-      refreshHUD(); setText("earned", G.earned); renderStock();
+      refreshHUD(); setText("earned", G.earned); renderStock(); updateStallButton();
       return true;
     }
   }
@@ -750,21 +766,22 @@ function updateMarket(dt){
       } else if(c.state==="toNeighbour"){
         c.wait += dt;
         if(c.wait > 0.5){
-          // the customer spends money at a neighbouring stall — show it
-          const s = stalls[c.neighbourIdx] || stalls[1];
+          // the customer spends money at a neighbouring stall — show it on the stall's counter
+          const s = c.target || randOf(neighbourStalls());
           const spend = 3 + ((Math.random()*9)|0);
-          floats.push({ x:s.x+s.w/2, y:s.y-6, t:1.1, txt:`${s.emoji} +$${spend}`, color:s.color });
+          s.earned += spend;
+          floats.push({ x:s.x+s.w/2, y:s.y-4, t:1.1, txt:`+$${spend}`, color:s.color });
           AU.sfx("neighbour");
           c.bought = true; c.wait = 0; c.state="leaving";
-          c.tx = (c.x<MW/2)? -30 : MW+30; c.ty = 150+Math.random()*150;
+          c.tx = (c.x<MW/2)? -30 : MW+30; c.ty = 200+Math.random()*110;
         }
       } else if(c.state==="leaving"){
         // off-screen handled below
         c.tx = (c.x<MW/2)? -40 : MW+40;
       } else {
         c.patience -= 0.6;
-        if(c.patience<=0){ c.patience = 2+Math.random()*3; pickTarget(c); }
-        else { c.tx = 60+Math.random()*(MW-120); c.ty=130+Math.random()*170; }
+        if(c.patience<=0){ c.patience = 1.5+Math.random()*2.5; pickTarget(c); }
+        else { c.tx = 70+Math.random()*(MW-140); c.ty=195+Math.random()*120; }
       }
     }
     if(c.x < -35 || c.x > MW+35) customers.splice(i,1);
@@ -777,40 +794,106 @@ function updateMarket(dt){
   }
 }
 function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+// --- static backdrop (skyline + bunting), drawn once to an offscreen layer ---
+let backdrop = null;
+function buildBackdrop(){
+  backdrop = document.createElement("canvas");
+  backdrop.width = MW; backdrop.height = MH;
+  const b = backdrop.getContext("2d");
+  // sky
+  const sky = b.createLinearGradient(0,0,0,MH);
+  sky.addColorStop(0,"#3a4a6b"); sky.addColorStop(0.45,"#6b6e8e"); sky.addColorStop(0.62,"#c98f6a");
+  b.fillStyle=sky; b.fillRect(0,0,MW,170);
+  // distant city skyline silhouette
+  let x=0; let seed=7;
+  const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
+  while(x < MW){
+    const w = 26+rnd()*46, h = 50+rnd()*80, y = 170-h;
+    b.fillStyle = "#27304a"; b.fillRect(x, y, w, h);
+    // windows
+    b.fillStyle = "rgba(231,183,95,.5)";
+    for(let wy=y+8; wy<170-6; wy+=12) for(let wx=x+5; wx<x+w-5; wx+=11){ if(rnd()>0.4) b.fillRect(wx,wy,4,5); }
+    x += w + 6;
+  }
+  // ground (cobbles)
+  const gr = b.createLinearGradient(0,150,0,MH);
+  gr.addColorStop(0,"#586a3a"); gr.addColorStop(1,"#3c4a26");
+  b.fillStyle=gr; b.fillRect(0,150,MW,MH-150);
+  b.strokeStyle="rgba(0,0,0,.10)"; b.lineWidth=2;
+  for(let yy=170; yy<MH; yy+=20){ const sc=(yy-150)/(MH-150);
+    for(let xx=((yy/20)%2)*22; xx<MW; xx+=44){ b.beginPath(); b.ellipse(xx, yy, 14*(0.6+sc), 6*(0.6+sc), 0,0,7); b.stroke(); } }
+  // bunting flags across the very top
+  const cols=["#e7b75f","#9fcf6b","#c98bdb","#e88","#7fb0e0"];
+  b.strokeStyle="rgba(0,0,0,.3)"; b.beginPath(); b.moveTo(0,10); b.quadraticCurveTo(MW/2,26,MW,10); b.stroke();
+  for(let i=0;i<MW;i+=34){ const dip=Math.sin(i/MW*Math.PI)*16;
+    b.fillStyle=cols[(i/34|0)%cols.length];
+    b.beginPath(); b.moveTo(i,10+dip*0.6); b.lineTo(i+26,10+dip*0.6); b.lineTo(i+13,28+dip*0.6); b.closePath(); b.fill(); }
+}
+function drawStall(s){
+  const cx = s.x + s.w/2;
+  // ground shadow
+  ctx.fillStyle="rgba(0,0,0,.20)";
+  ctx.beginPath(); ctx.ellipse(cx, s.y+s.h+4, s.w*0.52, 9, 0,0,7); ctx.fill();
+  // posts
+  ctx.fillStyle="#5b4632"; ctx.fillRect(s.x+4, s.y+6, 6, s.h-6); ctx.fillRect(s.x+s.w-10, s.y+6, 6, s.h-6);
+  // counter table
+  roundRect(s.x-2, s.y+s.h-28, s.w+4, 28, 5); ctx.fillStyle="#7a5a3a"; ctx.fill();
+  roundRect(s.x-2, s.y+s.h-32, s.w+4, 8, 3); ctx.fillStyle="#9c794f"; ctx.fill();
+  // goods on the counter
+  ctx.textAlign="center"; ctx.font="15px "+bodyFont();
+  for(let i=0;i<3;i++) ctx.fillText(s.emoji, s.x + s.w*(0.26+0.24*i), s.y+s.h-9);
+  // awning
+  const ay=s.y-4, ah=22;
+  ctx.save(); roundRect(s.x-6, ay, s.w+12, ah, 5); ctx.clip();
+  ctx.fillStyle=s.color; ctx.fillRect(s.x-6, ay, s.w+12, ah);
+  ctx.fillStyle="rgba(255,255,255,.25)";
+  for(let i=-6;i<s.w+12;i+=26){ ctx.fillRect(s.x-6+i, ay, 13, ah); }
+  ctx.restore();
+  // scalloped fringe
+  ctx.fillStyle=s.color;
+  for(let fx=s.x-6; fx<s.x+s.w+6; fx+=12){ ctx.beginPath(); ctx.arc(fx+6, ay+ah, 6, 0, Math.PI); ctx.fill(); }
+  // big emoji on the awning face
+  ctx.font="20px "+bodyFont(); ctx.fillText(s.emoji, cx, s.y+18);
+  // sign board with the name
+  const label = s.player ? "Your Olive Oil" : s.label;
+  ctx.font="700 11px "+bodyFont(); const tw = ctx.measureText(label).width + 14;
+  roundRect(cx-tw/2, s.y+s.h-50, tw, 16, 4); ctx.fillStyle="rgba(18,28,16,.82)"; ctx.fill();
+  ctx.fillStyle="#f5f1e4"; ctx.fillText(label, cx, s.y+s.h-38);
+  // info tag: player stock, or neighbour money counter
+  if(s.player){
+    ctx.font="700 11px "+bodyFont();
+    ctx.fillStyle = stockEmpty()? "#f0a3a3" : "#cdeaa6";
+    ctx.fillText(stockEmpty()? "SOLD OUT" : (bottlesTotal()+" bottles"), cx, s.y+s.h-1);
+  } else {
+    roundRect(cx-26, s.y+s.h+8, 52, 17, 9); ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fill();
+    ctx.font="700 12px "+bodyFont(); ctx.fillStyle="#ffe49a";
+    ctx.fillText("💰$"+(s.earned|0), cx, s.y+s.h+20);
+  }
+}
+function drawCustomer(c){
+  const sc = 0.82 + (c.y-190)/280*0.32;       // perspective: nearer = bigger
+  ctx.fillStyle="rgba(0,0,0,.18)";
+  ctx.beginPath(); ctx.ellipse(c.x, c.y+5, 9*sc, 4*sc, 0,0,7); ctx.fill();
+  ctx.textAlign="center"; ctx.font=(22*sc).toFixed(1)+"px "+bodyFont();
+  ctx.fillText(c.emoji, c.x, c.y);
+  if(c.state==="toStall" || c.state==="toNeighbour"){
+    ctx.font=(13*sc).toFixed(1)+"px "+bodyFont(); ctx.fillText("💭", c.x+11*sc, c.y-12*sc);
+  }
+}
 function drawMarket(){
+  if(!backdrop) buildBackdrop();
   ctx.clearRect(0,0,MW,MH);
-  // ground
-  const g = ctx.createLinearGradient(0,0,0,MH);
-  g.addColorStop(0,"#2f3d1c"); g.addColorStop(1,"#222d15");
-  ctx.fillStyle=g; ctx.fillRect(0,0,MW,MH);
-  // cobble path
-  ctx.fillStyle="rgba(0,0,0,.12)"; ctx.fillRect(0,200,MW,12);
-  // stalls
-  for(const s of stalls){
-    // canopy
-    roundRect(s.x, s.y, s.w, s.h, 8); ctx.fillStyle="rgba(0,0,0,.25)"; ctx.fill();
-    roundRect(s.x, s.y-10, s.w, 18, 6); ctx.fillStyle=s.color; ctx.fill();
-    // stripes
-    ctx.fillStyle="rgba(255,255,255,.18)";
-    for(let i=0;i<s.w;i+=22){ ctx.fillRect(s.x+i, s.y-10, 11, 18); }
-    // sign
-    ctx.fillStyle="#f5f1e4"; ctx.font="600 11px "+bodyFont(); ctx.textAlign="center";
-    ctx.fillText(s.label, s.x+s.w/2, s.y+s.h-8);
-    ctx.font="22px "+bodyFont(); ctx.fillText(s.emoji, s.x+s.w/2, s.y+s.h-24);
-    if(s.player){
-      ctx.fillStyle=stockEmpty()? "#d98b8b" : "#9fcf6b";
-      ctx.font="600 10px "+bodyFont();
-      ctx.fillText(stockEmpty()? "SOLD OUT" : (bottlesTotal()+" bottles"), s.x+s.w/2, s.y+10);
-    }
-  }
-  // customers
-  for(const c of customers){
-    ctx.font="22px "+bodyFont(); ctx.textAlign="center";
-    ctx.fillText(c.emoji, c.x, c.y);
-    if(c.state==="toStall"){ ctx.fillStyle="#e7b75f"; ctx.font="13px "+bodyFont(); ctx.fillText("…", c.x+12, c.y-14); }
-  }
-  // floats
-  for(const f of floats){ ctx.globalAlpha=Math.max(0,f.t); ctx.fillStyle=f.color; ctx.font="700 14px "+bodyFont(); ctx.textAlign="center"; ctx.fillText(f.txt, f.x, f.y); }
+  ctx.drawImage(backdrop, 0, 0);
+  // stalls back-to-front (neighbours behind, players in front)
+  neighbourStalls().forEach(drawStall);
+  playerStalls().forEach(drawStall);
+  // customers sorted by depth
+  customers.slice().sort((a,b)=>a.y-b.y).forEach(drawCustomer);
+  // floating earnings (with a soft shadow behind)
+  ctx.font="700 14px "+bodyFont(); ctx.textAlign="center";
+  for(const f of floats){ const a=Math.max(0,f.t);
+    ctx.globalAlpha=a*0.5; ctx.fillStyle="#000"; ctx.fillText(f.txt, f.x+1, f.y+1);
+    ctx.globalAlpha=a; ctx.fillStyle=f.color; ctx.fillText(f.txt, f.x, f.y); }
   ctx.globalAlpha=1;
 }
 function bodyFont(){ return "'Space Grotesk',system-ui,sans-serif"; }
@@ -830,6 +913,13 @@ function endMarket(){
   AU.sfx("fanfare");
   $("returnBtn").style.display = "inline-block";
 }
+$("buyStallBtn").onclick = ()=>{
+  if(G.extraStall || G.money < EXTRA_STALL_COST) return;
+  G.money -= EXTRA_STALL_COST;
+  G.extraStall = true;
+  AU.sfx("coin");
+  refreshHUD(); buildStalls(); renderStock(); updateStallButton(); saveGame();
+};
 $("returnBtn").onclick = ()=>{
   AU.stopMusic();
   AU.sfx("click");
@@ -887,6 +977,7 @@ $("continueBtn").onclick = ()=>{
   if(!G.phase) G.phase = "grove";
   if(!G.planning) G.planning = { evoo:0, virgin:0, pomace:0 };
   if(typeof G.grownThisYear !== "boolean") G.grownThisYear = false;
+  if(typeof G.extraStall !== "boolean") G.extraStall = false;
   $("startScreen").classList.add("hidden");
   resumePhase();
 };
