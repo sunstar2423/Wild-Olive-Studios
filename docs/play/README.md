@@ -12,7 +12,7 @@ Because this lives under `docs/` (the folder GitHub Pages serves), each game
 becomes **playable directly in the browser** at:
 
 ```
-https://sunstar2423.github.io/wild-olive-studios/play/<game-slug>/
+https://sunstar2423.github.io/Wild-Olive-Studios/play/<game-slug>/
 ```
 
 You can then link or embed it from a game card in `docs/index.html`, e.g.:

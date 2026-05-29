@@ -6,8 +6,8 @@ The official website for **Wild Olive Studios**, an independent game studio
 crafting bold, heartfelt worlds. This is a fast, dependency-free static site
 built to be hosted for free on **GitHub Pages**.
 
-🔗 **Live site:** `https://sunstar2423.github.io/wild-olive-studios/`
-_(enable GitHub Pages — see below — for this URL to go live)_
+🔗 **Live site:** `https://sunstar2423.github.io/Wild-Olive-Studios/`
+_(set GitHub Pages to deploy from the `/docs` folder — see below)_
 
 ---
 
@@ -74,7 +74,7 @@ Branches are for *work in progress*, not permanent separation.
 2. Go to **Settings → Pages**.
 3. Under **Build and deployment → Source**, choose **Deploy from a branch**.
 4. Select the **`main`** branch and the **`/docs`** folder, then **Save**.
-5. Wait a minute, then visit `https://<your-username>.github.io/wild-olive-studios/`.
+5. Wait a minute, then visit `https://sunstar2423.github.io/Wild-Olive-Studios/`.
 
 > The `docs/.nojekyll` file ensures GitHub serves the site exactly as written.
 

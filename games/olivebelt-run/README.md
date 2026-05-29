@@ -24,7 +24,7 @@ docs/play/olivebelt-run/index.html
 - **Play locally:** open that file in a browser, or run
   `python3 -m http.server 8000 --directory docs` and visit
   `http://localhost:8000/play/olivebelt-run/`.
-- **Play live:** `https://sunstar2423.github.io/wild-olive-studios/play/olivebelt-run/`
+- **Play live:** `https://sunstar2423.github.io/Wild-Olive-Studios/play/olivebelt-run/`
 - **Linked from:** the *Olivebelt Run* card on the home page (`docs/index.html`).
 
 > For larger games built in an engine (Godot, Unity, Phaser, …), keep the
