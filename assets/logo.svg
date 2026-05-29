@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Wild Olive Studios logo">
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9fcf6b"/>
+      <stop offset="1" stop-color="#4f8f43"/>
+    </linearGradient>
+    <radialGradient id="og" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#e7b75f"/>
+      <stop offset="1" stop-color="#5a6e2f"/>
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="#0f1d14" stroke="#7fb069" stroke-width="2"/>
+  <!-- branch -->
+  <path d="M32 52 C 32 40 30 30 36 18" fill="none" stroke="#6b4f3a" stroke-width="3" stroke-linecap="round"/>
+  <!-- leaves -->
+  <ellipse cx="38" cy="20" rx="9" ry="4" fill="url(#lg)" transform="rotate(-30 38 20)"/>
+  <ellipse cx="26" cy="30" rx="9" ry="4" fill="url(#lg)" transform="rotate(35 26 30)"/>
+  <ellipse cx="40" cy="34" rx="8" ry="3.5" fill="url(#lg)" transform="rotate(-20 40 34)"/>
+  <!-- olives -->
+  <circle cx="42" cy="26" r="4" fill="url(#og)"/>
+  <circle cx="24" cy="40" r="4" fill="url(#og)"/>
+</svg>

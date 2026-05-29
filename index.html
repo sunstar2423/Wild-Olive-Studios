@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Wild Olive Studios — an indie game studio crafting bold, heartfelt worlds. Big imagination, handmade craft, wild ideas." />
+  <meta name="theme-color" content="#0d1a12" />
+
+  <!-- Open Graph / social cards -->
+  <meta property="og:title" content="Wild Olive Studios" />
+  <meta property="og:description" content="An indie game studio crafting bold, heartfelt worlds. Big imagination, handmade craft, wild ideas." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/social-card.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <title>Wild Olive Studios — Indie Games, Wild Imagination</title>
+
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Animated particle / star canvas background -->
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="nav">
+    <a class="nav__brand" href="#top" aria-label="Wild Olive Studios home">
+      <img src="assets/logo.svg" alt="" class="nav__logo" width="40" height="40" />
+      <span class="nav__name">Wild&nbsp;Olive<span class="nav__name-accent"> Studios</span></span>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#games">Games</a>
+      <a href="#studio">Studio</a>
+      <a href="#values">Craft</a>
+      <a href="#follow">Follow</a>
+    </nav>
+    <a class="btn btn--ghost nav__cta" href="#follow">Get updates</a>
+    <button class="nav__menu" id="navMenu" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <main id="top">
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="hero">
+      <div class="hero__grain" aria-hidden="true"></div>
+      <div class="hero__inner">
+        <p class="hero__eyebrow reveal">🌿 An independent game studio</p>
+        <h1 class="hero__title reveal">
+          We grow <span class="hero__word">wild</span> worlds
+          from small, stubborn <span class="hero__word hero__word--alt">seeds</span>.
+        </h1>
+        <p class="hero__sub reveal">
+          Wild Olive Studios is a tiny indie team making games with big heart —
+          handcrafted stories, strange beautiful art, and the kind of ideas that
+          take root and refuse to let go.
+        </p>
+        <div class="hero__actions reveal">
+          <a class="btn btn--primary" href="#games">See what's growing</a>
+          <a class="btn btn--ghost" href="#follow">Wishlist &amp; follow</a>
+        </div>
+        <ul class="hero__stats reveal" aria-label="Studio at a glance">
+          <li><span class="hero__stat-num" data-count="100">0</span><span class="hero__stat-label">% indie</span></li>
+          <li><span class="hero__stat-num" data-count="3">0</span><span class="hero__stat-label">worlds in the works</span></li>
+          <li><span class="hero__stat-num" data-count="0">0</span><span class="hero__stat-label">compromises made</span></li>
+        </ul>
+      </div>
+
+      <!-- Animated hero scene (pure SVG, looping) -->
+      <div class="hero__scene" aria-hidden="true">
+        <div class="scene-glow"></div>
+        <svg class="olive-tree" viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A stylized growing olive branch">
+          <defs>
+            <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#9fcf6b"/>
+              <stop offset="1" stop-color="#4f8f43"/>
+            </linearGradient>
+            <radialGradient id="oliveGrad" cx="0.35" cy="0.3" r="0.8">
+              <stop offset="0" stop-color="#b9c66a"/>
+              <stop offset="1" stop-color="#5a6e2f"/>
+            </radialGradient>
+          </defs>
+          <!-- branch -->
+          <path class="branch" d="M200 410 C 200 330 200 300 200 250 C 200 200 210 150 200 90"
+                fill="none" stroke="#6b4f3a" stroke-width="10" stroke-linecap="round"/>
+          <path class="branch branch--2" d="M200 250 C 250 230 290 210 320 170"
+                fill="none" stroke="#6b4f3a" stroke-width="7" stroke-linecap="round"/>
+          <path class="branch branch--3" d="M200 300 C 150 290 110 270 80 230"
+                fill="none" stroke="#6b4f3a" stroke-width="7" stroke-linecap="round"/>
+          <!-- leaves -->
+          <g class="leaves">
+            <ellipse class="leaf" cx="320" cy="168" rx="26" ry="11" fill="url(#leafGrad)" transform="rotate(-25 320 168)"/>
+            <ellipse class="leaf" cx="80"  cy="228" rx="26" ry="11" fill="url(#leafGrad)" transform="rotate(20 80 228)"/>
+            <ellipse class="leaf" cx="200" cy="92"  rx="26" ry="11" fill="url(#leafGrad)" transform="rotate(8 200 92)"/>
+            <ellipse class="leaf" cx="250" cy="150" rx="22" ry="9"  fill="url(#leafGrad)" transform="rotate(-40 250 150)"/>
+            <ellipse class="leaf" cx="150" cy="180" rx="22" ry="9"  fill="url(#leafGrad)" transform="rotate(40 150 180)"/>
+            <ellipse class="leaf" cx="230" cy="200" rx="20" ry="8"  fill="url(#leafGrad)" transform="rotate(-15 230 200)"/>
+          </g>
+          <!-- olives -->
+          <g class="olives">
+            <circle class="olive" cx="300" cy="185" r="10" fill="url(#oliveGrad)"/>
+            <circle class="olive" cx="105" cy="245" r="10" fill="url(#oliveGrad)"/>
+            <circle class="olive" cx="205" cy="120" r="9"  fill="url(#oliveGrad)"/>
+          </g>
+        </svg>
+        <!-- floating pixel sprites -->
+        <div class="sprite sprite--1">👾</div>
+        <div class="sprite sprite--2">🕹️</div>
+        <div class="sprite sprite--3">⭐</div>
+        <div class="sprite sprite--4">🍃</div>
+      </div>
+
+      <a class="hero__scroll" href="#games" aria-label="Scroll to games">
+        <span></span>
+      </a>
+    </section>
+
+    <!-- ============ MARQUEE ============ -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>HANDMADE WORLDS</span><span>•</span>
+        <span>BOLD STORIES</span><span>•</span>
+        <span>WILD IDEAS</span><span>•</span>
+        <span>PLAYER FIRST</span><span>•</span>
+        <span>NO MICROTRANSACTIONS</span><span>•</span>
+        <span>HANDMADE WORLDS</span><span>•</span>
+        <span>BOLD STORIES</span><span>•</span>
+        <span>WILD IDEAS</span><span>•</span>
+        <span>PLAYER FIRST</span><span>•</span>
+        <span>NO MICROTRANSACTIONS</span><span>•</span>
+      </div>
+    </div>
+
+    <!-- ============ GAMES ============ -->
+    <section class="section games" id="games">
+      <div class="section__head reveal">
+        <p class="section__kicker">Our Games</p>
+        <h2 class="section__title">Worlds taking root</h2>
+        <p class="section__lead">
+          Everything here is made by hand with love. These are the projects
+          currently growing in the studio — wishlist them, follow along, and
+          watch them bloom.
+        </p>
+      </div>
+
+      <div class="game-grid">
+        <!-- Game card 1 -->
+        <article class="game-card reveal" style="--accent:#7fb069;--accent2:#3f6b35">
+          <div class="game-card__art">
+            <span class="game-card__badge">In development</span>
+            <div class="game-card__cover game-card__cover--grove">
+              <span class="game-card__emoji">🌳</span>
+            </div>
+          </div>
+          <div class="game-card__body">
+            <div class="game-card__tags"><span>Cozy</span><span>Exploration</span><span>Single-player</span></div>
+            <h3 class="game-card__title">The Last Grove</h3>
+            <p class="game-card__desc">
+              A hand-painted exploration game about reviving a forgotten orchard
+              on a floating island. Plant, tend, and uncover the quiet secrets
+              of a world that's slowly waking back up.
+            </p>
+            <div class="game-card__links">
+              <a class="btn btn--small btn--primary" href="#follow">Wishlist</a>
+              <a class="btn btn--small btn--ghost" href="#follow">Devlog</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Game card 2 -->
+        <article class="game-card reveal" style="--accent:#c98bdb;--accent2:#6c3a86">
+          <div class="game-card__art">
+            <span class="game-card__badge">Prototype</span>
+            <div class="game-card__cover game-card__cover--neon">
+              <span class="game-card__emoji">🛸</span>
+            </div>
+          </div>
+          <div class="game-card__body">
+            <div class="game-card__tags"><span>Action</span><span>Roguelike</span><span>Pixel art</span></div>
+            <h3 class="game-card__title">Olivebelt Run</h3>
+            <p class="game-card__desc">
+              A neon-drenched pixel roguelite where you pilot a salvage ship
+              through an asteroid belt of haunted arcades. Fast, punchy, and
+              built for one-more-run nights.
+            </p>
+            <div class="game-card__links">
+              <a class="btn btn--small btn--primary" href="#follow">Notify me</a>
+              <a class="btn btn--small btn--ghost" href="#follow">Devlog</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Game card 3 -->
+        <article class="game-card reveal" style="--accent:#f2a65a;--accent2:#a85f1e">
+          <div class="game-card__art">
+            <span class="game-card__badge">Concept</span>
+            <div class="game-card__cover game-card__cover--ember">
+              <span class="game-card__emoji">🔥</span>
+            </div>
+          </div>
+          <div class="game-card__body">
+            <div class="game-card__tags"><span>Narrative</span><span>Puzzle</span><span>Atmospheric</span></div>
+            <h3 class="game-card__title">Emberkeep</h3>
+            <p class="game-card__desc">
+              A moody narrative puzzle game about a lighthouse keeper trading
+              memories for fire to survive an endless winter. A story you
+              feel as much as solve.
+            </p>
+            <div class="game-card__links">
+              <a class="btn btn--small btn--primary" href="#follow">Follow</a>
+              <a class="btn btn--small btn--ghost" href="#follow">Devlog</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Coming soon card -->
+        <article class="game-card game-card--ghost reveal">
+          <div class="game-card__ghost-inner">
+            <span class="game-card__plus">+</span>
+            <h3>Your next obsession</h3>
+            <p>We're always planting something new. New worlds land here first.</p>
+            <a class="btn btn--small btn--ghost" href="#follow">Stay in the loop</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ STUDIO / ABOUT ============ -->
+    <section class="section studio" id="studio">
+      <div class="studio__grid">
+        <div class="studio__text reveal">
+          <p class="section__kicker">The Studio</p>
+          <h2 class="section__title">Small team. Wild imagination.</h2>
+          <p>
+            Wild Olive Studios was founded on a simple, slightly stubborn idea:
+            that the most memorable games come from people who care more about
+            the <em>feeling</em> of a world than the size of its budget.
+          </p>
+          <p>
+            We're a tiny independent team. We write our own code, draw our own
+            art, and compose our own quiet little soundtracks. Like an olive
+            tree, we grow slowly, we grow gnarled and characterful, and what we
+            make is meant to last.
+          </p>
+          <p>
+            This site grows alongside the studio — as we ship new games, they'll
+            take their place in the grove above.
+          </p>
+        </div>
+        <div class="studio__panel reveal">
+          <div class="studio__stat">
+            <span class="studio__stat-num">est. 2026</span>
+            <span class="studio__stat-label">Planted &amp; growing</span>
+          </div>
+          <div class="studio__stat">
+            <span class="studio__stat-num">∞</span>
+            <span class="studio__stat-label">Ideas in the notebook</span>
+          </div>
+          <div class="studio__stat">
+            <span class="studio__stat-num">100%</span>
+            <span class="studio__stat-label">Self-published &amp; independent</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VALUES / CRAFT ============ -->
+    <section class="section values" id="values">
+      <div class="section__head reveal">
+        <p class="section__kicker">Our Craft</p>
+        <h2 class="section__title">What we promise players</h2>
+      </div>
+      <div class="value-grid">
+        <div class="value-card reveal">
+          <div class="value-card__icon">🎨</div>
+          <h3>Handmade by humans</h3>
+          <p>Every pixel, line, and note is crafted with intention. No filler, no factory.</p>
+        </div>
+        <div class="value-card reveal">
+          <div class="value-card__icon">💛</div>
+          <h3>Players, not wallets</h3>
+          <p>You buy the game, you get the game. No microtransactions, no dark patterns.</p>
+        </div>
+        <div class="value-card reveal">
+          <div class="value-card__icon">📖</div>
+          <h3>Stories that linger</h3>
+          <p>We chase the kind of moments you'll still be thinking about weeks later.</p>
+        </div>
+        <div class="value-card reveal">
+          <div class="value-card__icon">🌍</div>
+          <h3>Built in the open</h3>
+          <p>We share our devlogs, our messes, and our wins. Come grow with us.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FOLLOW / CTA ============ -->
+    <section class="section follow" id="follow">
+      <div class="follow__card reveal">
+        <h2 class="section__title">Be there from the first sprout</h2>
+        <p class="follow__lead">
+          Follow Wild Olive Studios for devlogs, early demos, wishlist links,
+          and the occasional behind-the-scenes peek. We'd love to have you in
+          the grove.
+        </p>
+
+        <div class="follow__links">
+          <a class="social-btn" href="https://itch.io" target="_blank" rel="noopener">
+            <span class="social-btn__icon">🎮</span>
+            <span class="social-btn__label"><strong>itch.io</strong><small>Play our demos</small></span>
+          </a>
+          <a class="social-btn" href="https://store.steampowered.com" target="_blank" rel="noopener">
+            <span class="social-btn__icon">🚂</span>
+            <span class="social-btn__label"><strong>Steam</strong><small>Wishlist our games</small></span>
+          </a>
+          <a class="social-btn" href="https://bsky.app" target="_blank" rel="noopener">
+            <span class="social-btn__icon">🦋</span>
+            <span class="social-btn__label"><strong>Bluesky</strong><small>Daily devlog</small></span>
+          </a>
+          <a class="social-btn" href="https://discord.com" target="_blank" rel="noopener">
+            <span class="social-btn__icon">💬</span>
+            <span class="social-btn__label"><strong>Discord</strong><small>Join the community</small></span>
+          </a>
+          <a class="social-btn" href="https://youtube.com" target="_blank" rel="noopener">
+            <span class="social-btn__icon">▶️</span>
+            <span class="social-btn__label"><strong>YouTube</strong><small>Trailers &amp; dev vlogs</small></span>
+          </a>
+          <a class="social-btn" href="https://github.com/sunstar2423/wild-olive-studios" target="_blank" rel="noopener">
+            <span class="social-btn__icon">🐙</span>
+            <span class="social-btn__label"><strong>GitHub</strong><small>This very site</small></span>
+          </a>
+        </div>
+
+        <form class="follow__form" id="signupForm" novalidate>
+          <label class="visually-hidden" for="email">Email address</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          <button type="submit" class="btn btn--primary">Notify me</button>
+        </form>
+        <p class="follow__note" id="formNote">No spam — just news when something's ready to play.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <img src="assets/logo.svg" alt="" width="32" height="32" />
+        <span>Wild Olive Studios</span>
+      </div>
+      <p class="footer__tag">Growing wild worlds, one seed at a time. 🌿</p>
+      <p class="footer__legal">© <span id="year">2026</span> Wild Olive Studios. All rights reserved. Built with imagination &amp; hosted on GitHub Pages.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js" defer></script>
+</body>
+</html>
