@@ -422,9 +422,10 @@ function showStage(name){
 let seasonBusy = false;
 function enterGrove(){
   showStage("grove");
-  // bankruptcy check: no money to plant, no trees, no stock/olives
+  // bankruptcy: nothing left to sell AND can't afford to press even the cheapest oil
   const trees = G.plots.filter(Boolean).length;
-  if(G.money < PLANT_COST && trees === 0 && G.olives === 0 && bottlesTotal() === 0){
+  const cheapestPress = Math.min(...Object.values(GRADES).map(g=>g.press));
+  if(bottlesTotal() === 0 && G.money < cheapestPress){
     return gameOver();
   }
   G.planting = false;
@@ -598,6 +599,7 @@ function changeQty(grade, dir){
   const g = GRADES[grade];
   if(dir>0){
     if(olivesUsed() + g.olives > G.olives){ $("refMsg").textContent = "Not enough olives for another bottle."; return; }
+    if(pressCost() + g.press > G.money){ $("refMsg").textContent = `Not enough money for the press fee ($${g.press}/bottle).`; return; }
     G.planning[grade]++;
   } else {
     G.planning[grade] = Math.max(0, G.planning[grade]-1);
@@ -617,7 +619,11 @@ function updateRefinery(){
   setText("sumCost", "$"+pressCost());
   setText("sumBottles", plannedBottles());
   setText("sumRevenue", "$"+potentialRevenue());
-  $("pressBtn").disabled = plannedBottles() === 0;
+  // never lock you on this screen: if you can't afford to press, you can still ship onward
+  $("pressBtn").disabled = false;
+  $("pressBtn").textContent = plannedBottles() === 0
+    ? "🚂 Rail to the city (skip pressing) →"
+    : "🚂 Press, bottle & rail to the city →";
 }
 function autoPlan(){
   // greedy: make EVOO while possible, then virgin, then pomace, leaving money for freight
@@ -638,20 +644,18 @@ function autoPlan(){
   updateRefinery();
 }
 $("pressBtn").onclick = ()=>{
-  const bottles = plannedBottles();
-  if(bottles === 0) return;
-  const cost = pressCost();
+  const cost = pressCost();                 // you can only have planned what you can afford
+  G.money -= cost;                          // press fee always charged in full
   G.olives -= olivesUsed();
   G.bottles.evoo += G.planning.evoo;
   G.bottles.virgin += G.planning.virgin;
   G.bottles.pomace += G.planning.pomace;
-  // press fee + freight to the city — paid in full when you can, never a dead-end
-  const total = cost + FREIGHT;
-  const paid = Math.min(G.money, total);
-  G.money -= paid;
+  // freight to the city stays safety-netted so a low-cash run is never stranded
+  const fare = Math.min(G.money, FREIGHT);
+  G.money -= fare;
   AU.sfx("press");
   refreshHUD();
-  if(paid < total){ $("refMsg").textContent = "🚂 The rail co-op covered part of the press & freight — sell well!"; setTimeout(enterMarket, 700); }
+  if(fare < FREIGHT){ $("refMsg").textContent = "🚂 The rail co-op spotted you the city fare this time."; setTimeout(enterMarket, 650); }
   else setTimeout(enterMarket, 350);
 };
 
@@ -1003,7 +1007,7 @@ window.addEventListener("resize", ()=>{ if(marketActive) fitCanvas(); });
 function gameOver(){
   setText("overYears", G.year-1<0?0:G.year);
   setText("overBest", "$"+G.bestMoney);
-  $("overMsg").textContent = "You ran out of money, trees, and stock. Every grove has lean years — give it another go.";
+  $("overMsg").textContent = "You're out of cash with no oil to sell and can't even afford the press. Every grove has lean years — give it another go.";
   $("overScreen").classList.remove("hidden");
 }
 
