@@ -40,9 +40,13 @@ lean years, so just replant and try again.
 - **Co-op loans:** if you can't cover a rail fare, the shortfall becomes a loan
   shown in the HUD. Interest accrues each grow season and the loan auto-repays
   from spare cash; let it balloon past the limit and the co-op forecloses.
-- **Buy out a neighbour** ($300, tap their stall): you then run that shop, make
-  its product at the farm once a year, and keep its market sales.
+- **Buy out neighbours** ($300, tap their stall): run their shop, make its
+  product at the farm once a year, and keep its market sales. Buy out as many
+  as you can afford — each adds a side business.
 - **A growing market:** more shoppers and new stall types appear in later years.
+- **Seasonal themed markets on a recurring calendar** (year 1 standard, then
+  spring, summer, harvest, Halloween, winter, Christmas, animal fair, repeat),
+  each with its own backdrop, weather and **its own background music**.
 - **Chatter:** tap a shopper to hear a casual line — the market feels alive.
 - **Themed markets:** each visit may be standard, spring, a spring animal fair
   (animals wander about), summer, harvest, Halloween, winter (snow) or Christmas
@@ -66,7 +70,8 @@ lean years, so just replant and try again.
 - [x] Buy out a neighbouring shop and run a side business (make + sell its product)
 - [x] Market grows over the years (more shoppers, more stall types)
 - [x] Tap shoppers for casual chatter
-- [x] Themed markets (winter/Christmas/spring/Halloween/harvest/animal fair…)
+- [x] Themed markets on a recurring seasonal calendar, each with its own music
+- [x] Buy out multiple neighbour shops
 - [x] Buy a juice & tea stand for passive income
 - [ ] Reputation that grows your premium customer base over the years
 - [x] Sound effects + upbeat market music

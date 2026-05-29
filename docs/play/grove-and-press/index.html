@@ -165,7 +165,7 @@
         <button class="btn btn--primary" id="seasonBtn">☀️ Grow the season ▶</button>
         <button class="btn btn--ghost" id="harvestBtn">🧺 Harvest all</button>
         <button class="btn btn--gold" id="shipBtn">🚂 Rail olives to the press →</button>
-        <button class="btn btn--ghost" id="sideBizBtn" style="display:none;"></button>
+        <span id="sideBiz" style="display:flex; gap:.4rem; flex-wrap:wrap;"></span>
         <span class="msg" id="groveMsg"></span>
       </div>
     </section>
@@ -280,6 +280,11 @@ const THEMES = {
   christmas: { label:"🎄 Christmas Market",     sky:["#1f3050","#3a4a6a","#6a4a4a"], ground:["#bcc4cc","#94a2aa"], particle:"snow",   decor:["🎄","🎁","⛄","🔔","🕯️"],  creatures:[] },
 };
 const THEME_KEYS = Object.keys(THEMES);
+// which themed market each year brings (recurring) — feels like seasonal occasions
+const MARKET_CALENDAR = ["standard","spring","summer","autumn","halloween","winter","christmas","fair"];
+function themeForYear(y){ return MARKET_CALENDAR[(Math.max(1,y)-1) % MARKET_CALENDAR.length]; }
+// each theme gets its own music style
+const THEME_MUSIC = { standard:"cheery", spring:"spring", fair:"fair", summer:"summer", autumn:"harvest", halloween:"spooky", winter:"winter", christmas:"festive" };
 const CHATTER = [
   "Lovely oil this year!", "How much for the green one?", "Smells like home 🌿",
   "My nonna swears by olive oil.", "Bit pricey today, no?", "I'll take a bottle!",
@@ -326,9 +331,9 @@ function newGame(){
     extraStall: false,
     priceMul: { evoo:1, virgin:1, pomace:1 },
     debt: 0,
-    ownedShop: null,             // key of a SHOPS shop you've bought out
-    sideStock: 0,                // units of your side-shop product, ready to sell
-    producedSideThisYear: false, // one side-business batch per year
+    ownedShops: [],              // keys of SHOPS you've bought out (you can own many)
+    sideStock: {},               // key -> units ready to sell
+    producedSide: {},            // key -> made-this-year flag (resets each year)
     drinksStand: false,          // own a juice & tea stand (passive market income)
   };
   // start with three mature trees in the first row
@@ -348,17 +353,21 @@ const AU = (function(){
   let ctx = null, master = null, enabled = true;
   let music = { on:false, step:0, next:0, timer:null };
 
-  // I–V–vi–IV in C major; pleasant + upbeat. Notes as frequencies (Hz).
-  const N = { C3:130.81,E3:164.81,G3:196.0,A3:220.0,F3:174.61,D3:146.83,
-              C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.0,A4:440.0,B4:493.88,C5:523.25 };
-  const BASS = [N.C3,N.G3,N.A3,N.F3];                  // one root per bar
-  const MEL  = [ // 8 steps per bar, chord-tone arpeggios (0 = rest)
-    [N.C4,N.E4,N.G4,N.E4,N.C5,N.G4,N.E4,N.G4],
-    [N.B4,N.G4,N.D4,N.G4,N.B4,N.G4,N.D4,N.G4],
-    [N.A4,N.E4,N.C4,N.E4,N.A4,N.E4,N.C4,N.E4],
-    [N.F4,N.A4,N.C5,N.A4,N.F4,N.C5,N.A4,N.F4],
-  ];
-  const STEP = 0.16; // seconds per 8th note (~94 BPM, bouncy)
+  // semitones from A4 -> Hz
+  const hz = n => 440 * Math.pow(2, n/12);
+  // each track: step (sec/8th), 4-bar progression as [rootSemitone, isMinor],
+  // instrument waveforms, and an optional bell accent. Melody arpeggiates chord tones.
+  const TRACKS = {
+    cheery:  { step:0.16, lead:"square",   bass:"sawtooth", bells:false, prog:[[-9,0],[-2,0],[0,1],[-4,0]] }, // C G Am F
+    spring:  { step:0.14, lead:"triangle", bass:"triangle", bells:false, prog:[[-7,0],[0,0],[2,1],[-2,0]] },  // D A Bm G
+    summer:  { step:0.15, lead:"square",   bass:"sawtooth", bells:false, prog:[[-9,0],[-4,0],[-2,0],[-9,0]] },// C F G C
+    fair:    { step:0.13, lead:"square",   bass:"triangle", bells:false, prog:[[-2,0],[-7,0],[-5,1],[-9,0]] },// G D Em C
+    harvest: { step:0.18, lead:"triangle", bass:"sawtooth", bells:false, prog:[[-2,0],[-9,0],[-4,0],[-2,0]] },// G C F G (mixolydian-ish)
+    spooky:  { step:0.21, lead:"sine",     bass:"sawtooth", bells:false, minorMood:true, prog:[[0,1],[-4,0],[-7,1],[-5,0]] }, // Am F Dm E
+    winter:  { step:0.22, lead:"sine",     bass:"triangle", bells:true,  prog:[[-9,0],[0,1],[-4,0],[-2,0]] }, // C Am F G (gentle)
+    festive: { step:0.16, lead:"triangle", bass:"triangle", bells:true,  prog:[[-2,0],[-9,0],[-7,0],[-2,0]] },// G C D G (jolly)
+  };
+  let track = TRACKS.cheery, lastStyle = "cheery";
 
   function ensure(){
     if(ctx) return true;
@@ -410,21 +419,30 @@ const AU = (function(){
 
   function schedule(){
     if(!music.on || !ctx) return;
+    const STEP = track.step;
     while(music.next < ctx.currentTime + 0.12){
       const bar = Math.floor(music.step/8) % 4;
       const s = music.step % 8;
       const t = music.next;
-      if(s===0) blip(BASS[bar], STEP*3.4, "sawtooth", 0.10, t, BASS[bar]*0.98); // bass on the 1
-      if(s===4) blip(BASS[bar]*1.5, STEP*1.6, "triangle", 0.07, t);             // mid pulse
-      const m = MEL[bar][s];
-      if(m) blip(m, STEP*0.9, "square", 0.06, t);
-      if(s%2===0) noise(0.03, 0.03, t);                                          // soft hat
+      const [rootSemi, isMin] = track.prog[bar];
+      const tones = isMin ? [0,3,7,12] : [0,4,7,12]; // triad + octave
+      if(s===0) blip(hz(rootSemi-12), STEP*3.4, track.bass, 0.11, t, hz(rootSemi-12)*0.99); // bass on the 1
+      if(s===4) blip(hz(rootSemi),    STEP*1.6, track.bass, 0.06, t);                        // mid pulse
+      const tone = tones[s % tones.length];
+      blip(hz(rootSemi + tone + 12), STEP*0.9, track.lead, track.minorMood?0.05:0.06, t);    // arpeggio lead
+      if(track.bells){ if(s%2===0) blip(hz(rootSemi+tone+24), STEP*0.7, "sine", 0.035, t); } // sparkly bells
+      else if(s%2===0) noise(0.03, 0.03, t);                                                 // soft hat
       music.next += STEP; music.step = (music.step+1) % 32;
     }
     music.timer = setTimeout(schedule, 30);
   }
-  function startMusic(){ if(!enabled || !ensure()) return; if(ctx.state==="suspended") ctx.resume();
-    if(music.on) return; music.on=true; music.step=0; music.next=ctx.currentTime+0.08; schedule(); }
+  function startMusic(style){
+    if(style){ track = TRACKS[style] || TRACKS.cheery; lastStyle = style; }
+    else { track = TRACKS[lastStyle] || TRACKS.cheery; }
+    if(!enabled || !ensure()) return;
+    if(ctx.state==="suspended") ctx.resume();
+    if(music.on) return; music.on=true; music.step=0; music.next=ctx.currentTime+0.08; schedule();
+  }
   function stopMusic(){ music.on=false; if(music.timer){ clearTimeout(music.timer); music.timer=null; } }
 
   return { init, setEnabled, isEnabled, sfx, startMusic, stopMusic };
@@ -443,6 +461,7 @@ function hasSave(){ return !!loadSave(); }
 const $ = id => document.getElementById(id);
 function setText(id,v){ $(id).textContent = v; }
 function bottlesTotal(){ return G.bottles.evoo + G.bottles.virgin + G.bottles.pomace; }
+function sideStockTotal(){ return Object.values(G.sideStock).reduce((a,b)=>a+b,0); }
 // pay an amount from cash; whatever you can't cover becomes co-op debt. returns amount borrowed.
 function chargeOrBorrow(amount){
   const pay = Math.min(G.money, amount);
@@ -481,9 +500,9 @@ function enterGrove(){
   // bankruptcy: nothing to sell and nothing to make it from (press fees can be loaned,
   // so having trees or olives always lets you recover — debt foreclosure is the real loss)
   const trees = G.plots.filter(Boolean).length;
-  const canSell = bottlesTotal() > 0 || G.sideStock > 0;
+  const canSell = bottlesTotal() > 0 || sideStockTotal() > 0 || G.drinksStand;
   const canProduce = trees > 0 || G.olives > 0;
-  const canMakeSide = G.ownedShop && G.money >= SHOPS[G.ownedShop].makeCost;
+  const canMakeSide = G.ownedShops.some(k=> G.money >= SHOPS[k].makeCost);
   if(!canSell && !canProduce && !canMakeSide){
     return gameOver("broke");
   }
@@ -505,15 +524,23 @@ function renderGrove(){
   const sb = $("seasonBtn");
   sb.disabled = G.grownThisYear || seasonBusy;
   sb.textContent = G.grownThisYear ? "✓ Grown this year — off to the press" : "☀️ Grow the season ▶";
-  // side business (a bought-out shop)
-  const sbz = $("sideBizBtn");
-  if(G.ownedShop){
-    const sh = SHOPS[G.ownedShop];
-    sbz.style.display = "inline-flex";
-    sbz.textContent = `${sh.emoji} ${sh.verb} (−$${sh.makeCost} → +${sh.makeYield})  ·  stock ${G.sideStock}`;
-    sbz.disabled = G.producedSideThisYear || G.money < sh.makeCost;
-    if(G.producedSideThisYear) sbz.textContent = `${sh.emoji} ${sh.name.split(" ")[0]} made this year  ·  stock ${G.sideStock}`;
-  } else { sbz.style.display = "none"; }
+  // side businesses (one produce button per bought-out shop)
+  const sbz = $("sideBiz");
+  sbz.innerHTML = "";
+  G.ownedShops.forEach(key=>{
+    const sh = SHOPS[key];
+    const made = G.producedSide[key];
+    const stock = G.sideStock[key]|0;
+    const btn = document.createElement("button");
+    btn.className = "btn btn--ghost btn--sm";
+    btn.dataset.shop = key;
+    btn.textContent = made
+      ? `${sh.emoji} made ✓ · stock ${stock}`
+      : `${sh.emoji} ${sh.verb} (−$${sh.makeCost} → +${sh.makeYield}) · ${stock}`;
+    btn.disabled = made || G.money < sh.makeCost;
+    btn.onclick = ()=>makeSide(key);
+    sbz.appendChild(btn);
+  });
   grid.innerHTML = "";
   G.plots.forEach((t,i)=>{
     const el = document.createElement("div");
@@ -563,15 +590,17 @@ $("harvestBtn").onclick = ()=>{
   else $("groveMsg").textContent = "Nothing ripe to harvest yet.";
 };
 $("plantBtn").onclick = ()=>{ G.planting = !G.planting; AU.sfx("click"); renderGrove(); };
-$("sideBizBtn").onclick = ()=>{
-  if(!G.ownedShop || G.producedSideThisYear) return;
-  const sh = SHOPS[G.ownedShop];
+function makeSide(key){
+  if(!G.ownedShops.includes(key) || G.producedSide[key]) return;
+  const sh = SHOPS[key];
   if(G.money < sh.makeCost){ $("groveMsg").textContent = `Need $${sh.makeCost} to ${sh.verb.toLowerCase()}.`; return; }
-  G.money -= sh.makeCost; G.sideStock += sh.makeYield; G.producedSideThisYear = true;
+  G.money -= sh.makeCost;
+  G.sideStock[key] = (G.sideStock[key]|0) + sh.makeYield;
+  G.producedSide[key] = true;
   AU.sfx("harvest");
   refreshHUD(); renderGrove(); saveGame();
-  $("groveMsg").textContent = `${sh.verb}: +${sh.makeYield} to sell at market (stock ${G.sideStock}).`;
-};
+  $("groveMsg").textContent = `${sh.verb}: +${sh.makeYield} to sell at market (stock ${G.sideStock[key]}).`;
+}
 
 $("seasonBtn").onclick = ()=>{
   if(seasonBusy) return;
@@ -747,11 +776,6 @@ const canvas = $("marketCanvas"), ctx = canvas.getContext("2d");
 const MW = 800, MH = 360;
 let customers = [], floats = [], stalls = [], marketActive = false, marketTime = 0, raf = 0, spawnAcc = 0;
 let weather = [], critters = [], theme = THEMES.standard, weatherAcc = 0;
-function pickTheme(){
-  if(Math.random() < 0.42) return "standard";
-  const themed = THEME_KEYS.filter(k=>k!=="standard");
-  return themed[(Math.random()*themed.length)|0];
-}
 
 function fitCanvas(){
   const dpr = Math.min(window.devicePixelRatio||1, 2);
@@ -777,10 +801,12 @@ canvas.addEventListener("pointerdown", (e)=>{
 function floatMsg(txt, s){ floats.push({ x:s.x+s.w/2, y:s.y-22, t:1.6, txt, color:"#f0d090" }); }
 function tryBuyShop(s){
   const sh = SHOPS[s.key];
-  if(G.ownedShop){ floatMsg("You already run a 2nd shop", s); return; }
   if(G.money < BUYOUT_COST){ floatMsg("Need $"+BUYOUT_COST, s); return; }
   if(window.confirm(`Buy ${sh.name} for $${BUYOUT_COST}?\n\nYou'll run this stall and keep its sales. Make ${sh.name.split(" ")[0].toLowerCase()} back at the farm each year, then sell it here.`)){
-    G.money -= BUYOUT_COST; G.ownedShop = s.key; G.sideStock = 0; G.producedSideThisYear = false;
+    G.money -= BUYOUT_COST;
+    G.ownedShops.push(s.key);
+    if(!(s.key in G.sideStock)) G.sideStock[s.key] = 0;
+    G.producedSide[s.key] = false;
     AU.sfx("coin");
     buildStalls(); renderStock(); refreshHUD(); saveGame();
   }
@@ -795,8 +821,9 @@ function enterMarket(){
   customers = []; floats = []; weather = []; critters = []; G.earned = 0;
   setText("earned", 0);
   $("returnBtn").style.display = "none";
-  // pick an occasional themed market and build a matching backdrop
-  theme = THEMES[pickTheme()] || THEMES.standard;
+  // this year's themed market (recurring calendar) and a matching backdrop
+  const themeKey = themeForYear(G.year);
+  theme = THEMES[themeKey] || THEMES.standard;
   setText("marketTitle", "🏙️ " + theme.label);
   buildBackdrop();
   spawnCritters();
@@ -804,7 +831,7 @@ function enterMarket(){
   buildPriceRow();
   renderStock();
   updateStallButton();
-  AU.startMusic(); // upbeat music plays only in the market
+  AU.startMusic(THEME_MUSIC[themeKey] || "cheery"); // theme-specific market music
   let last = performance.now();
   const tick = (now)=>{
     const dt = Math.min(0.05, (now-last)/1000); last = now;
@@ -816,7 +843,7 @@ function currentShopKeys(){
   // the market grows: +1 shop type every 3 years, up to all of them
   const count = Math.min(4 + Math.floor((G.year-1)/3), SHOP_ORDER.length);
   let keys = SHOP_ORDER.slice(0, count);
-  if(G.ownedShop && !keys.includes(G.ownedShop)) keys.push(G.ownedShop);
+  for(const k of G.ownedShops){ if(!keys.includes(k)) keys.push(k); }
   return keys;
 }
 function buildStalls(){
@@ -833,7 +860,7 @@ function buildStalls(){
     const sh = SHOPS[key];
     const w = Math.max(76, Math.min(118, slot-12));
     const x = margin + i*slot + (slot - w)/2, y = 118, h = 60;
-    const owned = G.ownedShop === key;
+    const owned = G.ownedShops.includes(key);
     stalls.push({ kind: owned?"side":"npc", key, x, y, w, h, emoji:sh.emoji, color:sh.color, label:sh.name, earned:0 });
   });
 }
@@ -901,9 +928,9 @@ function pickTarget(c){
     const s = randOf(playerStalls()); c.target = s;
     c.tx = s.x + s.w/2 + (Math.random()*50-25); c.ty = s.y - 16; c.state = "toStall";
   } else if(c.goal==="other" && Math.random()<0.72){
-    // your own shop pulls a healthy share of the "other goods" crowd
+    // your own shops pull a healthy share of the "other goods" crowd
     const sideStalls = stalls.filter(st=>st.kind==="side");
-    const s = (sideStalls.length && Math.random()<0.45) ? sideStalls[0] : randOf(neighbourStalls());
+    const s = (sideStalls.length && Math.random()<0.5) ? randOf(sideStalls) : randOf(neighbourStalls());
     c.target = s;
     c.tx = s.x + s.w/2 + (Math.random()*30-15); c.ty = s.y + s.h + 18; c.state = "toNeighbour";
   } else {
@@ -987,10 +1014,10 @@ function updateMarket(dt){
           const s = c.target || randOf(neighbourStalls());
           if(s.kind==="side"){
             // your own side shop — the sale is YOURS
-            if(G.sideStock > 0){
+            if((G.sideStock[s.key]|0) > 0){
               const sh = SHOPS[s.key];
               const price = Math.round(sh.price * (0.88 + Math.random()*0.28));
-              G.sideStock--; G.money += price; G.earned += price; s.earned += price;
+              G.sideStock[s.key]--; G.money += price; G.earned += price; s.earned += price;
               floats.push({ x:s.x+s.w/2, y:s.y-4, t:1.1, txt:"+$"+price, color:s.color });
               AU.sfx("coin");
               refreshHUD(); setText("earned", G.earned); renderStock(); updateStallButton();
@@ -1038,7 +1065,7 @@ function updateMarket(dt){
   updateWeather(dt);
   updateCritters(dt);
 
-  const nothingToSell = bottlesTotal()===0 && (!G.ownedShop || G.sideStock===0) && !G.drinksStand;
+  const nothingToSell = bottlesTotal()===0 && sideStockTotal()===0 && !G.drinksStand;
   const ourBuyerActive = customers.some(c=> c.state==="toStall" || c.state==="toDrinks" || (c.state==="toNeighbour" && c.target && c.target.kind==="side"));
   if(marketTime <= 0 || (nothingToSell && !ourBuyerActive)){
     endMarket();
@@ -1196,16 +1223,17 @@ function drawStall(s){
     roundRect(cx-26, s.y+s.h+8, 52, 17, 9); ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fill();
     ctx.font="700 12px "+bodyFont(); ctx.fillStyle="#ffe49a"; ctx.fillText("💰$"+(s.earned|0), cx, s.y+s.h+20);
   } else if(s.kind==="side"){
+    const st = G.sideStock[s.key]|0;
     ctx.font="700 11px "+bodyFont();
-    ctx.fillStyle = G.sideStock>0 ? "#cdeaa6" : "#f0a3a3";
-    ctx.fillText(G.sideStock>0 ? (G.sideStock+" left") : "SOLD OUT", cx, s.y+s.h-1);
+    ctx.fillStyle = st>0 ? "#cdeaa6" : "#f0a3a3";
+    ctx.fillText(st>0 ? (st+" left") : "SOLD OUT", cx, s.y+s.h-1);
     roundRect(cx-26, s.y+s.h+8, 52, 17, 9); ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fill();
     ctx.font="700 12px "+bodyFont(); ctx.fillStyle="#ffe49a"; ctx.fillText("💰$"+(s.earned|0), cx, s.y+s.h+20);
   } else {
     roundRect(cx-26, s.y+s.h+8, 52, 17, 9); ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fill();
     ctx.font="700 12px "+bodyFont(); ctx.fillStyle="#ffe49a"; ctx.fillText("💰$"+(s.earned|0), cx, s.y+s.h+20);
-    // a 'buy this shop' tag when you can afford it and don't already run one
-    if(!G.ownedShop && G.money >= BUYOUT_COST){
+    // a 'buy this shop' tag whenever you can afford it (you can own several)
+    if(G.money >= BUYOUT_COST){
       roundRect(cx-32, s.y-26, 64, 16, 8); ctx.fillStyle="rgba(231,183,95,.94)"; ctx.fill();
       ctx.fillStyle="#2a1c05"; ctx.font="700 10px "+bodyFont(); ctx.fillText("🛒 Buy $"+BUYOUT_COST, cx, s.y-14);
     }
@@ -1267,12 +1295,12 @@ function renderStock(){
     s.innerHTML = `${g.emoji} ${g.name.split(" ")[0]}: <b>${G.bottles[k]}</b> @ $${gradePrice(k)}`;
     el.appendChild(s);
   });
-  if(G.ownedShop){
-    const sh = SHOPS[G.ownedShop];
+  G.ownedShops.forEach(key=>{
+    const sh = SHOPS[key];
     const s = document.createElement("span"); s.className="s";
-    s.innerHTML = `${sh.emoji} ${sh.name.split(" ")[0]}: <b>${G.sideStock}</b> @ $${sh.price}`;
+    s.innerHTML = `${sh.emoji} ${sh.name.split(" ")[0]}: <b>${G.sideStock[key]|0}</b> @ $${sh.price}`;
     el.appendChild(s);
-  }
+  });
 }
 function endMarket(){
   if(!marketActive) return;
@@ -1294,7 +1322,7 @@ $("returnBtn").onclick = ()=>{
   G.year++;
   G.seasonIdx = 0;
   G.grownThisYear = false; // a new year — you can grow again
-  G.producedSideThisYear = false; // and run your side business again
+  G.producedSide = {}; // and run your side businesses again
   // leftover bottles are kept and can be sold next market too
   enterGrove();
 };
@@ -1352,11 +1380,18 @@ $("continueBtn").onclick = ()=>{
   if(typeof G.extraStall !== "boolean") G.extraStall = false;
   if(!G.priceMul) G.priceMul = { evoo:1, virgin:1, pomace:1 };
   if(typeof G.debt !== "number") G.debt = 0;
-  if(G.ownedShop === undefined) G.ownedShop = null;
-  if(typeof G.sideStock !== "number") G.sideStock = 0;
-  if(typeof G.producedSideThisYear !== "boolean") G.producedSideThisYear = false;
   if(typeof G.drinksStand !== "boolean") G.drinksStand = false;
-  if(G.ownedShop && !SHOPS[G.ownedShop]) G.ownedShop = null; // guard against unknown keys
+  // migrate older single-shop saves -> multi-shop model
+  if(!Array.isArray(G.ownedShops)){
+    G.ownedShops = (G.ownedShop && SHOPS[G.ownedShop]) ? [G.ownedShop] : [];
+  }
+  if(typeof G.sideStock !== "object" || G.sideStock === null){
+    const n = (typeof G.sideStock === "number") ? G.sideStock : 0;
+    G.sideStock = {}; if(G.ownedShops[0]) G.sideStock[G.ownedShops[0]] = n;
+  }
+  if(typeof G.producedSide !== "object" || G.producedSide === null) G.producedSide = {};
+  G.ownedShops = G.ownedShops.filter(k=>SHOPS[k]); // drop unknown keys
+  delete G.ownedShop; delete G.producedSideThisYear;
   $("startScreen").classList.add("hidden");
   resumePhase();
 };
