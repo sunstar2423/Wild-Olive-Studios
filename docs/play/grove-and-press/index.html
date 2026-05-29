@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Grove & Press — an olive-oil tycoon from Wild Olive Studios. Plant olive trees, harvest, press oil, and sell at the city farmers market." />
+<title>Grove &amp; Press — Wild Olive Studios</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg" />
+<style>
+  :root{
+    --olive:#7fb069; --olive-br:#9fcf6b; --olive-dk:#3f6b35;
+    --gold:#e7b75f; --ink:#1d2a18; --paper:#f5f1e4; --paper-2:#e9e2cc;
+    --bg:#0c1610; --panel:#16271a; --line:rgba(159,207,107,.22);
+    --font:"Space Grotesk",system-ui,sans-serif;
+    --display:"Fraunces",Georgia,serif;
+  }
+  *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font); color:#eef3ea; background:var(--bg);
+    display:grid; place-items:center; min-height:100dvh; padding:10px; overflow:hidden;
+  }
+  #app{ position:relative; width:min(100vw,820px); height:min(96dvh,720px);
+    background:linear-gradient(180deg,#13241a,#0c1610);
+    border:1px solid var(--line); border-radius:16px; overflow:hidden;
+    box-shadow:0 30px 80px -20px rgba(0,0,0,.7); display:flex; flex-direction:column; }
+
+  /* ---------- HUD ---------- */
+  .hud{ display:flex; flex-wrap:wrap; gap:.5rem 1rem; align-items:center;
+    padding:.6rem .9rem; background:rgba(0,0,0,.3); border-bottom:1px solid var(--line);
+    font-size:.85rem; }
+  .hud b{ font-family:var(--display); }
+  .hud .pill{ display:inline-flex; align-items:center; gap:.35rem;
+    background:rgba(127,176,105,.1); border:1px solid var(--line);
+    padding:.25rem .6rem; border-radius:999px; white-space:nowrap; }
+  .hud .money{ color:var(--gold); }
+  .hud .phase{ margin-left:auto; color:var(--olive-br); font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-size:.72rem; }
+
+  /* ---------- stage area ---------- */
+  .stage{ flex:1; position:relative; overflow:hidden; }
+  .panel{ position:absolute; inset:0; display:none; flex-direction:column; }
+  .panel.active{ display:flex; }
+  .panel__head{ padding:.7rem 1rem .2rem; }
+  .panel__head h2{ font-family:var(--display); font-size:1.4rem; }
+  .panel__head p{ color:#a9b8a2; font-size:.85rem; }
+  .panel__body{ flex:1; overflow:auto; padding:.8rem 1rem; }
+  .panel__foot{ padding:.7rem 1rem; border-top:1px solid var(--line); display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; background:rgba(0,0,0,.2); }
+  .msg{ font-size:.82rem; color:var(--gold); min-height:1.1em; }
+
+  /* ---------- buttons ---------- */
+  .btn{ cursor:pointer; border:1px solid transparent; font-family:var(--font); font-weight:700;
+    font-size:.9rem; padding:.6rem 1.1rem; border-radius:999px; transition:transform .15s, filter .15s, background .15s; }
+  .btn:hover:not(:disabled){ transform:translateY(-2px); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn--primary{ background:linear-gradient(135deg,var(--olive-br),var(--olive)); color:#0b1a0f; box-shadow:0 8px 22px -8px rgba(127,176,105,.6); }
+  .btn--gold{ background:linear-gradient(135deg,#f0cd84,var(--gold)); color:#2a1c05; }
+  .btn--ghost{ background:rgba(255,255,255,.04); border-color:var(--line); color:#eef3ea; }
+  .btn--ghost.on{ background:rgba(231,183,95,.18); border-color:var(--gold); color:var(--gold); }
+  .btn--sm{ padding:.35rem .7rem; font-size:.8rem; }
+
+  /* ---------- grove ---------- */
+  #groveStage .panel__body{ transition:background .8s; }
+  .season-spring{ background:radial-gradient(120% 90% at 50% 0%, #1f3a23, transparent); }
+  .season-summer{ background:radial-gradient(120% 90% at 50% 0%, #2a3d18, transparent); }
+  .season-autumn{ background:radial-gradient(120% 90% at 50% 0%, #3a2f15, transparent); }
+  .season-winter{ background:radial-gradient(120% 90% at 50% 0%, #1c2733, transparent); }
+  .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; max-width:520px; margin:0 auto; }
+  .plot{ aspect-ratio:1; border-radius:12px; border:2px dashed rgba(159,207,107,.25);
+    background:rgba(0,0,0,.18); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; position:relative; transition:transform .12s, border-color .15s, background .15s; font-size:2.4rem; }
+  .plot:hover{ transform:translateY(-2px); }
+  .plot.tree{ border-style:solid; border-color:rgba(127,176,105,.35); background:rgba(63,107,53,.18); }
+  .plot.ripe{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(231,183,95,.35) inset; animation:bob 1.6s ease-in-out infinite; }
+  .plot.plantable.planting{ border-color:var(--olive-br); background:rgba(127,176,105,.12); }
+  .plot .age{ position:absolute; bottom:4px; font-size:.6rem; color:#a9b8a2; letter-spacing:.03em; }
+  .plot .crop{ position:absolute; top:4px; right:6px; font-size:.7rem; font-weight:700; color:var(--gold);
+    background:rgba(0,0,0,.5); border-radius:999px; padding:.05rem .4rem; }
+  @keyframes bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-4px);} }
+
+  /* ---------- refinery ---------- */
+  .grade{ display:grid; grid-template-columns:1fr auto; gap:.4rem 1rem; align-items:center;
+    padding:.7rem .9rem; border:1px solid var(--line); border-radius:12px; margin-bottom:.6rem; background:rgba(0,0,0,.18); }
+  .grade h3{ font-family:var(--display); font-size:1.05rem; }
+  .grade small{ color:#a9b8a2; font-size:.76rem; }
+  .stepper{ display:flex; align-items:center; gap:.5rem; }
+  .stepper b{ min-width:2ch; text-align:center; font-family:var(--display); font-size:1.2rem; }
+  .stepper .btn{ width:34px; height:34px; padding:0; display:grid; place-items:center; font-size:1.1rem; }
+  .summary{ display:flex; gap:1.2rem; flex-wrap:wrap; font-size:.85rem; padding:.5rem 0; }
+  .summary span b{ color:var(--gold); font-family:var(--display); }
+
+  /* ---------- market ---------- */
+  #marketCanvas{ width:100%; flex:1; display:block; background:#243018; }
+  .market-bars{ display:flex; gap:.8rem; align-items:center; padding:.5rem 1rem; flex-wrap:wrap; }
+  .timer{ flex:1; min-width:120px; height:10px; background:rgba(0,0,0,.4); border-radius:999px; overflow:hidden; }
+  .timer > i{ display:block; height:100%; width:100%; background:linear-gradient(90deg,var(--gold),var(--olive-br)); transition:width .2s linear; }
+  .stock{ display:flex; gap:.5rem; font-size:.8rem; flex-wrap:wrap; }
+  .stock .s{ background:rgba(0,0,0,.3); border:1px solid var(--line); border-radius:999px; padding:.15rem .55rem; }
+
+  /* ---------- overlays ---------- */
+  .overlay{ position:absolute; inset:0; z-index:20; display:grid; place-items:center; text-align:center; padding:1.5rem;
+    background:radial-gradient(120% 100% at 50% 0%, rgba(63,107,53,.5), rgba(10,18,12,.95)); transition:opacity .3s; }
+  .overlay.hidden{ opacity:0; pointer-events:none; }
+  .overlay .card{ max-width:520px; }
+  .overlay h1{ font-family:var(--display); font-size:clamp(2rem,7vw,3rem); line-height:1.05;
+    background:linear-gradient(135deg,var(--olive-br),var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .overlay .tag{ color:var(--olive-br); letter-spacing:.16em; text-transform:uppercase; font-size:.75rem; margin-bottom:1rem; }
+  .overlay p{ color:#cdd8c5; font-size:.92rem; line-height:1.6; margin-bottom:.6rem; }
+  .overlay .loop{ display:flex; flex-wrap:wrap; gap:.4rem; justify-content:center; margin:1rem 0 1.4rem; font-size:.8rem; }
+  .overlay .loop span{ background:rgba(0,0,0,.3); border:1px solid var(--line); border-radius:999px; padding:.3rem .7rem; }
+  .back{ position:absolute; top:8px; left:10px; z-index:25; font-size:.72rem; color:#a9b8a2; text-decoration:none;
+    background:rgba(0,0,0,.4); padding:.3rem .7rem; border-radius:999px; border:1px solid var(--line); }
+  .back:hover{ color:#fff; }
+  .credit{ margin-top:1rem; font-size:.7rem; color:#7d8a76; }
+  .credit a{ color:var(--olive); text-decoration:none; }
+  @media (max-width:560px){
+    .grid{ grid-template-columns:repeat(3,1fr); }
+    .panel__head h2{ font-size:1.2rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <a class="back" href="../../index.html#games">← Studio</a>
+
+  <!-- HUD -->
+  <div class="hud">
+    <span class="pill money">💰 $<b id="money">0</b></span>
+    <span class="pill">📅 Year <b id="year">1</b> · <span id="season">Spring</span></span>
+    <span class="pill">🫒 <b id="invOlives">0</b> olives</span>
+    <span class="pill">🧴 <b id="invBottles">0</b> bottles</span>
+    <span class="phase" id="phaseLabel">The Grove</span>
+  </div>
+
+  <!-- STAGE -->
+  <div class="stage">
+
+    <!-- GROVE -->
+    <section class="panel" id="groveStage">
+      <div class="panel__head">
+        <h2>🌿 Your Olive Grove</h2>
+        <p>Plant trees, then grow the season and harvest the ripe ones.</p>
+      </div>
+      <div class="panel__body">
+        <div class="grid" id="plotGrid"></div>
+      </div>
+      <div class="panel__foot">
+        <button class="btn btn--ghost" id="plantBtn">🌱 Plant tree ($<span id="plantCost">30</span>)</button>
+        <button class="btn btn--primary" id="seasonBtn">☀️ Grow the season ▶</button>
+        <button class="btn btn--ghost" id="harvestBtn">🧺 Harvest all</button>
+        <button class="btn btn--gold" id="shipBtn">🚂 Rail olives to the press →</button>
+        <span class="msg" id="groveMsg"></span>
+      </div>
+    </section>
+
+    <!-- REFINERY -->
+    <section class="panel" id="refineryStage">
+      <div class="panel__head">
+        <h2>🏭 The Press &amp; Bottling House</h2>
+        <p>Press your <b id="refOlives">0</b> olives into oil and bottle it. Premium grades use more olives but sell for more.</p>
+      </div>
+      <div class="panel__body" id="gradeList"></div>
+      <div class="panel__foot" style="flex-direction:column; align-items:stretch;">
+        <div class="summary">
+          <span>Olives used: <b id="sumOlives">0</b> / <span id="sumAvail">0</span></span>
+          <span>Press cost: <b id="sumCost">$0</b></span>
+          <span>Bottles: <b id="sumBottles">0</b></span>
+          <span>Potential sales: <b id="sumRevenue">$0</b></span>
+        </div>
+        <div style="display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;">
+          <button class="btn btn--gold" id="pressBtn">🚂 Press, bottle &amp; rail to the city →</button>
+          <span class="msg" id="refMsg"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARKET -->
+    <section class="panel" id="marketStage">
+      <div class="panel__head">
+        <h2>🏙️ City Farmers Market</h2>
+        <p>Customers wander the market. They'll stop by your stall and buy oil while stock lasts.</p>
+      </div>
+      <canvas id="marketCanvas"></canvas>
+      <div class="market-bars">
+        <span style="font-size:.8rem;">⏱️</span>
+        <div class="timer"><i id="timerFill"></i></div>
+        <span class="pill money" style="font-size:.8rem;">+$<b id="earned">0</b></span>
+      </div>
+      <div class="panel__foot">
+        <div class="stock" id="marketStock"></div>
+        <button class="btn btn--primary" id="returnBtn" style="margin-left:auto; display:none;">🚜 Return to the grove →</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- START OVERLAY -->
+  <div class="overlay" id="startScreen">
+    <div class="card">
+      <div class="tag">Wild Olive Studios · tycoon demo</div>
+      <h1>Grove &amp; Press</h1>
+      <p>Run an olive-oil business through the turning seasons. Grow it from a couple of old trees into a thriving grove.</p>
+      <div class="loop">
+        <span>🌱 Plant</span><span>☀️ Grow</span><span>🧺 Harvest</span>
+        <span>🚂 Press</span><span>🧴 Bottle</span><span>🏙️ Sell</span><span>💰 Reinvest</span>
+      </div>
+      <p style="font-size:.82rem; color:#a9b8a2;">You start with two mature trees and $200 — enough to reach your first market. Spend on planting &amp; freight, earn at the market, and grow your fortune year by year.</p>
+      <button class="btn btn--primary" id="startBtn" style="margin-top:.6rem;">Start farming ▸</button>
+      <div class="credit">A playable demo · <a href="../../index.html">Wild Olive Studios</a></div>
+    </div>
+  </div>
+
+  <!-- GAME OVER OVERLAY -->
+  <div class="overlay hidden" id="overScreen">
+    <div class="card">
+      <div class="tag" id="overTag">The grove falls quiet…</div>
+      <h1 id="overTitle">Out of business</h1>
+      <p id="overMsg"></p>
+      <p>You lasted <b id="overYears">0</b> years and your best balance was <b id="overBest">$0</b>.</p>
+      <button class="btn btn--primary" id="restartBtn" style="margin-top:.6rem;">Try again ▸</button>
+      <div class="credit"><a href="../../index.html#games">← Other Wild Olive games</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// ---------- balance constants ----------
+const START_MONEY = 200;
+const PLANT_COST   = 30;
+const UPKEEP_TREE  = 4;     // per tree, charged each grow-season
+const FREIGHT       = 35;   // rail cost grove -> press, and press -> city
+const MATURE_AGE   = 2;     // seasons to bear fruit
+const MARKET_SECS  = 45;
+const PLOTS        = 12;
+
+// grade: olives per bottle, sale price, press cost per bottle, color, name
+const GRADES = {
+  evoo:   { name:"Extra-Virgin", olives:10, price:26, press:4, color:"#9fcf6b", emoji:"🟢" },
+  virgin: { name:"Virgin Olive Oil", olives:6, price:15, press:3, color:"#e7b75f", emoji:"🟡" },
+  pomace: { name:"Pomace (table) Oil", olives:3, price:7, press:2, color:"#c98b4a", emoji:"🟤" },
+};
+const NEIGHBOURS = [
+  { name:"Bramble Honey", emoji:"🍯", color:"#e0a92e" },
+  { name:"Hilltop Cheese", emoji:"🧀", color:"#e8cf6a" },
+  { name:"Riverbread", emoji:"🥖", color:"#cc9a5c" },
+  { name:"Old Vine Wine", emoji:"🍷", color:"#8e3b5a" },
+];
+
+// ---------- state ----------
+let G;
+function newGame(){
+  G = {
+    money: START_MONEY, year: 1, seasonIdx: 0,
+    plots: Array.from({length:PLOTS}, ()=>null),
+    olives: 0,
+    bottles: { evoo:0, virgin:0, pomace:0 },
+    planning: { evoo:0, virgin:0, pomace:0 },
+    planting: false,
+    bestMoney: START_MONEY,
+    earned: 0,
+  };
+  // start with two mature trees in the first row
+  G.plots[0] = makeTree(MATURE_AGE);
+  G.plots[1] = makeTree(MATURE_AGE);
+}
+function makeTree(age){ return { age:age, vigor: 0.65 + Math.random()*0.8, crop:0 }; }
+
+const SEASONS = ["Spring","Summer","Autumn","Winter"];
+
+// ---------- dom helpers ----------
+const $ = id => document.getElementById(id);
+function setText(id,v){ $(id).textContent = v; }
+function bottlesTotal(){ return G.bottles.evoo + G.bottles.virgin + G.bottles.pomace; }
+function refreshHUD(){
+  setText("money", G.money);
+  setText("year", G.year);
+  setText("season", SEASONS[G.seasonIdx]);
+  setText("invOlives", G.olives);
+  setText("invBottles", bottlesTotal());
+  if(G.money > G.bestMoney) G.bestMoney = G.money;
+}
+
+// ---------- stage switching ----------
+const PHASE_LABEL = { grove:"The Grove", refinery:"The Press", market:"The Market" };
+function showStage(name){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  $(name+"Stage").classList.add("active");
+  setText("phaseLabel", PHASE_LABEL[name]);
+}
+
+/* =====================================================================
+   GROVE
+   ===================================================================== */
+let seasonBusy = false;
+function enterGrove(){
+  showStage("grove");
+  // bankruptcy check: no money to plant, no trees, no stock/olives
+  const trees = G.plots.filter(Boolean).length;
+  if(G.money < PLANT_COST && trees === 0 && G.olives === 0 && bottlesTotal() === 0){
+    return gameOver();
+  }
+  G.planting = false;
+  renderGrove();
+  refreshHUD();
+  $("groveMsg").textContent = trees ? "Grow the season to ripen your olives, then harvest." :
+    "Plant some trees to get started!";
+}
+function renderGrove(){
+  const grid = $("plotGrid");
+  grid.className = "grid";
+  $("groveStage").querySelector(".panel__body").className =
+    "panel__body season-" + SEASONS[G.seasonIdx].toLowerCase();
+  setText("plantCost", PLANT_COST);
+  $("plantBtn").classList.toggle("on", G.planting);
+  grid.innerHTML = "";
+  G.plots.forEach((t,i)=>{
+    const el = document.createElement("div");
+    el.className = "plot";
+    if(!t){
+      el.classList.add("plantable");
+      if(G.planting) el.classList.add("planting");
+      el.innerHTML = G.planting ? "🌱" : "";
+    } else {
+      el.classList.add("tree");
+      const ripe = t.crop > 0;
+      const stage = t.age < 1 ? "🌱" : t.age < MATURE_AGE ? "🌿" : "🌳";
+      el.innerHTML = stage;
+      el.innerHTML += `<span class="age">${t.age<1?"sapling":t.age<MATURE_AGE?"young":"mature"}</span>`;
+      if(ripe){ el.classList.add("ripe"); el.innerHTML += `<span class="crop">🫒${t.crop}</span>`; }
+    }
+    el.onclick = ()=>plotClick(i);
+    grid.appendChild(el);
+  });
+}
+function plotClick(i){
+  const t = G.plots[i];
+  if(G.planting && !t){
+    if(G.money < PLANT_COST){ $("groveMsg").textContent = "Not enough money to plant."; return; }
+    G.money -= PLANT_COST;
+    G.plots[i] = makeTree(0);
+    refreshHUD(); renderGrove();
+    $("groveMsg").textContent = "Planted a sapling 🌱 — it'll bear fruit in a couple of seasons.";
+  } else if(t && t.crop > 0){
+    harvestTree(i);
+  }
+}
+function harvestTree(i){
+  const t = G.plots[i];
+  if(!t || t.crop<=0) return;
+  G.olives += t.crop;
+  $("groveMsg").textContent = `Harvested ${t.crop} olives 🫒`;
+  t.crop = 0;
+  refreshHUD(); renderGrove();
+}
+$("harvestBtn").onclick = ()=>{
+  let total=0;
+  G.plots.forEach((t)=>{ if(t&&t.crop>0){ total+=t.crop; G.olives+=t.crop; t.crop=0; } });
+  if(total){ $("groveMsg").textContent = `Harvested ${total} olives 🫒`; refreshHUD(); renderGrove(); }
+  else $("groveMsg").textContent = "Nothing ripe to harvest yet.";
+};
+$("plantBtn").onclick = ()=>{ G.planting = !G.planting; renderGrove(); };
+
+$("seasonBtn").onclick = ()=>{
+  if(seasonBusy) return;
+  const trees = G.plots.filter(Boolean);
+  if(trees.length === 0){ $("groveMsg").textContent = "Plant a tree first!"; return; }
+  seasonBusy = true;
+  $("seasonBtn").disabled = true;
+  G.planting = false;
+  // upkeep
+  const upkeep = trees.length * UPKEEP_TREE;
+  G.money = Math.max(0, G.money - upkeep);
+  // animate seasons Spring -> Summer -> Autumn
+  const steps = [1,2,3,0]; // summer, autumn, winter, back to spring
+  let s = 0;
+  const seq = ()=>{
+    G.seasonIdx = steps[s];
+    renderGrove(); refreshHUD();
+    s++;
+    if(s < steps.length){ setTimeout(seq, 420); }
+    else {
+      ripen();
+      seasonBusy = false;
+      $("seasonBtn").disabled = false;
+    }
+  };
+  $("groveMsg").textContent = `Tending the grove… (−$${upkeep} upkeep)`;
+  setTimeout(seq, 200);
+};
+function ripen(){
+  // age trees; mature ones produce a variable crop
+  let produced = 0, bearers = 0;
+  const yearLuck = 0.7 + Math.random()*0.6; // whole-season variation
+  G.plots.forEach(t=>{
+    if(!t) return;
+    if(t.age < MATURE_AGE) t.age++;
+    if(t.age >= MATURE_AGE){
+      const base = 9;
+      t.crop = Math.max(1, Math.round(base * t.vigor * yearLuck * (0.8 + Math.random()*0.5)));
+      produced += t.crop; bearers++;
+    }
+  });
+  G.seasonIdx = 2; // Autumn = harvest time
+  renderGrove(); refreshHUD();
+  $("groveMsg").textContent = bearers
+    ? `🍂 Autumn harvest! ${bearers} tree${bearers>1?"s":""} bore ${produced} olives ${yearLuck>1.1?"— a bumper year!":yearLuck<0.85?"— a lean year.":"."}  Click trees or “Harvest all”.`
+    : "Your young trees aren't bearing fruit yet — grow another season.";
+}
+$("shipBtn").onclick = ()=>{
+  // auto-harvest anything still ripe
+  G.plots.forEach(t=>{ if(t&&t.crop>0){ G.olives+=t.crop; t.crop=0; } });
+  if(G.olives <= 0){ $("groveMsg").textContent = "No olives to ship — grow & harvest first."; refreshHUD(); renderGrove(); return; }
+  if(G.money < FREIGHT){ $("groveMsg").textContent = `Need $${FREIGHT} for freight to the press.`; return; }
+  G.money -= FREIGHT;
+  refreshHUD();
+  enterRefinery();
+};
+
+/* =====================================================================
+   REFINERY
+   ===================================================================== */
+function enterRefinery(){
+  showStage("refinery");
+  G.planning = { evoo:0, virgin:0, pomace:0 };
+  setText("refOlives", G.olives);
+  buildGradeList();
+  updateRefinery();
+  $("refMsg").textContent = "";
+  // auto-suggest a sensible default split
+  autoPlan();
+}
+function buildGradeList(){
+  const list = $("gradeList");
+  list.innerHTML = "";
+  Object.entries(GRADES).forEach(([key,g])=>{
+    const row = document.createElement("div");
+    row.className = "grade";
+    row.innerHTML = `
+      <div>
+        <h3>${g.emoji} ${g.name}</h3>
+        <small>${g.olives} olives + $${g.press} press → sells ≈ $${g.price}/bottle</small>
+      </div>
+      <div class="stepper">
+        <button class="btn btn--ghost" data-grade="${key}" data-dir="-1">−</button>
+        <b id="qty-${key}">0</b>
+        <button class="btn btn--ghost" data-grade="${key}" data-dir="1">+</button>
+      </div>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll("button[data-grade]").forEach(b=>{
+    b.onclick = ()=>changeQty(b.dataset.grade, +b.dataset.dir);
+  });
+}
+function changeQty(grade, dir){
+  const g = GRADES[grade];
+  if(dir>0){
+    if(olivesUsed() + g.olives > G.olives){ $("refMsg").textContent = "Not enough olives for another bottle."; return; }
+    if(pressCost() + g.press > G.money){ $("refMsg").textContent = "Not enough money for more press fees."; return; }
+    G.planning[grade]++;
+  } else {
+    G.planning[grade] = Math.max(0, G.planning[grade]-1);
+  }
+  $("refMsg").textContent = "";
+  updateRefinery();
+}
+function olivesUsed(){ return Object.entries(G.planning).reduce((s,[k,n])=>s+n*GRADES[k].olives,0); }
+function pressCost(){ return Object.entries(G.planning).reduce((s,[k,n])=>s+n*GRADES[k].press,0); }
+function plannedBottles(){ return G.planning.evoo+G.planning.virgin+G.planning.pomace; }
+function potentialRevenue(){ return Object.entries(G.planning).reduce((s,[k,n])=>s+n*GRADES[k].price,0); }
+function updateRefinery(){
+  Object.keys(GRADES).forEach(k=> setText("qty-"+k, G.planning[k]) );
+  setText("sumOlives", olivesUsed());
+  setText("sumAvail", G.olives);
+  setText("sumCost", "$"+pressCost());
+  setText("sumBottles", plannedBottles());
+  setText("sumRevenue", "$"+potentialRevenue());
+  $("pressBtn").disabled = plannedBottles() === 0;
+}
+function autoPlan(){
+  // greedy: make EVOO while possible, then virgin, then pomace, leaving money for freight
+  G.planning = { evoo:0, virgin:0, pomace:0 };
+  let budget = G.money - FREIGHT; // keep freight for the city trip
+  const order = ["evoo","virgin","pomace"];
+  let guard = 0;
+  let progressed = true;
+  while(progressed && guard++ < 999){
+    progressed = false;
+    for(const k of order){
+      const g = GRADES[k];
+      if(olivesUsed()+g.olives <= G.olives && pressCost()+g.press <= budget){
+        G.planning[k]++; progressed = true;
+      }
+    }
+  }
+  updateRefinery();
+}
+$("pressBtn").onclick = ()=>{
+  const bottles = plannedBottles();
+  if(bottles === 0) return;
+  const cost = pressCost();
+  if(cost + FREIGHT > G.money){ $("refMsg").textContent = `Keep $${FREIGHT} aside for the rail trip to the city.`; return; }
+  G.money -= cost;
+  G.olives -= olivesUsed();
+  G.bottles.evoo += G.planning.evoo;
+  G.bottles.virgin += G.planning.virgin;
+  G.bottles.pomace += G.planning.pomace;
+  // freight to city
+  G.money -= FREIGHT;
+  refreshHUD();
+  enterMarket();
+};
+
+/* =====================================================================
+   MARKET  (animated canvas with wandering NPC customers)
+   ===================================================================== */
+const canvas = $("marketCanvas"), ctx = canvas.getContext("2d");
+const MW = 800, MH = 360;
+let customers = [], floats = [], stalls = [], marketActive = false, marketTime = 0, raf = 0, spawnAcc = 0;
+
+function fitCanvas(){
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  const cssW = canvas.clientWidth || MW;
+  canvas.width = MW*dpr; canvas.height = MH*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function enterMarket(){
+  showStage("market");
+  fitCanvas();
+  marketActive = true; marketTime = MARKET_SECS; spawnAcc = 0;
+  customers = []; floats = []; G.earned = 0;
+  setText("earned", 0);
+  $("returnBtn").style.display = "none";
+  buildStalls();
+  renderStock();
+  let last = performance.now();
+  const tick = (now)=>{
+    const dt = Math.min(0.05, (now-last)/1000); last = now;
+    if(marketActive){ updateMarket(dt); drawMarket(); raf = requestAnimationFrame(tick); }
+  };
+  raf = requestAnimationFrame(tick);
+}
+function buildStalls(){
+  // player stall on the left, neighbours along the top
+  stalls = [];
+  stalls.push({ x:120, y:250, w:120, h:70, player:true, label:"Your Olive Oil", emoji:"🫒", color:"#3f6b35" });
+  const spots = [ {x:300,y:70},{x:430,y:70},{x:560,y:70},{x:680,y:70} ];
+  NEIGHBOURS.forEach((n,i)=> stalls.push({ ...spots[i], w:96, h:62, player:false, label:n.name, emoji:n.emoji, color:n.color }) );
+}
+function playerStall(){ return stalls[0]; }
+
+function spawnCustomer(){
+  const fromLeft = Math.random()<0.5;
+  const wantsOil = Math.random() < 0.6;           // 60% are here for oil
+  const prefOrder = (()=>{
+    const r = Math.random();
+    if(r<0.4) return ["evoo","virgin","pomace"];   // foodie
+    if(r<0.75) return ["virgin","pomace","evoo"];  // everyday
+    return ["pomace","virgin","evoo"];             // bargain
+  })();
+  customers.push({
+    x: fromLeft ? -20 : MW+20, y: 150 + Math.random()*150,
+    tx: 100+Math.random()*(MW-200), ty: 150+Math.random()*150,
+    speed: 38 + Math.random()*26,
+    emoji: ["🧑","👩","🧓","👨","🧕","👵","🧔","👱"][ (Math.random()*8)|0 ],
+    wantsOil, pref: prefOrder, state:"wander", patience: 2+Math.random()*3,
+    bought:false, wait:0, tint:`hsl(${(Math.random()*360)|0} 45% 60%)`
+  });
+}
+function pickTarget(c){
+  if(c.wantsOil && !c.bought && Math.random()<0.7){
+    const s = playerStall();
+    c.tx = s.x + s.w/2 + (Math.random()*40-20); c.ty = s.y - 18; c.state = "toStall";
+  } else {
+    c.tx = 60 + Math.random()*(MW-120); c.ty = 130 + Math.random()*170; c.state = "wander";
+  }
+}
+function sellTo(c){
+  // sell the highest-pref grade we have stock of
+  for(const k of c.pref){
+    if(G.bottles[k] > 0){
+      const g = GRADES[k];
+      const tip = Math.round(g.price * (0.9 + Math.random()*0.3)); // small price variation
+      G.bottles[k]--; G.money += tip; G.earned += tip;
+      floats.push({ x:c.x, y:c.y-14, t:1, txt:"+$"+tip, color:g.color });
+      refreshHUD(); setText("earned", G.earned); renderStock();
+      return true;
+    }
+  }
+  return false;
+}
+function updateMarket(dt){
+  marketTime -= dt;
+  $("timerFill").style.width = Math.max(0,(marketTime/MARKET_SECS)*100) + "%";
+  // spawn
+  spawnAcc += dt;
+  const spawnEvery = 0.7;
+  if(spawnAcc > spawnEvery && customers.length < 14 && marketTime > 2){ spawnAcc = 0; spawnCustomer(); }
+
+  for(let i=customers.length-1;i>=0;i--){
+    const c = customers[i];
+    const dx = c.tx-c.x, dy = c.ty-c.y, d = Math.hypot(dx,dy);
+    if(d > 3){ c.x += dx/d*c.speed*dt; c.y += dy/d*c.speed*dt; }
+    else {
+      if(c.state==="toStall"){
+        c.wait += dt;
+        if(c.wait > 0.5){
+          const ok = sellTo(c);
+          c.bought = ok || c.bought;
+          c.wait = 0; c.state="leaving";
+          c.tx = (c.x<MW/2)? -30 : MW+30; c.ty = 150+Math.random()*150;
+        }
+      } else if(c.state==="leaving"){
+        // off-screen handled below
+        c.tx = (c.x<MW/2)? -40 : MW+40;
+      } else {
+        c.patience -= 0.6;
+        if(c.patience<=0){ c.patience = 2+Math.random()*3; pickTarget(c); }
+        else { c.tx = 60+Math.random()*(MW-120); c.ty=130+Math.random()*170; }
+      }
+    }
+    if(c.x < -35 || c.x > MW+35) customers.splice(i,1);
+  }
+  // floats
+  for(let i=floats.length-1;i>=0;i--){ const f=floats[i]; f.y-=24*dt; f.t-=dt*0.8; if(f.t<=0) floats.splice(i,1); }
+
+  if(marketTime <= 0 || (bottlesTotal()===0 && customers.every(c=>c.state!=="toStall"))){
+    endMarket();
+  }
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function drawMarket(){
+  ctx.clearRect(0,0,MW,MH);
+  // ground
+  const g = ctx.createLinearGradient(0,0,0,MH);
+  g.addColorStop(0,"#2f3d1c"); g.addColorStop(1,"#222d15");
+  ctx.fillStyle=g; ctx.fillRect(0,0,MW,MH);
+  // cobble path
+  ctx.fillStyle="rgba(0,0,0,.12)"; ctx.fillRect(0,200,MW,12);
+  // stalls
+  for(const s of stalls){
+    // canopy
+    roundRect(s.x, s.y, s.w, s.h, 8); ctx.fillStyle="rgba(0,0,0,.25)"; ctx.fill();
+    roundRect(s.x, s.y-10, s.w, 18, 6); ctx.fillStyle=s.color; ctx.fill();
+    // stripes
+    ctx.fillStyle="rgba(255,255,255,.18)";
+    for(let i=0;i<s.w;i+=22){ ctx.fillRect(s.x+i, s.y-10, 11, 18); }
+    // sign
+    ctx.fillStyle="#f5f1e4"; ctx.font="600 11px "+bodyFont(); ctx.textAlign="center";
+    ctx.fillText(s.label, s.x+s.w/2, s.y+s.h-8);
+    ctx.font="22px "+bodyFont(); ctx.fillText(s.emoji, s.x+s.w/2, s.y+s.h-24);
+    if(s.player){
+      ctx.fillStyle=stockEmpty()? "#d98b8b" : "#9fcf6b";
+      ctx.font="600 10px "+bodyFont();
+      ctx.fillText(stockEmpty()? "SOLD OUT" : (bottlesTotal()+" bottles"), s.x+s.w/2, s.y+10);
+    }
+  }
+  // customers
+  for(const c of customers){
+    ctx.font="22px "+bodyFont(); ctx.textAlign="center";
+    ctx.fillText(c.emoji, c.x, c.y);
+    if(c.state==="toStall"){ ctx.fillStyle="#e7b75f"; ctx.font="13px "+bodyFont(); ctx.fillText("…", c.x+12, c.y-14); }
+  }
+  // floats
+  for(const f of floats){ ctx.globalAlpha=Math.max(0,f.t); ctx.fillStyle=f.color; ctx.font="700 14px "+bodyFont(); ctx.textAlign="center"; ctx.fillText(f.txt, f.x, f.y); }
+  ctx.globalAlpha=1;
+}
+function bodyFont(){ return "'Space Grotesk',system-ui,sans-serif"; }
+function stockEmpty(){ return bottlesTotal()===0; }
+function renderStock(){
+  const el = $("marketStock"); el.innerHTML="";
+  Object.entries(GRADES).forEach(([k,g])=>{
+    const s = document.createElement("span"); s.className="s";
+    s.innerHTML = `${g.emoji} ${g.name.split(" ")[0]}: <b>${G.bottles[k]}</b>`;
+    el.appendChild(s);
+  });
+}
+function endMarket(){
+  if(!marketActive) return;
+  marketActive = false;
+  cancelAnimationFrame(raf);
+  $("returnBtn").style.display = "inline-block";
+}
+$("returnBtn").onclick = ()=>{
+  G.year++;
+  G.seasonIdx = 0;
+  // leftover bottles are kept and can be sold next market too
+  enterGrove();
+};
+window.addEventListener("resize", ()=>{ if(marketActive) fitCanvas(); });
+
+/* =====================================================================
+   GAME OVER
+   ===================================================================== */
+function gameOver(){
+  setText("overYears", G.year-1<0?0:G.year);
+  setText("overBest", "$"+G.bestMoney);
+  $("overMsg").textContent = "You ran out of money, trees, and stock. Every grove has lean years — give it another go.";
+  $("overScreen").classList.remove("hidden");
+}
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+$("startBtn").onclick = ()=>{ newGame(); $("startScreen").classList.add("hidden"); enterGrove(); };
+$("restartBtn").onclick = ()=>{ newGame(); $("overScreen").classList.add("hidden"); enterGrove(); };
+})();
+</script>
+</body>
+</html>

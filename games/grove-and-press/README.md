@@ -1,0 +1,47 @@
+# 🫒 Grove & Press
+
+An olive-oil tycoon. Run a small farm through the turning seasons: **plant →
+grow → harvest → press → bottle → rail to the city → sell → reinvest.**
+
+## The loop
+
+1. **🌿 The Grove** — Plant olive trees ($ each). Press *Grow the season* to age
+   your trees and ripen a crop on the mature ones (the yield varies per tree and
+   per year — some years are bumper, some are lean). Harvest the ripe trees, then
+   rail your olives to the press (costs freight). You start with two mature trees
+   and $200 — enough to reach your first market.
+2. **🏭 The Press & Bottling House** — Turn olives into bottled oil across three
+   grades: **Extra-Virgin** (premium, more olives/bottle), **Virgin**, and
+   **Pomace** (cheap, fast-moving). Each bottle has a press fee. A sensible split
+   is auto-suggested; tune it with +/−, then rail the bottles to the city.
+3. **🏙️ City Farmers Market** — A live, animated market. **NPC customers wander
+   in and move around**, stop by your stall, and buy oil while stock lasts —
+   foodies favour Extra-Virgin, bargain-hunters grab Pomace. Neighbouring farms
+   (honey, cheese, bread, wine) trade alongside you. Earn money before the timer
+   runs out, then return to the grove for the next year. Leftover bottles carry
+   over.
+
+Run out of money, trees, *and* stock and it's game over — but every grove has
+lean years, so just replant and try again.
+
+## Tech
+
+- **Single-file HTML5 game** — vanilla JS, DOM UI for the farm/press panels and
+  a **Canvas 2D** scene for the animated market crowd. No engine, no build step.
+- Touch- and mouse-friendly.
+
+## Where it lives
+
+- **Playable build / source:** `docs/play/grove-and-press/index.html`
+- **Play locally:** `python3 -m http.server 8000 --directory docs` →
+  `http://localhost:8000/play/grove-and-press/`
+- **Play live:** `https://sunstar2423.github.io/Wild-Olive-Studios/play/grove-and-press/`
+- **Linked from:** the *Grove & Press* card on the home page.
+
+## Ideas to grow it
+
+- [ ] Weather/blight events and irrigation upgrades
+- [ ] Tunable market: hire a second stall, set your own prices
+- [ ] Reputation that grows your premium customer base over the years
+- [ ] Sound + a gentle seasonal soundtrack
+- [ ] Save/continue across sessions (localStorage)
