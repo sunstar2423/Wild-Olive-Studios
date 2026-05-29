@@ -220,7 +220,7 @@
         <span>🌱 Plant</span><span>☀️ Grow</span><span>🧺 Harvest</span>
         <span>🚂 Press</span><span>🧴 Bottle</span><span>🏙️ Sell</span><span>💰 Reinvest</span>
       </div>
-      <p style="font-size:.82rem; color:#a9b8a2;">You start with two mature trees and $200 — enough to reach your first market. Spend on planting &amp; freight, earn at the market, and grow your fortune year by year.</p>
+      <p style="font-size:.82rem; color:#a9b8a2;">You start with three mature trees and $200. Spend on planting, upkeep &amp; freight; earn at the market by pricing your oil well; and grow your fortune year by year.</p>
       <div style="display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:.6rem;">
         <button class="btn btn--gold" id="continueBtn" style="display:none;">↺ Continue <small id="continueInfo"></small></button>
         <button class="btn btn--primary" id="startBtn">Start farming ▸</button>
@@ -248,20 +248,20 @@
 
 // ---------- balance constants ----------
 const START_MONEY = 200;
-const PLANT_COST   = 30;
-const UPKEEP_TREE  = 4;     // per tree, charged each grow-season
-const FREIGHT       = 35;   // rail cost grove -> press, and press -> city
+const PLANT_COST   = 24;
+const UPKEEP_TREE  = 3;     // per tree, charged each grow-season
+const FREIGHT       = 15;   // rail cost grove -> press, and press -> city (each leg)
 const MATURE_AGE   = 2;     // seasons to bear fruit
-const MARKET_SECS  = 45;
+const MARKET_SECS  = 48;
 const PLOTS        = 12;
-const EXTRA_STALL_COST = 220;  // buy a second market stall
+const EXTRA_STALL_COST = 200;  // buy a second market stall
 const PRICE_MIN = 0.6, PRICE_MAX = 1.4, PRICE_STEP = 0.1; // price range as a multiplier of base
 
 // grade: olives per bottle, sale price, press cost per bottle, color, name
 const GRADES = {
-  evoo:   { name:"Extra-Virgin", olives:10, price:26, press:4, color:"#9fcf6b", emoji:"🟢" },
-  virgin: { name:"Virgin Olive Oil", olives:6, price:15, press:3, color:"#e7b75f", emoji:"🟡" },
-  pomace: { name:"Pomace (table) Oil", olives:3, price:7, press:2, color:"#c98b4a", emoji:"🟤" },
+  evoo:   { name:"Extra-Virgin", olives:10, price:28, press:4, color:"#9fcf6b", emoji:"🟢" },
+  virgin: { name:"Virgin Olive Oil", olives:6, price:16, press:3, color:"#e7b75f", emoji:"🟡" },
+  pomace: { name:"Pomace (table) Oil", olives:3, price:8, press:2, color:"#c98b4a", emoji:"🟤" },
 };
 const NEIGHBOURS = [
   { name:"Bramble Honey", emoji:"🍯", color:"#e0a92e" },
@@ -287,9 +287,10 @@ function newGame(){
     extraStall: false,
     priceMul: { evoo:1, virgin:1, pomace:1 },
   };
-  // start with two mature trees in the first row
+  // start with three mature trees in the first row
   G.plots[0] = makeTree(MATURE_AGE);
   G.plots[1] = makeTree(MATURE_AGE);
+  G.plots[2] = makeTree(MATURE_AGE);
 }
 function makeTree(age){ return { age:age, vigor: 0.65 + Math.random()*0.8, crop:0 }; }
 
@@ -531,7 +532,7 @@ function ripen(){
     if(!t) return;
     if(t.age < MATURE_AGE) t.age++;
     if(t.age >= MATURE_AGE){
-      const base = 9;
+      const base = 11;
       t.crop = Math.max(1, Math.round(base * t.vigor * yearLuck * (0.8 + Math.random()*0.5)));
       produced += t.crop; bearers++;
     }
@@ -801,10 +802,11 @@ function updatePriceRow(){
 function updateMarket(dt){
   marketTime -= dt;
   $("timerFill").style.width = Math.max(0,(marketTime/MARKET_SECS)*100) + "%";
-  // spawn
+  // spawn — a second stall draws a noticeably bigger crowd
   spawnAcc += dt;
-  const spawnEvery = 0.7;
-  if(spawnAcc > spawnEvery && customers.length < 14 && marketTime > 2){ spawnAcc = 0; spawnCustomer(); }
+  const spawnEvery = G.extraStall ? 0.5 : 0.65;
+  const cap = G.extraStall ? 20 : 14;
+  if(spawnAcc > spawnEvery && customers.length < cap && marketTime > 2){ spawnAcc = 0; spawnCustomer(); }
 
   for(let i=customers.length-1;i>=0;i--){
     const c = customers[i];
@@ -927,13 +929,21 @@ function drawStall(s){
   }
 }
 function drawCustomer(c){
-  const sc = 0.82 + (c.y-190)/280*0.32;       // perspective: nearer = bigger
-  ctx.fillStyle="rgba(0,0,0,.18)";
-  ctx.beginPath(); ctx.ellipse(c.x, c.y+5, 9*sc, 4*sc, 0,0,7); ctx.fill();
-  ctx.textAlign="center"; ctx.font=(22*sc).toFixed(1)+"px "+bodyFont();
+  const sc = 0.98 + (c.y-190)/280*0.36;       // perspective: nearer = bigger
+  // contact shadow
+  ctx.fillStyle="rgba(0,0,0,.28)";
+  ctx.beginPath(); ctx.ellipse(c.x, c.y+6, 11*sc, 4.5*sc, 0,0,7); ctx.fill();
+  // soft light disc so the shopper reads clearly against the busy ground
+  const r = 15*sc;
+  const grd = ctx.createRadialGradient(c.x, c.y-7, 2, c.x, c.y-7, r);
+  grd.addColorStop(0,"rgba(245,241,228,.45)"); grd.addColorStop(1,"rgba(245,241,228,0)");
+  ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(c.x, c.y-7, r, 0, 7); ctx.fill();
+  // the person
+  ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+  ctx.font=(27*sc).toFixed(1)+"px "+bodyFont();
   ctx.fillText(c.emoji, c.x, c.y);
   if(c.state==="toStall" || c.state==="toNeighbour"){
-    ctx.font=(13*sc).toFixed(1)+"px "+bodyFont(); ctx.fillText("💭", c.x+11*sc, c.y-12*sc);
+    ctx.font=(14*sc).toFixed(1)+"px "+bodyFont(); ctx.fillText("💭", c.x+13*sc, c.y-15*sc);
   }
 }
 function drawMarket(){
