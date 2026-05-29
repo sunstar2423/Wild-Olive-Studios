@@ -34,6 +34,7 @@
     background:rgba(127,176,105,.1); border:1px solid var(--line);
     padding:.25rem .6rem; border-radius:999px; white-space:nowrap; }
   .hud .money{ color:var(--gold); }
+  .hud .debt{ color:#f0a3a3; border-color:rgba(240,120,120,.4); background:rgba(140,40,40,.18); }
   .hud .phase{ margin-left:auto; color:var(--olive-br); font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-size:.72rem; }
 
   /* ---------- stage area ---------- */
@@ -142,6 +143,7 @@
     <span class="pill">📅 Year <b id="year">1</b> · <span id="season">Spring</span></span>
     <span class="pill">🫒 <b id="invOlives">0</b> olives</span>
     <span class="pill">🧴 <b id="invBottles">0</b> bottles</span>
+    <span class="pill debt" id="debtPill" style="display:none;">🏦 Loan $<b id="debt">0</b></span>
     <span class="phase" id="phaseLabel">The Grove</span>
     <button class="muteBtn" id="muteBtn" title="Toggle sound" aria-label="Toggle sound">🔊</button>
   </div>
@@ -220,7 +222,7 @@
         <span>🌱 Plant</span><span>☀️ Grow</span><span>🧺 Harvest</span>
         <span>🚂 Press</span><span>🧴 Bottle</span><span>🏙️ Sell</span><span>💰 Reinvest</span>
       </div>
-      <p style="font-size:.82rem; color:#a9b8a2;">You start with three mature trees and $200. Spend on planting, upkeep &amp; freight; earn at the market by pricing your oil well; and grow your fortune year by year.</p>
+      <p style="font-size:.82rem; color:#a9b8a2;">You start with three mature trees and $200. Spend on planting, upkeep &amp; freight; earn at the market by pricing your oil well; and grow your fortune year by year. Short on a rail fare? The co-op will lend it — but interest builds each season, so pay it back.</p>
       <div style="display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:.6rem;">
         <button class="btn btn--gold" id="continueBtn" style="display:none;">↺ Continue <small id="continueInfo"></small></button>
         <button class="btn btn--primary" id="startBtn">Start farming ▸</button>
@@ -256,6 +258,9 @@ const MARKET_SECS  = 48;
 const PLOTS        = 12;
 const EXTRA_STALL_COST = 200;  // buy a second market stall
 const PRICE_MIN = 0.6, PRICE_MAX = 1.4, PRICE_STEP = 0.1; // price range as a multiplier of base
+const LOAN_INTEREST = 0.12;   // interest charged on the co-op loan each grow season
+const LOAN_RESERVE  = 30;     // cash kept back before auto-repaying the loan
+const DEBT_LIMIT    = 500;    // if the loan grows past this, the co-op calls it in (game over)
 
 // grade: olives per bottle, sale price, press cost per bottle, color, name
 const GRADES = {
@@ -286,6 +291,7 @@ function newGame(){
     grownThisYear: false,
     extraStall: false,
     priceMul: { evoo:1, virgin:1, pomace:1 },
+    debt: 0,
   };
   // start with three mature trees in the first row
   G.plots[0] = makeTree(MATURE_AGE);
@@ -399,12 +405,22 @@ function hasSave(){ return !!loadSave(); }
 const $ = id => document.getElementById(id);
 function setText(id,v){ $(id).textContent = v; }
 function bottlesTotal(){ return G.bottles.evoo + G.bottles.virgin + G.bottles.pomace; }
+// pay an amount from cash; whatever you can't cover becomes co-op debt. returns amount borrowed.
+function chargeOrBorrow(amount){
+  const pay = Math.min(G.money, amount);
+  G.money -= pay;
+  const owed = amount - pay;
+  if(owed > 0) G.debt += owed;
+  return owed;
+}
 function refreshHUD(){
   setText("money", G.money);
   setText("year", G.year);
   setText("season", SEASONS[G.seasonIdx]);
   setText("invOlives", G.olives);
   setText("invBottles", bottlesTotal());
+  setText("debt", G.debt|0);
+  $("debtPill").style.display = (G.debt|0) > 0 ? "inline-flex" : "none";
   if(G.money > G.bestMoney) G.bestMoney = G.money;
 }
 
@@ -422,11 +438,13 @@ function showStage(name){
 let seasonBusy = false;
 function enterGrove(){
   showStage("grove");
+  // the co-op calls in a loan that's grown too large
+  if(G.debt > DEBT_LIMIT){ return gameOver("debt"); }
   // bankruptcy: nothing left to sell AND can't afford to press even the cheapest oil
   const trees = G.plots.filter(Boolean).length;
   const cheapestPress = Math.min(...Object.values(GRADES).map(g=>g.press));
   if(bottlesTotal() === 0 && G.money < cheapestPress){
-    return gameOver();
+    return gameOver("broke");
   }
   G.planting = false;
   G.phase = "grove";
@@ -507,6 +525,16 @@ $("seasonBtn").onclick = ()=>{
   // upkeep
   const upkeep = trees.length * UPKEEP_TREE;
   G.money = Math.max(0, G.money - upkeep);
+  let note = `Tending the grove… (−$${upkeep} upkeep)`;
+  // co-op loan: interest accrues each grow season, then auto-repay from spare cash
+  if(G.debt > 0){
+    const interest = Math.ceil(G.debt * LOAN_INTEREST);
+    G.debt += interest;
+    note += ` · 🏦 loan interest +$${interest}`;
+    const repay = Math.min(G.debt, Math.max(0, G.money - LOAN_RESERVE));
+    if(repay > 0){ G.money -= repay; G.debt -= repay; note += ` · repaid $${repay}`; }
+  }
+  $("groveMsg").textContent = note;
   // animate seasons Spring -> Summer -> Autumn
   const steps = [1,2,3,0]; // summer, autumn, winter, back to spring
   let s = 0;
@@ -522,7 +550,6 @@ $("seasonBtn").onclick = ()=>{
       $("seasonBtn").disabled = false;
     }
   };
-  $("groveMsg").textContent = `Tending the grove… (−$${upkeep} upkeep)`;
   setTimeout(seq, 200);
 };
 function ripen(){
@@ -549,10 +576,9 @@ $("shipBtn").onclick = ()=>{
   // auto-harvest anything still ripe
   G.plots.forEach(t=>{ if(t&&t.crop>0){ G.olives+=t.crop; t.crop=0; } });
   if(G.olives <= 0){ $("groveMsg").textContent = "No olives to ship — grow & harvest first."; refreshHUD(); renderGrove(); return; }
-  // freight safety net: you pay the fare, but it can never strand you
-  const fare = Math.min(G.money, FREIGHT);
-  G.money -= fare;
-  if(fare < FREIGHT) $("groveMsg").textContent = "🚂 The rail co-op spotted you the fare this time.";
+  // pay the fare; anything you can't cover becomes a co-op loan
+  const owed = chargeOrBorrow(FREIGHT);
+  if(owed > 0) $("groveMsg").textContent = `🏦 The co-op loaned you $${owed} for the rail fare (interest applies each season).`;
   AU.sfx("train");
   refreshHUD();
   enterRefinery();
@@ -650,12 +676,11 @@ $("pressBtn").onclick = ()=>{
   G.bottles.evoo += G.planning.evoo;
   G.bottles.virgin += G.planning.virgin;
   G.bottles.pomace += G.planning.pomace;
-  // freight to the city stays safety-netted so a low-cash run is never stranded
-  const fare = Math.min(G.money, FREIGHT);
-  G.money -= fare;
+  // freight to the city — pay what you can, borrow the rest from the co-op
+  const owed = chargeOrBorrow(FREIGHT);
   AU.sfx("press");
   refreshHUD();
-  if(fare < FREIGHT){ $("refMsg").textContent = "🚂 The rail co-op spotted you the city fare this time."; setTimeout(enterMarket, 650); }
+  if(owed > 0){ $("refMsg").textContent = `🏦 The co-op loaned you $${owed} for the city fare.`; setTimeout(enterMarket, 650); }
   else setTimeout(enterMarket, 350);
 };
 
@@ -1004,10 +1029,13 @@ window.addEventListener("resize", ()=>{ if(marketActive) fitCanvas(); });
 /* =====================================================================
    GAME OVER
    ===================================================================== */
-function gameOver(){
+function gameOver(reason){
   setText("overYears", G.year-1<0?0:G.year);
   setText("overBest", "$"+G.bestMoney);
-  $("overMsg").textContent = "You're out of cash with no oil to sell and can't even afford the press. Every grove has lean years — give it another go.";
+  $("overTitle").textContent = reason === "debt" ? "The co-op called in your loan" : "Out of business";
+  $("overMsg").textContent = reason === "debt"
+    ? `Your loan ballooned past $${DEBT_LIMIT} and the co-op foreclosed on the grove. Keep the borrowing in check next time!`
+    : "You're out of cash with no oil to sell and can't even afford the press. Every grove has lean years — give it another go.";
   $("overScreen").classList.remove("hidden");
 }
 
@@ -1049,6 +1077,7 @@ $("continueBtn").onclick = ()=>{
   if(typeof G.grownThisYear !== "boolean") G.grownThisYear = false;
   if(typeof G.extraStall !== "boolean") G.extraStall = false;
   if(!G.priceMul) G.priceMul = { evoo:1, virgin:1, pomace:1 };
+  if(typeof G.debt !== "number") G.debt = 0;
   $("startScreen").classList.add("hidden");
   resumePhase();
 };

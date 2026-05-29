@@ -37,6 +37,9 @@ lean years, so just replant and try again.
   Mute toggle in the HUD (🔊).
 - At the market you can **see neighbouring stalls making sales too** — floating
   "+$" pops over the honey/cheese/bread/wine stalls as NPCs spend there.
+- **Co-op loans:** if you can't cover a rail fare, the shortfall becomes a loan
+  shown in the HUD. Interest accrues each grow season and the loan auto-repays
+  from spare cash; let it balloon past the limit and the co-op forecloses.
 
 ## Where it lives
 
