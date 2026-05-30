@@ -28,6 +28,10 @@ network — while keeping riders happy and your fleet maintained.
   surge demand at specific venues, rewarding players who pre-position vehicles.
   **Weather** sways outdoor/leisure demand and, for **ferries**, scales speed and
   wear: storms and blustery days leave ferries slower and wearing out faster.
+- **Explore the map & stations.** Scroll / pinch to **zoom**, drag to **pan**, and
+  **tap any station to look inside** — a side-on scene of the place with themed
+  buildings and scenery, animated people queueing on the platform, and your
+  vehicles arriving to board them (with live weather and the real waiting count).
 - **Use the bank.** Short on cash to expand? Take a **loan** (up to a credit limit)
   to build a new line or fleet now, then **repay** as fares roll in. Interest
   accrues daily on the outstanding balance, and debt counts against your net worth —
@@ -51,8 +55,11 @@ network — while keeping riders happy and your fleet maintained.
   wind and a goal chime. No audio files; mutable and gated behind a user gesture.
 - **Save/restore** in `localStorage`: auto-saves each night, manual save, and a
   Continue option on the title screen.
+- **Zoomable / pannable** network map (wheel, pinch, drag) and a separate
+  **station "look inside" scene** rendered on its own canvas with animated people
+  and arriving vehicles.
 - Mouse and touch controls; keyboard shortcuts (`1`/`2`/`3` modes, `H` demand,
-  `S` save, `M` sound, `Space` pause).
+  `S` save, `M` sound, `+`/`-` zoom, `Space` pause, `Esc` back).
 
 ## Where the playable build lives
 
