@@ -862,7 +862,7 @@ $("pressBtn").onclick = ()=>{
 const canvas = $("marketCanvas"), ctx = canvas.getContext("2d");
 const MW = 800, MH = 360;
 let customers = [], floats = [], stalls = [], marketActive = false, marketTime = 0, raf = 0, spawnAcc = 0;
-let weather = [], critters = [], theme = THEMES.standard, weatherAcc = 0, curThemeKey = "standard";
+let weather = [], critters = [], theme = THEMES.standard, weatherAcc = 0, curThemeKey = "standard", chatAcc = 0, nextChat = 4;
 function randomChat(){
   const themed = THEME_CHATTER[curThemeKey] || [];
   if(themed.length && Math.random() < 0.6) return themed[(Math.random()*themed.length)|0];
@@ -910,7 +910,7 @@ function enterMarket(){
   G.phase = "market";
   saveGame();
   fitCanvas();
-  marketActive = true; marketTime = MARKET_SECS; spawnAcc = 0; weatherAcc = 0;
+  marketActive = true; marketTime = MARKET_SECS; spawnAcc = 0; weatherAcc = 0; chatAcc = 0; nextChat = 3 + Math.random()*3;
   customers = []; floats = []; weather = []; critters = []; G.earned = 0;
   setText("earned", 0);
   $("returnBtn").style.display = "none";
@@ -1157,6 +1157,13 @@ function updateMarket(dt){
   // floats + speech-bubble timers
   for(let i=floats.length-1;i>=0;i--){ const f=floats[i]; f.y-=24*dt; f.t-=dt*0.8; if(f.t<=0) floats.splice(i,1); }
   for(const c of customers){ if(c.say){ c.say.t -= dt; if(c.say.t<=0) c.say=null; } }
+  // every few seconds a random on-screen shopper pipes up on their own
+  chatAcc += dt;
+  if(chatAcc >= nextChat){
+    chatAcc = 0; nextChat = 3 + Math.random()*4;
+    const onscreen = customers.filter(c=> !c.say && c.x>10 && c.x<MW-10);
+    if(onscreen.length) onscreen[(Math.random()*onscreen.length)|0].say = { text: randomChat(), t: 2.6 };
+  }
   updateWeather(dt);
   updateCritters(dt);
 
