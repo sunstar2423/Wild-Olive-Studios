@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="description" content="Emberkeep — a moody narrative puzzle from Wild Olive Studios. A lighthouse keeper trades memories for fire to survive an endless winter. Route the beam to guide ships home, and decide what you can bear to burn. A story you feel as much as solve." />
+<title>Emberkeep — Wild Olive Studios</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg" />
+<style>
+  :root{
+    --ember:#f2a65a; --ember2:#d2641b; --gold:#ffd9a0; --flame:#ff8a3d;
+    --ice:#9fd2e6; --ice2:#5b8fb0; --snow:#e9f1f6;
+    --ink:#0a0f17; --bg:#060a12; --bg2:#0b1422;
+    --panel:#0e1726; --panel2:#0a1320; --line:#1d2c44;
+    --paper:#dfe8f2; --muted:#7f93ad;
+    --good:#7fcf9b; --bad:#e76f6f; --warn:#e7b75f;
+    --font:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --ui:system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{ box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    font-family:var(--ui); color:var(--paper); background:var(--bg);
+    overflow:hidden; user-select:none; -webkit-user-select:none;
+  }
+  #bg{ position:fixed; inset:0; width:100%; height:100%; z-index:0; display:block; }
+
+  #app{ position:relative; z-index:2; display:grid; grid-template-rows:auto 1fr; height:100dvh; }
+
+  /* ---------------- top bar ---------------- */
+  #topbar{
+    display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;
+    padding:.5rem .8rem; background:linear-gradient(180deg,rgba(8,13,22,.85),rgba(8,13,22,.45));
+    border-bottom:1px solid var(--line); backdrop-filter:blur(4px); z-index:30;
+  }
+  .back{ font-size:.74rem; color:#a9c0d6; text-decoration:none; background:rgba(255,255,255,.04);
+    padding:.32rem .7rem; border-radius:999px; border:1px solid var(--line); font-family:var(--ui); }
+  .back:hover{ color:#fff; }
+  .brand{ display:flex; align-items:center; gap:.5rem; margin-right:.3rem; }
+  .brand b{ font-family:var(--font); font-size:1.12rem; letter-spacing:.02em;
+    background:linear-gradient(135deg,var(--gold),var(--ember),var(--ember2));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .brand span{ font-size:.6rem; color:#6f86a0; letter-spacing:.16em; text-transform:uppercase; }
+  .spacer{ flex:1; }
+
+  .night{ font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ice); }
+  .night b{ color:#fff; font-size:.86rem; }
+
+  /* warmth meter */
+  .warmth{ display:flex; align-items:center; gap:.5rem; min-width:160px; }
+  .warmth .lbl{ font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .wbar{ position:relative; flex:1; height:11px; border-radius:999px; background:rgba(255,255,255,.06);
+    overflow:hidden; border:1px solid var(--line); min-width:90px; }
+  .wbar > i{ display:block; height:100%; border-radius:999px;
+    background:linear-gradient(90deg,var(--ember2),var(--ember),var(--gold)); transition:width .5s ease; }
+  .wbar.cold > i{ background:linear-gradient(90deg,#3a5670,var(--ice2),var(--ice)); }
+  .wnum{ font-size:.84rem; font-weight:700; color:var(--gold); min-width:34px; text-align:right; }
+  .wbar.cold ~ .wnum{ color:var(--ice); }
+
+  .iconbtn{ font-family:var(--ui); cursor:pointer; border:1px solid var(--line);
+    background:rgba(255,255,255,.04); color:#cfe0ef; border-radius:8px; padding:.34rem .5rem; font-size:.95rem; }
+  .iconbtn:hover{ color:#fff; }
+
+  /* ---------------- stage ---------------- */
+  #stage{ position:relative; min-height:0; display:grid; place-items:center; padding:.6rem; }
+
+  /* puzzle layout */
+  #puzzle{ display:none; flex-direction:column; align-items:center; gap:.6rem; width:100%; height:100%;
+    justify-content:center; }
+  #puzzle.show{ display:flex; }
+  #boardWrap{ position:relative; }
+  #board{ display:block; touch-action:manipulation; border-radius:14px;
+    box-shadow:0 22px 70px -28px rgba(0,0,0,.9); }
+  .hint{ font-family:var(--font); font-size:.96rem; color:#cdddec; text-align:center; max-width:560px;
+    line-height:1.45; min-height:1.4em; }
+  .hint b{ color:var(--gold); }
+  .tray{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; justify-content:center;
+    background:rgba(8,13,22,.6); border:1px solid var(--line); padding:.5rem .7rem; border-radius:14px;
+    backdrop-filter:blur(4px); }
+  .trayItem{ display:flex; align-items:center; gap:.4rem; font-size:.82rem; color:#bcd0e3; }
+  .trayItem .swatch{ width:26px; height:26px; border-radius:7px; display:grid; place-items:center;
+    background:rgba(255,255,255,.05); border:1px solid var(--line); font-size:1rem; color:var(--ice); }
+  .trayItem b{ color:#fff; font-size:.95rem; }
+  .lit{ color:var(--gold); }
+  .lit b{ color:var(--gold); }
+  .cta{ cursor:pointer; font-family:var(--ui); font-weight:700; font-size:.86rem; color:#1a1206;
+    border:0; padding:.55rem 1.1rem; border-radius:999px;
+    background:linear-gradient(135deg,var(--gold),var(--ember)); box-shadow:0 10px 26px -10px rgba(242,166,90,.7); }
+  .cta:hover{ transform:translateY(-1px); }
+  .cta.ghost{ background:rgba(255,255,255,.06); color:#cfe0ef; box-shadow:none; border:1px solid var(--line); }
+  .traybtns{ display:flex; gap:.5rem; align-items:center; }
+
+  /* ---------------- narrative sheets ---------------- */
+  .screen{ position:absolute; inset:0; display:grid; place-items:center; z-index:50; padding:1.1rem;
+    background:radial-gradient(130% 90% at 50% 8%, rgba(242,166,90,.10), rgba(6,10,18,.92) 70%);
+    backdrop-filter:blur(3px); }
+  .screen.hidden{ display:none; }
+  .sheet{ max-width:600px; width:100%; background:rgba(9,15,26,.94); border:1px solid var(--line);
+    border-radius:18px; padding:1.7rem 1.6rem 1.4rem; max-height:92dvh; overflow:auto;
+    box-shadow:0 30px 90px -30px rgba(0,0,0,.9); }
+  .sheet .kick{ color:var(--ember); font-size:.66rem; letter-spacing:.2em; text-transform:uppercase;
+    margin-bottom:.7rem; font-family:var(--ui); }
+  .sheet h1{ font-family:var(--font); font-size:clamp(2rem,7vw,3.1rem); line-height:1; letter-spacing:.01em;
+    margin-bottom:.7rem; font-weight:600;
+    background:linear-gradient(135deg,var(--gold),var(--ember),var(--ember2));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .sheet h2{ font-family:var(--font); font-size:1.5rem; font-weight:600; margin-bottom:.6rem; color:#fff; }
+  .sheet p{ font-family:var(--font); color:#cdddec; line-height:1.7; font-size:1.02rem; margin-bottom:.9rem; }
+  .sheet p.small{ font-size:.9rem; color:var(--muted); }
+  .sheet .em{ color:var(--gold); font-style:italic; }
+  .sheet ul{ font-family:var(--font); color:#cdddec; line-height:1.7; font-size:.98rem; margin:.2rem 0 1rem 1.1rem; }
+  .sheet ul b{ color:#fff; }
+  .btns{ display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.4rem; }
+  .bigbtn{ cursor:pointer; font-family:var(--ui); font-weight:700; font-size:1rem; color:#1a1206;
+    border:0; padding:.8rem 1.8rem; border-radius:999px;
+    background:linear-gradient(135deg,var(--gold),var(--ember));
+    box-shadow:0 14px 36px -12px rgba(242,166,90,.7); }
+  .bigbtn:hover{ transform:translateY(-2px); }
+  .bigbtn.alt{ background:rgba(255,255,255,.06); color:#cfe0ef; box-shadow:none; border:1px solid var(--line); }
+
+  /* status block (hearth) */
+  .status{ display:flex; gap:.7rem; flex-wrap:wrap; margin:.2rem 0 1.1rem; }
+  .stat{ flex:1; min-width:120px; background:rgba(255,255,255,.03); border:1px solid var(--line);
+    border-radius:12px; padding:.6rem .75rem; }
+  .stat .k{ font-size:.58rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-family:var(--ui); }
+  .stat .v{ font-family:var(--font); font-size:1.5rem; font-weight:700; }
+  .v.warm{ color:var(--gold); } .v.cold{ color:var(--ice); } .v.dim{ color:#9fb0c4; }
+
+  /* memory cards */
+  .shelfHead{ display:flex; align-items:baseline; justify-content:space-between; margin:.4rem 0 .55rem; }
+  .shelf{ display:grid; grid-template-columns:1fr; gap:.5rem; }
+  .mem{ display:flex; align-items:center; gap:.7rem; background:rgba(255,255,255,.03);
+    border:1px solid var(--line); border-radius:13px; padding:.6rem .7rem; }
+  .mem .glyph{ width:40px; height:40px; flex:none; border-radius:10px; display:grid; place-items:center;
+    font-size:1.3rem; background:radial-gradient(circle at 50% 35%, rgba(242,166,90,.25), rgba(255,255,255,.02));
+    border:1px solid var(--line); }
+  .mem .txt{ flex:1; min-width:0; }
+  .mem .ttl{ font-family:var(--font); font-size:1rem; color:#fff; }
+  .mem .desc{ font-family:var(--font); font-size:.82rem; color:var(--muted); font-style:italic; line-height:1.4; }
+  .mem .heat{ font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ember); margin-top:.15rem; font-family:var(--ui); }
+  .burnbtn{ cursor:pointer; flex:none; font-family:var(--ui); font-weight:700; font-size:.78rem; color:#1a1206;
+    border:0; padding:.5rem .8rem; border-radius:10px; background:linear-gradient(135deg,var(--flame),var(--ember2)); }
+  .burnbtn:hover{ filter:brightness(1.1); }
+  .mem.gone{ opacity:.4; }
+  .mem.gone .ttl{ text-decoration:line-through; color:var(--muted); }
+  .ashtag{ font-size:.7rem; color:var(--muted); font-style:italic; font-family:var(--font); }
+
+  /* toast */
+  #toasts{ position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:60;
+    display:flex; flex-direction:column; gap:.4rem; align-items:center; pointer-events:none; }
+  .toast{ background:rgba(9,15,26,.95); border:1px solid var(--line); border-left:3px solid var(--ember);
+    padding:.55rem .9rem; border-radius:11px; font-size:.86rem; font-family:var(--font); max-width:88vw;
+    animation:tin .35s ease; }
+  .toast.good{ border-left-color:var(--good); } .toast.bad{ border-left-color:var(--bad); }
+  .toast.cold{ border-left-color:var(--ice); }
+  @keyframes tin{ from{opacity:0; transform:translateY(10px);} to{opacity:1;} }
+
+  @media (max-width:600px){
+    .brand span{ display:none; }
+    .sheet{ padding:1.3rem 1.1rem 1.1rem; }
+    .sheet p{ font-size:.96rem; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<div id="app">
+  <!-- ===================== TOP BAR ===================== -->
+  <header id="topbar">
+    <a class="back" href="../../#games">← Studio</a>
+    <div class="brand"><b>Emberkeep</b><span>Wild Olive</span></div>
+    <div class="spacer"></div>
+    <div class="night">Night <b id="uiNight">1</b> / 8</div>
+    <div class="warmth">
+      <span class="lbl">Warmth</span>
+      <div class="wbar" id="wbar"><i id="wfill" style="width:55%"></i></div>
+      <span class="wnum" id="uiWarm">55</span>
+    </div>
+    <button class="iconbtn" id="soundBtn" title="Sound on/off">🔊</button>
+  </header>
+
+  <!-- ===================== STAGE ===================== -->
+  <div id="stage">
+    <!-- the light-routing puzzle -->
+    <div id="puzzle">
+      <div class="hint" id="hint">Guide the lost ship home.</div>
+      <div id="boardWrap"><canvas id="board"></canvas></div>
+      <div class="tray">
+        <div class="trayItem"><span class="swatch">◧</span> Mirrors left <b id="uiMirrors">0</b></div>
+        <div class="trayItem"><span class="swatch lit" style="color:var(--gold)">⌖</span> Ships guided <span class="lit"><b id="uiShips">0</b>/<b id="uiShipsTot">0</b></span></div>
+        <div class="traybtns">
+          <button class="cta ghost" id="resetBtn">Clear mirrors</button>
+          <button class="cta" id="confirmBtn">Guide them home ▸</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TITLE ===================== -->
+<div class="screen" id="titleScreen">
+  <div class="sheet">
+    <p class="kick">Wild Olive Studios · A narrative puzzle</p>
+    <h1>Emberkeep</h1>
+    <p>The supply boat will not come again. Snow has sealed the channel and the winter has
+      no end that you can see. But the light must turn — it has always turned — and a light
+      needs fire.</p>
+    <p>You are the keeper. When the driftwood runs out, there is only one thing left to burn:
+      what you remember. <span class="em">Trade memories for fire, and survive the dark.</span></p>
+    <ul>
+      <li>🚢 <b>Tend the light.</b> Place mirrors to bend the beam and guide lost ships home — each one brings driftwood for the fire.</li>
+      <li>🔥 <b>Feed the fire.</b> When the cold outpaces the wood, burn a memory to keep warm. It will warm you. It will cost you.</li>
+      <li>🤍 <b>Keep who you are.</b> Survive all eight nights to the thaw. What you choose to save decides who greets the spring.</li>
+    </ul>
+    <div class="btns">
+      <button class="bigbtn" id="continueBtn" style="display:none">Return to the keep ▸</button>
+      <button class="bigbtn" id="startBtn">Light the fire ▸</button>
+      <button class="bigbtn alt" id="newBtn" style="display:none">Begin again</button>
+    </div>
+    <p class="small" style="margin-top:1rem">Tap an empty cell to place a mirror, tap again to flip it
+      <b style="color:#fff">◤ / ◢</b>, once more to take it back. Headphones recommended.</p>
+  </div>
+</div>
+
+<!-- ===================== INTRO (per-night narrative) ===================== -->
+<div class="screen hidden" id="introScreen">
+  <div class="sheet">
+    <p class="kick" id="introKick">The deep winter</p>
+    <h1 id="introTitle">Night</h1>
+    <p id="introBody"></p>
+    <div class="btns"><button class="bigbtn" id="introBtn">Climb to the lamp ▸</button></div>
+  </div>
+</div>
+
+<!-- ===================== HEARTH (burn memories) ===================== -->
+<div class="screen hidden" id="hearthScreen">
+  <div class="sheet">
+    <p class="kick">The hearth</p>
+    <h1 id="hearthTitle">The long night</h1>
+    <p id="hearthBody"></p>
+    <div class="status">
+      <div class="stat"><div class="k">Warmth now</div><div class="v warm" id="hWarm">0</div></div>
+      <div class="stat"><div class="k">The night will take</div><div class="v cold" id="hDrain">0</div></div>
+      <div class="stat"><div class="k">You'll wake with</div><div class="v dim" id="hProj">0</div></div>
+    </div>
+    <div class="shelfHead">
+      <h2 style="margin:0">Your memories</h2>
+      <span class="ashtag" id="memCount"></span>
+    </div>
+    <div class="shelf" id="shelf"></div>
+    <div class="btns" style="margin-top:1.1rem">
+      <button class="bigbtn" id="endureBtn">Endure the night ▸</button>
+    </div>
+    <p class="small" id="hearthWarn"></p>
+  </div>
+</div>
+
+<!-- ===================== DAWN (results) ===================== -->
+<div class="screen hidden" id="dawnScreen">
+  <div class="sheet">
+    <p class="kick" id="dawnKick">Morning</p>
+    <h1 id="dawnTitle">You wake</h1>
+    <p id="dawnBody"></p>
+    <div class="btns"><button class="bigbtn" id="dawnBtn">Face the next night ▸</button></div>
+  </div>
+</div>
+
+<!-- ===================== END ===================== -->
+<div class="screen hidden" id="endScreen">
+  <div class="sheet">
+    <p class="kick" id="endKick">An ending</p>
+    <h1 id="endTitle"></h1>
+    <p id="endBody"></p>
+    <div class="status" id="endStats"></div>
+    <div class="btns"><button class="bigbtn" id="endBtn">Keep the light again ▸</button></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+"use strict";
+/* ============================================================================
+   EMBERKEEP — a moody narrative puzzle
+   Wild Olive Studios · single-file HTML5 (vanilla JS + Canvas 2D)
+   ----------------------------------------------------------------------------
+   A lighthouse keeper survives an endless winter by keeping the fire alive.
+   Each night you route the lamp's beam through mirrors to guide lost ships home
+   (the puzzle) — every ship brings driftwood (warmth). When the deepening cold
+   outpaces the wood, you must burn your own memories to keep warm — losing
+   pieces of who you are. Survive eight nights to the thaw; what you keep decides
+   the ending.
+
+   Sections:  CONFIG · DATA (levels, memories, narrative) · STATE · SAVE
+              AUDIO · AMBIENT RENDER · BOARD (beam sim + render + input)
+              PHASES / UI · INIT
+   ========================================================================== */
+
+/* ----------------------------- CONFIG ------------------------------------ */
+const GW = 7, GH = 7;            // puzzle grid
+const WARM_MAX = 100;
+const WARM_START = 55;
+const DRIFT_PER_SHIP = 9;        // warmth per ship guided home
+const TOTAL_NIGHTS = 8;
+
+// the cold deepens; how much warmth each night drains. Tuned (with a headless
+// solver/economy sim) so that perfect light-keeping reaches the thaw having kept
+// most memories, weaker play forces ever-harder sacrifices, and even a player
+// who guides no ships can survive by burning everything — but refusing to burn
+// while freezing means death.
+const DRAIN = [18, 22, 27, 33, 40, 48, 57, 67];
+
+const $ = id => document.getElementById(id);
+
+/* --------------------------- DATA: LEVELS -------------------------------- */
+/* Each level is solvable by construction: a beam polyline with mirror turns.
+   x,y in 0..6 (left→right, top→bottom). dir: N/E/S/W.
+   ships are "transparent collectors" — the beam lights them and continues, so a
+   single routed path can thread through several. `mirrors` = pool the player has.
+   `rocks` block the beam. `fixed` mirrors (if any) can't be moved.            */
+const LEVELS = [
+  { // Night 1 — straight shot, teaches "beam → ship"
+    lamp:{x:0,y:3,dir:"E"}, ships:[{x:3,y:3},{x:6,y:3}], rocks:[], mirrors:1,
+  },
+  { // Night 2 — one bend, teaches mirrors
+    lamp:{x:3,y:6,dir:"N"}, ships:[{x:3,y:4},{x:0,y:2}], rocks:[{x:5,y:5}], mirrors:2,
+  },
+  { // Night 3 — two bends
+    lamp:{x:3,y:6,dir:"N"}, ships:[{x:3,y:4},{x:1,y:1},{x:0,y:4}],
+    rocks:[{x:5,y:2},{x:6,y:5}], mirrors:3,
+  },
+  { // Night 4 — U-shape
+    lamp:{x:0,y:0,dir:"S"}, ships:[{x:0,y:2},{x:3,y:4},{x:5,y:2}],
+    rocks:[{x:2,y:2},{x:6,y:6}], mirrors:3,
+  },
+  { // Night 5 — staircase
+    lamp:{x:0,y:3,dir:"E"}, ships:[{x:2,y:3},{x:4,y:2},{x:2,y:1},{x:1,y:4}],
+    rocks:[{x:6,y:0},{x:6,y:6},{x:0,y:6}], mirrors:4,
+  },
+  { // Night 6 — long sweep
+    lamp:{x:6,y:6,dir:"N"}, ships:[{x:6,y:5},{x:3,y:3},{x:1,y:4},{x:4,y:5}],
+    rocks:[{x:0,y:0},{x:3,y:1}], mirrors:4,
+  },
+  { // Night 7 — spiral inward
+    lamp:{x:0,y:6,dir:"N"}, ships:[{x:0,y:3},{x:2,y:1},{x:4,y:3},{x:3,y:4}],
+    rocks:[{x:6,y:6},{x:6,y:0},{x:2,y:6}], mirrors:5,
+  },
+  { // Night 8 — the last deep night
+    lamp:{x:3,y:6,dir:"N"}, ships:[{x:3,y:4},{x:4,y:2},{x:5,y:4},{x:2,y:5}],
+    rocks:[{x:0,y:0},{x:6,y:6},{x:6,y:0},{x:0,y:3}], mirrors:5,
+  },
+];
+
+/* --------------------------- DATA: MEMORIES ------------------------------ */
+/* Ordered from the small & tender to the core of the self. The hottest burn
+   last by player necessity — that is the story. `warmth` = warmth gained.      */
+const MEMORIES = [
+  { id:"first",  glyph:"🗼", title:"The first sight of the keep",
+    desc:"the lighthouse rising white from the headland, the day you came",
+    warmth:14, ash:"You forget arriving. It feels, now, like you were always here." },
+  { id:"bread",  glyph:"🥖", title:"The bakery at dawn",
+    desc:"warm bread through a frosted window, before the village slept",
+    warmth:16, ash:"The smell of it goes. You can't recall if it was rye or white." },
+  { id:"shell",  glyph:"🐚", title:"Learning to swim",
+    desc:"cold green water, a hand under your belly that would not let go",
+    warmth:18, ash:"The water closes over the memory. Whose hand was it?" },
+  { id:"lullaby",glyph:"🎵", title:"Your mother's lullaby",
+    desc:"a tune with no words now, hummed against your hair",
+    warmth:22, ash:"The melody unravels into the wind and is gone." },
+  { id:"wed",    glyph:"💍", title:"The harbour wedding",
+    desc:"salt in the air, her hand cold and certain in yours",
+    warmth:28, ash:"The vows scatter. A ring with no finger to it." },
+  { id:"laugh",  glyph:"🌊", title:"Eline's laugh",
+    desc:"the sound she made when the gulls stole your supper",
+    warmth:32, ash:"The laugh fades to a shape of a sound. Then to nothing." },
+  { id:"step",   glyph:"👣", title:"A first step",
+    desc:"small hands let go of the table, and the whole world held its breath",
+    warmth:36, ash:"You reach for the small face and find only firelight." },
+  { id:"name",   glyph:"📜", title:"Your own name",
+    desc:"the word others called you, the one you answered to",
+    warmth:42, ash:"You open your mouth to say it and nothing comes." },
+  { id:"why",    glyph:"🕯️", title:"Why you keep the light",
+    desc:"the reason. the one you have never once let go of",
+    warmth:52, ash:"You no longer know who the light is for. Only that it must burn." },
+];
+
+/* --------------------------- DATA: NARRATIVE ----------------------------- */
+const INTROS = [
+  "The supply boat did not come. It will not come now — snow has sealed the channel and the calendar has lost its pages. But the light must turn. It has always turned. You climb the stairs with the cold pressing at your back.",
+  "Frost has crept across the inside of the glass. You scrape it with a thumbnail and find, beneath, the sea: black, patient, waiting. Somewhere out there a boat is looking for you.",
+  "You dreamed of a warm room and a door that opened inward. You woke with your hands cupped over dead coals, holding nothing, the way one holds water.",
+  "The cold has a sound now — a low note beneath the wind. The driftwood is almost gone. You are beginning to understand what the winter is asking of you.",
+  "You catch your reflection in the curve of the lamp glass and do not, for a moment, know the face. You feed the fire and the face returns. A little smaller than before.",
+  "The ships come more often now, or you only imagine them. Each light you bring home buys another night. Each night takes something you cannot quite name.",
+  "There is so little left to burn. You hold each memory up to the firelight and weigh it: this one — or one more night. The wind decides nothing. Only you.",
+  "This is the last of the deep nights. After it, the thaw — if you are still here to meet it. You climb the stairs one final time. The fire waits, hungry. So does the dark.",
+];
+
+/* --------------------------- STATE --------------------------------------- */
+const S = {
+  night:1, warmth:WARM_START,
+  burned:{},          // memory id -> true
+  phase:"title",
+  sound:false,
+  shipsThisNight:0,    // guided count carried into hearth
+};
+
+/* board sub-state */
+const B = {
+  level:null, placed:new Map(),   // "x,y" -> "/" or "\"
+  beam:[], lit:new Set(), cs:64, pad:0,
+};
+
+/* --------------------------- SAVE ---------------------------------------- */
+const SAVE_KEY = "emberkeep.save.v1";
+function saveGame(){
+  try{
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      night:S.night, warmth:S.warmth, burned:S.burned, phase:"intro",
+    }));
+  }catch(e){}
+}
+function loadSave(){
+  try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; }
+}
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function memoriesLeft(){ return MEMORIES.filter(m=>!S.burned[m.id]).length; }
+
+/* --------------------------- AUDIO --------------------------------------- */
+/* Procedural ambient: filtered-noise wind + low sea swell, plus fire crackle
+   and soft UI tones. No audio files; gated behind a user gesture; mutable.    */
+const AUDIO = (()=> {
+  let ctx=null, master=null, windGain=null, started=false, crackleTimer=0, raf=0;
+  function ensure(){
+    if(ctx) return;
+    try{
+      ctx = new (window.AudioContext||window.webkitAudioContext)();
+      master = ctx.createGain(); master.gain.value = 0.0; master.connect(ctx.destination);
+      // wind: brown-ish noise through a slow-wandering lowpass
+      const buf = ctx.createBuffer(1, ctx.sampleRate*3, ctx.sampleRate);
+      const d = buf.getChannelData(0); let last=0;
+      for(let i=0;i<d.length;i++){ const w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*3.2; }
+      const src = ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+      const lp = ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=420; lp.Q.value=0.6;
+      windGain = ctx.createGain(); windGain.gain.value=0.35;
+      src.connect(lp); lp.connect(windGain); windGain.connect(master); src.start();
+      // gentle LFO on the filter so the wind breathes
+      const lfo = ctx.createOscillator(); lfo.frequency.value=0.06;
+      const lfoG = ctx.createGain(); lfoG.gain.value=180;
+      lfo.connect(lfoG); lfoG.connect(lp.frequency); lfo.start();
+      started=true;
+      loop();
+    }catch(e){ ctx=null; }
+  }
+  function loop(){
+    if(!ctx) return;
+    raf = requestAnimationFrame(loop);
+    // occasional fire crackle when warm
+    crackleTimer--;
+    if(crackleTimer<=0 && master.gain.value>0.001){
+      crackleTimer = 18 + Math.random()*70;
+      const warmth = (typeof S!=="undefined") ? S.warmth/100 : 0.5;
+      if(Math.random() < 0.35 + warmth*0.4) crackle(warmth);
+    }
+  }
+  function crackle(warmth){
+    if(!ctx||!master) return;
+    const t=ctx.currentTime;
+    const o=ctx.createOscillator(); o.type="triangle";
+    o.frequency.setValueAtTime(120+Math.random()*340, t);
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.0,t);
+    g.gain.linearRampToValueAtTime(0.05+0.06*warmth, t+0.005);
+    g.gain.exponentialRampToValueAtTime(0.0005, t+0.06+Math.random()*0.08);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+0.2);
+  }
+  function tone(freq, dur, type, vol){
+    if(!ctx||master.gain.value<=0.001) return;
+    const t=ctx.currentTime;
+    const o=ctx.createOscillator(); o.type=type||"sine"; o.frequency.value=freq;
+    const g=ctx.createGain(); g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol||0.12, t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0005, t+(dur||0.3));
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+(dur||0.3)+0.05);
+  }
+  return {
+    start(){ ensure(); if(ctx&&ctx.state==="suspended") ctx.resume(); },
+    setOn(on){ ensure(); if(!ctx) return; master.gain.setTargetAtTime(on?0.5:0.0, ctx.currentTime, 0.4); },
+    // small palette of cues
+    place(){ tone(330,0.12,"sine",0.07); },
+    flip(){ tone(440,0.1,"sine",0.06); },
+    ship(){ tone(523,0.18,"sine",0.10); setTimeout(()=>tone(784,0.3,"sine",0.09),90); },
+    solve(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.4,"sine",0.09),i*110)); },
+    burn(){ tone(180,0.5,"sawtooth",0.05); for(let i=0;i<5;i++) setTimeout(()=>crackle(1),i*40); },
+    chime(){ [392,494,587].forEach((f,i)=>setTimeout(()=>tone(f,0.6,"sine",0.08),i*140)); },
+    knell(){ tone(110,1.4,"sine",0.14); setTimeout(()=>tone(82,1.8,"sine",0.12),200); },
+  };
+})();
+
+/* --------------------------- TOAST --------------------------------------- */
+function toast(msg, kind){
+  const el=document.createElement("div");
+  el.className="toast"+(kind?" "+kind:"");
+  el.textContent=msg;
+  $("toasts").appendChild(el);
+  setTimeout(()=>{ el.style.transition="opacity .5s"; el.style.opacity="0";
+    setTimeout(()=>el.remove(),500); }, 2600);
+}
+
+/* ====================== AMBIENT BACKDROP RENDER ========================== */
+/* A persistent moody scene behind everything: night sky, sea, the lighthouse
+   silhouette with a warm beam, drifting snow, and a hearth glow whose strength
+   follows your warmth. Cheap; runs every frame.                               */
+const bg = $("bg"), bx = bg.getContext("2d");
+let bgW=0, bgH=0, dpr=1, flakes=[], t0=performance.now();
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function resizeBG(){
+  dpr = Math.min(2, window.devicePixelRatio||1);
+  bgW = window.innerWidth; bgH = window.innerHeight;
+  bg.width = bgW*dpr; bg.height = bgH*dpr;
+  bg.style.width=bgW+"px"; bg.style.height=bgH+"px";
+  bx.setTransform(dpr,0,0,dpr,0,0);
+  // snow density grows with the deepening winter
+  const n = Math.floor((bgW*bgH)/14000) + (S.night-1)*14;
+  flakes = [];
+  for(let i=0;i<n;i++) flakes.push(newFlake(true));
+}
+function newFlake(spawnAnywhere){
+  return {
+    x: Math.random()*bgW,
+    y: spawnAnywhere ? Math.random()*bgH : -8,
+    r: 0.6 + Math.random()*2.2,
+    sp: 14 + Math.random()*44,
+    drift: (Math.random()*2-1)*16,
+    ph: Math.random()*Math.PI*2,
+  };
+}
+
+function drawBG(now){
+  const dt = Math.min(0.05, (now - t0)/1000); t0 = now;
+  const time = now/1000;
+  const warmthN = S.warmth/100;            // 0..1
+  const winterN = (S.night-1)/(TOTAL_NIGHTS-1);
+
+  // sky gradient — colder/darker as winter deepens
+  const sky = bx.createLinearGradient(0,0,0,bgH);
+  sky.addColorStop(0, mix("#0a1426","#05080f", winterN));
+  sky.addColorStop(0.55, mix("#0b1828","#070b14", winterN));
+  sky.addColorStop(1, "#04070d");
+  bx.fillStyle = sky; bx.fillRect(0,0,bgW,bgH);
+
+  // a few cold stars
+  bx.save();
+  for(let i=0;i<40;i++){
+    const sx=((i*97.13)%bgW), sy=((i*53.7)%(bgH*0.55));
+    const tw = 0.4+0.6*Math.abs(Math.sin(time*0.6+i));
+    bx.globalAlpha = 0.10 + 0.22*tw*(1-winterN*0.5);
+    bx.fillStyle = "#bcd6ea";
+    bx.fillRect(sx, sy, 1.4, 1.4);
+  }
+  bx.restore();
+
+  const horizon = bgH*0.66;
+  // sea
+  const sea = bx.createLinearGradient(0,horizon,0,bgH);
+  sea.addColorStop(0, "#08131f");
+  sea.addColorStop(1, "#03060c");
+  bx.fillStyle=sea; bx.fillRect(0,horizon,bgW,bgH-horizon);
+  // sea glints
+  bx.save(); bx.globalAlpha=0.5;
+  for(let i=0;i<26;i++){
+    const gy = horizon + ((i*i*13)% (bgH-horizon));
+    const gx = (i*131.7 + Math.sin(time*0.5+i)*30) % bgW;
+    bx.fillStyle = "rgba(120,160,190,0.16)";
+    bx.fillRect(gx, gy, 18+(i%5)*8, 1);
+  }
+  bx.restore();
+
+  // lighthouse on the right headland (silhouette)
+  drawLighthouse(time, warmthN);
+
+  // hearth glow rising from the bottom centre — strength follows warmth
+  const gx = bgW*0.5, gy = bgH*1.02;
+  const glow = bx.createRadialGradient(gx,gy, 10, gx,gy, bgH*0.85);
+  const a = 0.10 + 0.34*warmthN;
+  glow.addColorStop(0, `rgba(255,150,60,${a})`);
+  glow.addColorStop(0.4, `rgba(210,100,27,${a*0.45})`);
+  glow.addColorStop(1, "rgba(210,100,27,0)");
+  bx.fillStyle=glow; bx.fillRect(0,0,bgW,bgH);
+
+  // snow
+  bx.save();
+  bx.fillStyle="rgba(233,241,246,0.85)";
+  for(const f of flakes){
+    if(!reduced){
+      f.y += f.sp*dt;
+      f.x += (f.drift + Math.sin(time*0.7+f.ph)*10)*dt;
+    }
+    if(f.y > bgH+6){ Object.assign(f, newFlake(false)); }
+    if(f.x < -8) f.x = bgW+8; if(f.x>bgW+8) f.x=-8;
+    bx.globalAlpha = 0.35 + (f.r/2.8)*0.5;
+    bx.beginPath(); bx.arc(f.x, f.y, f.r, 0, Math.PI*2); bx.fill();
+  }
+  bx.restore();
+
+  // cold vignette
+  const vg = bx.createRadialGradient(bgW/2,bgH*0.42, bgH*0.2, bgW/2,bgH*0.5, bgH*0.95);
+  vg.addColorStop(0,"rgba(0,0,0,0)");
+  vg.addColorStop(1,`rgba(2,5,12,${0.55+0.2*(1-warmthN)})`);
+  bx.fillStyle=vg; bx.fillRect(0,0,bgW,bgH);
+
+  requestAnimationFrame(drawBG);
+}
+
+function drawLighthouse(time, warmthN){
+  const baseX = bgW*0.84, horizon = bgH*0.66;
+  const towerW = Math.max(34, bgW*0.05), towerH = bgH*0.34;
+  const topY = horizon - towerH;
+  bx.save();
+  // headland
+  bx.fillStyle="#060b13";
+  bx.beginPath();
+  bx.moveTo(baseX-towerW*2.4, horizon+30);
+  bx.quadraticCurveTo(baseX, horizon-6, baseX+towerW*2.6, horizon+40);
+  bx.lineTo(baseX+towerW*3, bgH); bx.lineTo(baseX-towerW*3, bgH); bx.closePath(); bx.fill();
+  // tower
+  bx.fillStyle="#0c121d";
+  bx.beginPath();
+  bx.moveTo(baseX-towerW*0.7, horizon);
+  bx.lineTo(baseX-towerW*0.42, topY);
+  bx.lineTo(baseX+towerW*0.42, topY);
+  bx.lineTo(baseX+towerW*0.7, horizon);
+  bx.closePath(); bx.fill();
+  // lamp room
+  const lampY = topY - towerW*0.5;
+  bx.fillStyle="#11202e";
+  bx.fillRect(baseX-towerW*0.5, lampY, towerW, towerW*0.55);
+  // the light itself + sweeping beam
+  const flick = 0.7 + 0.3*Math.sin(time*7)*Math.sin(time*2.3);
+  const lr = (towerW*0.32)*(0.7+0.5*warmthN);
+  const lampGlow = bx.createRadialGradient(baseX, lampY+towerW*0.25, 1, baseX, lampY+towerW*0.25, lr*4);
+  lampGlow.addColorStop(0, `rgba(255,210,140,${(0.5+0.5*warmthN)*flick})`);
+  lampGlow.addColorStop(1, "rgba(255,160,60,0)");
+  bx.fillStyle=lampGlow;
+  bx.beginPath(); bx.arc(baseX, lampY+towerW*0.25, lr*4, 0, Math.PI*2); bx.fill();
+  // rotating beam
+  if(!reduced){
+    const ang = (time*0.45)%(Math.PI*2);
+    const sweep = 0.16;
+    const cx = baseX, cy = lampY+towerW*0.25, len = bgW*0.9;
+    const beam = bx.createLinearGradient(cx,cy, cx+Math.cos(ang)*len, cy+Math.sin(ang)*len);
+    beam.addColorStop(0, `rgba(255,214,150,${0.16*(0.6+0.4*warmthN)})`);
+    beam.addColorStop(1, "rgba(255,214,150,0)");
+    bx.fillStyle=beam;
+    bx.beginPath(); bx.moveTo(cx,cy);
+    bx.lineTo(cx+Math.cos(ang-sweep)*len, cy+Math.sin(ang-sweep)*len);
+    bx.lineTo(cx+Math.cos(ang+sweep)*len, cy+Math.sin(ang+sweep)*len);
+    bx.closePath(); bx.fill();
+  }
+  bx.restore();
+}
+
+function mix(a,b,t){
+  const ca=hx(a), cb=hx(b);
+  const r=Math.round(ca[0]+(cb[0]-ca[0])*t);
+  const g=Math.round(ca[1]+(cb[1]-ca[1])*t);
+  const bl=Math.round(ca[2]+(cb[2]-ca[2])*t);
+  return `rgb(${r},${g},${bl})`;
+}
+function hx(h){ h=h.replace("#",""); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+
+/* ====================== BOARD: beam sim + render + input ================= */
+const board = $("board"), cx = board.getContext("2d");
+const DIRV = { N:{x:0,y:-1}, S:{x:0,y:1}, E:{x:1,y:0}, W:{x:-1,y:0} };
+
+function reflect(dir, t){
+  // '/'  : E<->N, W<->S      '\' : E<->S, W<->N
+  return (t==="/") ? {x:-dir.y, y:-dir.x} : {x:dir.y, y:dir.x};
+}
+function mirrorAt(x,y){
+  const k=x+","+y;
+  if(B.placed.has(k)) return B.placed.get(k);
+  if(B.level.fixed){ const f=B.level.fixed.find(m=>m.x===x&&m.y===y); if(f) return f.t; }
+  return null;
+}
+function isRock(x,y){ return B.level.rocks.some(r=>r.x===x&&r.y===y); }
+function isShip(x,y){ return B.level.ships.some(s=>s.x===x&&s.y===y); }
+function isLamp(x,y){ return B.level.lamp.x===x && B.level.lamp.y===y; }
+function cellFree(x,y){ return !isRock(x,y) && !isShip(x,y) && !isLamp(x,y) &&
+  !(B.level.fixed&&B.level.fixed.some(m=>m.x===x&&m.y===y)); }
+
+function computeBeam(){
+  const pts=[]; const lit=new Set();
+  let x=B.level.lamp.x, y=B.level.lamp.y;
+  let dir={...DIRV[B.level.lamp.dir]};
+  pts.push({x,y});
+  const seen=new Set();
+  let guard=0;
+  while(guard++ < GW*GH*8){
+    const nx=x+dir.x, ny=y+dir.y;
+    if(nx<0||ny<0||nx>=GW||ny>=GH){ pts.push({x:nx,y:ny}); break; }
+    if(isRock(nx,ny)){ break; }
+    const key=nx+","+ny+","+dir.x+","+dir.y;
+    if(seen.has(key)) break;
+    seen.add(key);
+    if(isShip(nx,ny)) lit.add(nx+","+ny);
+    const m=mirrorAt(nx,ny);
+    x=nx; y=ny; pts.push({x,y});
+    if(m) dir=reflect(dir,m);
+  }
+  B.beam=pts; B.lit=lit;
+}
+
+function resizeBoard(){
+  if(S.phase!=="puzzle") return;
+  const stage=$("stage").getBoundingClientRect();
+  // leave room for hint + tray
+  const avail = Math.min(stage.width-24, stage.height-150, 560);
+  const size = Math.max(240, avail);
+  B.pad = Math.round(size*0.06);
+  const inner = size - B.pad*2;
+  B.cs = Math.floor(inner/GW);
+  const px = B.cs*GW + B.pad*2;
+  board.style.width=px+"px"; board.style.height=px+"px";
+  board.width = px*dpr; board.height = px*dpr;
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  drawBoard();
+}
+
+function cellCenter(x,y){ return { x:B.pad + x*B.cs + B.cs/2, y:B.pad + y*B.cs + B.cs/2 }; }
+
+function drawBoard(){
+  const W = B.cs*GW + B.pad*2;
+  cx.clearRect(0,0,W,W);
+  // panel
+  const g=cx.createLinearGradient(0,0,0,W);
+  g.addColorStop(0,"rgba(14,23,38,0.92)"); g.addColorStop(1,"rgba(8,14,24,0.95)");
+  cx.fillStyle=g; roundRect(0,0,W,W,14); cx.fill();
+
+  const cs=B.cs;
+  // grid
+  cx.strokeStyle="rgba(120,150,190,0.10)"; cx.lineWidth=1;
+  for(let i=0;i<=GW;i++){
+    cx.beginPath(); cx.moveTo(B.pad+i*cs, B.pad); cx.lineTo(B.pad+i*cs, B.pad+GH*cs); cx.stroke();
+    cx.beginPath(); cx.moveTo(B.pad, B.pad+i*cs); cx.lineTo(B.pad+GW*cs, B.pad+i*cs); cx.stroke();
+  }
+
+  // beam (glowing polyline through cell centres)
+  if(B.beam.length>1){
+    const path=()=>{ cx.beginPath();
+      const p0=cellCenter(B.beam[0].x,B.beam[0].y); cx.moveTo(p0.x,p0.y);
+      for(let i=1;i<B.beam.length;i++){ const p=cellCenter(B.beam[i].x,B.beam[i].y); cx.lineTo(p.x,p.y); }
+    };
+    cx.save(); cx.lineCap="round"; cx.lineJoin="round";
+    cx.strokeStyle="rgba(255,180,90,0.18)"; cx.lineWidth=cs*0.5; path(); cx.stroke();
+    cx.strokeStyle="rgba(255,200,120,0.5)"; cx.lineWidth=cs*0.18; path(); cx.stroke();
+    cx.strokeStyle="rgba(255,240,210,0.95)"; cx.lineWidth=Math.max(2,cs*0.06); path(); cx.stroke();
+    cx.restore();
+  }
+
+  // rocks
+  for(const r of B.level.rocks){ const c=cellCenter(r.x,r.y);
+    cx.fillStyle="#1b2740"; cx.strokeStyle="#2b3c5c"; cx.lineWidth=1.5;
+    roundRect(c.x-cs*0.34, c.y-cs*0.30, cs*0.68, cs*0.6, 7); cx.fill(); cx.stroke();
+    cx.fillStyle="rgba(255,255,255,0.05)"; cx.beginPath();
+    cx.arc(c.x-cs*0.1, c.y-cs*0.1, cs*0.08,0,Math.PI*2); cx.fill();
+  }
+
+  // fixed mirrors
+  if(B.level.fixed) for(const m of B.level.fixed){ drawMirror(m.x,m.y,m.t,true); }
+  // placed mirrors
+  for(const [k,t] of B.placed){ const [mx,my]=k.split(",").map(Number); drawMirror(mx,my,t,false); }
+
+  // ships
+  for(const s of B.level.ships){ drawShip(s.x,s.y, B.lit.has(s.x+","+s.y)); }
+
+  // lamp
+  drawLamp(B.level.lamp.x, B.level.lamp.y, B.level.lamp.dir);
+}
+
+function drawMirror(x,y,t,fixed){
+  const c=cellCenter(x,y), cs=B.cs, r=cs*0.32;
+  cx.save();
+  cx.translate(c.x,c.y);
+  cx.lineCap="round";
+  // glow
+  cx.strokeStyle = fixed ? "rgba(150,180,210,0.25)" : "rgba(159,210,230,0.3)";
+  cx.lineWidth=cs*0.22;
+  cx.beginPath();
+  if(t==="/"){ cx.moveTo(r,-r); cx.lineTo(-r,r); } else { cx.moveTo(-r,-r); cx.lineTo(r,r); }
+  cx.stroke();
+  // glass
+  cx.strokeStyle = fixed ? "#7f93ad" : "#cdeefb";
+  cx.lineWidth=Math.max(3,cs*0.1);
+  cx.beginPath();
+  if(t==="/"){ cx.moveTo(r,-r); cx.lineTo(-r,r); } else { cx.moveTo(-r,-r); cx.lineTo(r,r); }
+  cx.stroke();
+  cx.restore();
+}
+
+function drawShip(x,y,lit){
+  const c=cellCenter(x,y), cs=B.cs;
+  cx.save(); cx.translate(c.x,c.y);
+  if(lit){
+    const gl=cx.createRadialGradient(0,0,1,0,0,cs*0.6);
+    gl.addColorStop(0,"rgba(255,220,150,0.6)"); gl.addColorStop(1,"rgba(255,220,150,0)");
+    cx.fillStyle=gl; cx.beginPath(); cx.arc(0,0,cs*0.6,0,Math.PI*2); cx.fill();
+  }
+  // hull
+  cx.fillStyle = lit ? "#ffd9a0" : "#52647e";
+  cx.beginPath();
+  cx.moveTo(-cs*0.26, cs*0.04);
+  cx.quadraticCurveTo(0, cs*0.22, cs*0.26, cs*0.04);
+  cx.lineTo(cs*0.20,-cs*0.02); cx.lineTo(-cs*0.20,-cs*0.02); cx.closePath(); cx.fill();
+  // sail / mast
+  cx.strokeStyle = lit ? "#fff3dc" : "#6f829c"; cx.lineWidth=Math.max(2,cs*0.045);
+  cx.beginPath(); cx.moveTo(0, cs*0.02); cx.lineTo(0,-cs*0.26); cx.stroke();
+  cx.fillStyle = lit ? "#fff" : "#7f93ad";
+  cx.beginPath(); cx.moveTo(cs*0.015,-cs*0.24); cx.lineTo(cs*0.16,-cs*0.08);
+  cx.lineTo(cs*0.015,-cs*0.08); cx.closePath(); cx.fill();
+  cx.restore();
+}
+
+function drawLamp(x,y,dir){
+  const c=cellCenter(x,y), cs=B.cs;
+  cx.save(); cx.translate(c.x,c.y);
+  const gl=cx.createRadialGradient(0,0,1,0,0,cs*0.7);
+  gl.addColorStop(0,"rgba(255,200,110,0.85)"); gl.addColorStop(0.5,"rgba(255,160,60,0.4)");
+  gl.addColorStop(1,"rgba(255,160,60,0)");
+  cx.fillStyle=gl; cx.beginPath(); cx.arc(0,0,cs*0.7,0,Math.PI*2); cx.fill();
+  cx.fillStyle="#fff2cf"; cx.beginPath(); cx.arc(0,0,cs*0.2,0,Math.PI*2); cx.fill();
+  cx.fillStyle="#ffb858"; cx.beginPath(); cx.arc(0,0,cs*0.12,0,Math.PI*2); cx.fill();
+  // direction arrow
+  const d=DIRV[dir];
+  cx.fillStyle="#1a1206";
+  cx.beginPath();
+  const ax=d.x*cs*0.12, ay=d.y*cs*0.12;
+  const px=-d.y, py=d.x;
+  cx.moveTo(ax+d.x*cs*0.08, ay+d.y*cs*0.08);
+  cx.lineTo(-ax+px*cs*0.05, -ay+py*cs*0.05);
+  cx.lineTo(-ax-px*cs*0.05, -ay-py*cs*0.05);
+  cx.closePath(); cx.fill();
+  cx.restore();
+}
+
+function roundRect(x,y,w,h,r){ cx.beginPath();
+  cx.moveTo(x+r,y); cx.arcTo(x+w,y,x+w,y+h,r); cx.arcTo(x+w,y+h,x,y+h,r);
+  cx.arcTo(x,y+h,x,y,r); cx.arcTo(x,y,x+w,y,r); cx.closePath();
+}
+
+/* --------- board input: tap empty=place '/', tap=flip to '\', tap=remove --- */
+function boardPoint(ev){
+  const rect=board.getBoundingClientRect();
+  const cxp = (ev.touches?ev.touches[0].clientX:ev.clientX)-rect.left;
+  const cyp = (ev.touches?ev.touches[0].clientY:ev.clientY)-rect.top;
+  const x = Math.floor((cxp - B.pad)/B.cs);
+  const y = Math.floor((cyp - B.pad)/B.cs);
+  return {x,y};
+}
+function onBoardTap(ev){
+  ev.preventDefault();
+  if(S.phase!=="puzzle") return;
+  const {x,y}=boardPoint(ev);
+  if(x<0||y<0||x>=GW||y>=GH) return;
+  if(!cellFree(x,y)){ return; }
+  const k=x+","+y;
+  const placedCount = B.placed.size;
+  if(!B.placed.has(k)){
+    if(placedCount >= B.level.mirrors){ toast("No mirrors left to place.","bad"); return; }
+    B.placed.set(k,"/"); AUDIO.place();
+  } else if(B.placed.get(k)==="/"){
+    B.placed.set(k,"\\"); AUDIO.flip();
+  } else {
+    B.placed.delete(k); AUDIO.flip();
+  }
+  const before=B.lit.size;
+  computeBeam();
+  if(B.lit.size>before) AUDIO.ship();
+  updatePuzzleUI();
+  drawBoard();
+}
+board.addEventListener("pointerdown", onBoardTap);
+
+function updatePuzzleUI(){
+  const tot=B.level.ships.length, lit=B.lit.size;
+  $("uiMirrors").textContent = B.level.mirrors - B.placed.size;
+  $("uiShips").textContent = lit;
+  $("uiShipsTot").textContent = tot;
+  const cb=$("confirmBtn");
+  const allLit = lit>=tot && tot>0;
+  $("hint").innerHTML = allLit ? "Every ship has the light. <b>Bring them home.</b>" : puzzleHint();
+  cb.textContent = allLit ? "Guide them all home ▸" : (lit>0 ? `Bring ${lit} home ▸` : "Guide them home ▸");
+}
+
+/* ====================== PHASES / UI ===================================== */
+function show(id){ ["titleScreen","introScreen","hearthScreen","dawnScreen","endScreen"]
+  .forEach(s=>$(s).classList.toggle("hidden", s!==id)); }
+function hideAllScreens(){ ["titleScreen","introScreen","hearthScreen","dawnScreen","endScreen"]
+  .forEach(s=>$(s).classList.add("hidden")); }
+
+function updateTopBar(){
+  $("uiNight").textContent = S.night;
+  const w = Math.round(S.warmth);
+  $("uiWarm").textContent = w;
+  const fill=$("wfill"), bar=$("wbar");
+  fill.style.width = Math.max(0,Math.min(100,w))+"%";
+  const cold = w < 35;
+  bar.classList.toggle("cold", cold);
+  $("uiWarm").style.color = cold ? "var(--ice)" : "var(--gold)";
+}
+
+/* --- night intro --- */
+function startNight(n){
+  S.night = n; S.phase="intro"; updateTopBar();
+  $("puzzle").classList.remove("show");
+  $("introKick").textContent = n>=TOTAL_NIGHTS ? "The last deep night" : "The deep winter · Night "+n;
+  $("introTitle").textContent = ["First Night","Second Night","Third Night","Fourth Night",
+    "Fifth Night","Sixth Night","Seventh Night","Final Night"][n-1] || ("Night "+n);
+  $("introBody").textContent = INTROS[n-1] || INTROS[INTROS.length-1];
+  show("introScreen");
+}
+
+/* --- the puzzle --- */
+function enterPuzzle(){
+  S.phase="puzzle";
+  hideAllScreens();
+  B.level = LEVELS[S.night-1];
+  B.placed = new Map();
+  computeBeam();
+  $("puzzle").classList.add("show");
+  $("hint").innerHTML = puzzleHint();
+  $("uiShipsTot").textContent = B.level.ships.length;
+  updatePuzzleUI();
+  resizeBoard();
+}
+function puzzleHint(){
+  const n=S.night, ships=LEVELS[n-1].ships.length;
+  if(n===1) return "A ship is lost in the dark. The beam travels in a straight line — it already touches them. <b>Bring them home.</b>";
+  if(n===2) return "This one's off the straight path. Tap a cell to set a <b>mirror</b>, tap again to flip it ◤/◢, and bend the light around.";
+  return `Thread the light through all <b>${ships} ships</b>. Tap to place a mirror, again to flip it, once more to remove.`;
+}
+
+/* --- confirm puzzle → collect driftwood → hearth --- */
+function confirmPuzzle(){
+  const lit=B.lit.size, tot=B.level.ships.length;
+  const drift = lit*DRIFT_PER_SHIP;
+  S.shipsThisNight = lit;
+  if(lit>=tot) AUDIO.solve(); else if(lit>0) AUDIO.ship();
+  S.warmth = Math.min(WARM_MAX, S.warmth + drift);
+  updateTopBar();
+  if(lit>0) toast(`${lit} ship${lit>1?"s":""} guided home — +${drift} warmth from driftwood.`, "good");
+  else toast("No ships found the harbour tonight. No driftwood.", "cold");
+  enterHearth();
+}
+
+/* --- hearth: burn memories before the night's drain --- */
+function enterHearth(){
+  S.phase="hearth";
+  $("puzzle").classList.remove("show");
+  const drain = DRAIN[S.night-1];
+  $("hearthTitle").textContent = S.night>=TOTAL_NIGHTS ? "The longest night" : "The long night";
+  let body;
+  if(S.shipsThisNight>0)
+    body = `You feed the driftwood to the fire and the keep breathes a little easier. But the night ahead is long, and the cold will take its share before dawn.`;
+  else
+    body = `No wood came in from the sea. The hearth gutters low, and the cold leans against the door, waiting.`;
+  $("hearthBody").textContent = body;
+  renderHearth();
+  show("hearthScreen");
+}
+function renderHearth(){
+  const drain = DRAIN[S.night-1];
+  const proj = Math.round(S.warmth - drain);
+  $("hWarm").textContent = Math.round(S.warmth);
+  $("hDrain").textContent = "−"+drain;
+  const pe=$("hProj"); pe.textContent = proj;
+  pe.className = "v " + (proj<=0 ? "cold" : proj<25 ? "cold" : "warm");
+  const left=memoriesLeft();
+  $("memCount").textContent = left>0 ? `${left} of ${MEMORIES.length} still yours` : "nothing left to burn";
+
+  const warn=$("hearthWarn");
+  if(proj<=0){
+    warn.textContent = "The fire won't last the night as it is. You must burn something — or freeze.";
+    warn.style.color="var(--bad)";
+  } else if(proj<22){
+    warn.textContent = "You'll survive, but barely. Burn a memory for a safer dawn, or risk it.";
+    warn.style.color="var(--warn)";
+  } else {
+    warn.textContent = "Warm enough to last till morning. You can keep your memories tonight.";
+    warn.style.color="var(--muted)";
+  }
+
+  const shelf=$("shelf"); shelf.innerHTML="";
+  for(const m of MEMORIES){
+    const gone = !!S.burned[m.id];
+    const row=document.createElement("div");
+    row.className="mem"+(gone?" gone":"");
+    row.innerHTML = `
+      <div class="glyph">${gone?"🌫️":m.glyph}</div>
+      <div class="txt">
+        <div class="ttl">${m.title}</div>
+        <div class="desc">${gone? "— given to the fire —" : m.desc}</div>
+        ${gone?"":`<div class="heat">burns for +${m.warmth} warmth</div>`}
+      </div>`;
+    if(!gone){
+      const btn=document.createElement("button");
+      btn.className="burnbtn"; btn.textContent="Burn";
+      btn.onclick=()=>burnMemory(m.id);
+      row.appendChild(btn);
+    } else {
+      const tag=document.createElement("span"); tag.className="ashtag"; tag.textContent="ash";
+      row.appendChild(tag);
+    }
+    shelf.appendChild(row);
+  }
+  // endure button reflects danger
+  const eb=$("endureBtn");
+  eb.textContent = proj<=0 ? "Endure anyway ▸" : "Endure the night ▸";
+}
+function burnMemory(id){
+  if(S.burned[id]) return;
+  const m=MEMORIES.find(x=>x.id===id); if(!m) return;
+  S.burned[id]=true;
+  S.warmth=Math.min(WARM_MAX, S.warmth + m.warmth);
+  AUDIO.burn();
+  updateTopBar();
+  toast(m.ash, "good");
+  renderHearth();
+}
+
+/* --- endure: apply the night's drain, resolve --- */
+function endureNight(){
+  const drain = DRAIN[S.night-1];
+  S.warmth -= drain;
+  updateTopBar();
+  if(S.warmth<=0){ return deathEnding(); }
+  // survived the night
+  if(S.night>=TOTAL_NIGHTS){ return thawEnding(); }
+  dawn();
+}
+
+function dawn(){
+  S.phase="dawn";
+  const next=S.night+1;
+  $("dawnKick").textContent = "Morning · the dark holds, but you held too";
+  $("dawnTitle").textContent = "You wake";
+  const left=memoriesLeft();
+  let line;
+  if(S.warmth<22) line = "Grey light finds you curled by the embers, breath shallow, but breathing. The keep stands. The light turned all night.";
+  else line = "Grey light seeps over the ice. The fire is low but living, and so are you. The light turned all night, faithful as a heartbeat.";
+  if(left===MEMORIES.length) line += " You burned nothing. You are still entirely yourself.";
+  else if(left===0) line += " There is nothing left of you to lose now — only the keeper, and the keeping.";
+  else line += ` Of what you were, ${left} ${left===1?"memory remains":"memories remain"}.`;
+  $("dawnBody").textContent = line;
+  $("dawnBtn").textContent = "Face Night "+next+" ▸";
+  S.night = next; updateTopBar();
+  saveGame();        // persist the night to resume at (post-drain warmth + memories)
+  show("dawnScreen");
+  AUDIO.chime();
+}
+
+/* --------------------------- ENDINGS ------------------------------------- */
+function deathEnding(){
+  S.phase="end"; clearSave(); AUDIO.knell();
+  $("endKick").textContent="The light goes out";
+  $("endTitle").textContent="The Dark";
+  $("endTitle").style.background="linear-gradient(135deg,#9fb0c4,#5b8fb0,#3a5670)";
+  $("endTitle").style.webkitBackgroundClip="text"; $("endTitle").style.backgroundClip="text";
+  $("endBody").textContent="The last ember sighs and is gone. The cold comes in unhurried, the way the tide comes in, and the great lamp above you slows, and stops. Out on the black water a ship looks for a light that is no longer there. You close your eyes. The winter has what it wanted.";
+  endStats(false);
+  $("endBtn").textContent="Light the fire again ▸";
+  show("endScreen");
+}
+function thawEnding(){
+  S.phase="end"; clearSave();
+  const left=memoriesLeft();
+  let title, body, kick;
+  if(left>=6){
+    kick="The thaw · You kept the most of yourself";
+    title="The Keeper";
+    body="On the eighth dawn the wind changes. There is a softness in it, a smell of melt and far-off green. The channel groans and cracks. You climb down from the lamp with stiff hands and a fuller heart than you had any right to — you fed the fire on driftwood and wit, and gave it only the smallest pieces of yourself. When the first boat noses through the broken ice, the keeper who waves it in still knows their own name, and still knows why the light must turn.";
+    AUDIO.chime();
+  } else if(left>=3){
+    kick="The thaw · You survived, but it cost you";
+    title="The Thaw";
+    body="The ice lets go at last. You step out into a wet grey morning that smells, impossibly, of spring. You are alive. The light never once failed. But there are rooms in you that stand empty now, doors that open onto nothing — the warm things you fed to the dark to buy these mornings. You kept enough to know what you lost. Perhaps that is its own small mercy.";
+    AUDIO.chime();
+  } else {
+    kick="The thaw · Almost nothing of you remains";
+    title="The Light";
+    body="Spring comes. It always does. The keeper watches the ice break apart on the bay and cannot say, now, who is watching. Night by night the winter asked for the small warm things first, and then the ones you swore you'd never give — and night by night you gave them, to keep the fire, to keep the light. What is left keeps it still, because the light must be kept. It is enough. It has to be.";
+    AUDIO.knell();
+  }
+  $("endKick").textContent=kick;
+  $("endTitle").textContent=title;
+  $("endTitle").style.background="linear-gradient(135deg,var(--gold),var(--ember),var(--ember2))";
+  $("endTitle").style.webkitBackgroundClip="text"; $("endTitle").style.backgroundClip="text";
+  $("endBody").textContent=body;
+  endStats(true);
+  $("endBtn").textContent="Keep the light again ▸";
+  show("endScreen");
+}
+function endStats(survived){
+  const left=memoriesLeft(), burned=MEMORIES.length-left;
+  const burnedList = MEMORIES.filter(m=>S.burned[m.id]).map(m=>m.title);
+  let ledger = "";
+  if(burnedList.length){
+    ledger = `<p class="small" style="margin:.9rem 0 0; font-style:italic; line-height:1.6">
+      Given to the fire: ${burnedList.join(" · ")}.</p>`;
+  } else {
+    ledger = `<p class="small" style="margin:.9rem 0 0; font-style:italic">You burned nothing. Every memory is still yours.</p>`;
+  }
+  $("endStats").innerHTML = `
+    <div class="stat"><div class="k">Nights endured</div><div class="v warm">${survived?TOTAL_NIGHTS:S.night-1}</div></div>
+    <div class="stat"><div class="k">Memories kept</div><div class="v ${left>0?'warm':'cold'}">${left}</div></div>
+    <div class="stat"><div class="k">Given to the fire</div><div class="v dim">${burned}</div></div>
+    <div style="flex-basis:100%">${ledger}</div>`;
+}
+
+/* --------------------------- NEW / CONTINUE ------------------------------ */
+function newGame(){
+  S.night=1; S.warmth=WARM_START; S.burned={}; S.shipsThisNight=0;
+  clearSave(); updateTopBar(); resizeBG();
+  startNight(1);
+}
+function continueGame(sv){
+  S.night=sv.night||1; S.warmth=sv.warmth!=null?sv.warmth:WARM_START;
+  S.burned=sv.burned||{}; updateTopBar(); resizeBG();
+  startNight(S.night);
+}
+
+/* --------------------------- WIRING -------------------------------------- */
+$("startBtn").onclick = ()=>{ AUDIO.start(); setSound(true); newGame(); };
+$("continueBtn").onclick = ()=>{ AUDIO.start(); setSound(true); const sv=loadSave(); if(sv) continueGame(sv); else newGame(); };
+$("newBtn").onclick = ()=>{ if(confirm("Begin a new winter? Your current keep will be lost.")){ AUDIO.start(); setSound(true); newGame(); } };
+$("introBtn").onclick = enterPuzzle;
+$("confirmBtn").onclick = confirmPuzzle;
+$("resetBtn").onclick = ()=>{ B.placed.clear(); computeBeam(); updatePuzzleUI(); drawBoard(); AUDIO.flip(); };
+$("endureBtn").onclick = endureNight;
+$("dawnBtn").onclick = ()=> startNight(S.night);
+$("endBtn").onclick = ()=>{ newGame(); };
+
+function setSound(on){ S.sound=on; $("soundBtn").textContent = on?"🔊":"🔇"; AUDIO.setOn(on); }
+$("soundBtn").onclick = ()=>{ AUDIO.start(); setSound(!S.sound); };
+
+window.addEventListener("resize", ()=>{ resizeBG(); resizeBoard(); });
+
+/* --------------------------- INIT ---------------------------------------- */
+function init(){
+  resizeBG();
+  requestAnimationFrame(drawBG);
+  const sv=loadSave();
+  if(sv && sv.night && sv.night>=1 && sv.night<=TOTAL_NIGHTS){
+    // there's a winter in progress: Continue is primary, Begin again is secondary
+    $("continueBtn").style.display="";
+    $("continueBtn").textContent = `Return to the keep · Night ${sv.night} ▸`;
+    $("newBtn").style.display="";
+    $("startBtn").style.display="none";
+  }
+  updateTopBar();
+}
+init();
+</script>
+</body>
+</html>
