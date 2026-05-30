@@ -220,9 +220,12 @@
       <button class="bigbtn" id="continueBtn" style="display:none">Return to the keep ▸</button>
       <button class="bigbtn" id="startBtn">Light the fire ▸</button>
       <button class="bigbtn alt" id="newBtn" style="display:none">Begin again</button>
+      <button class="bigbtn alt" id="endlessTitleBtn">Endless Winter ▸</button>
     </div>
     <p class="small" style="margin-top:1rem">Tap an empty cell to place a mirror, tap again to flip it
-      <b style="color:#fff">◤ / ◢</b>, once more to take it back. Headphones recommended.</p>
+      <b style="color:#fff">◤ / ◢</b>, once more to take it back. Headphones recommended.<br>
+      <b style="color:var(--ice)">Endless Winter</b> — once the story is done, keep going: survive
+      procedurally-generated nights as the cold deepens forever, and chase your longest run.</p>
   </div>
 </div>
 
@@ -276,7 +279,10 @@
     <h1 id="endTitle"></h1>
     <p id="endBody"></p>
     <div class="status" id="endStats"></div>
-    <div class="btns"><button class="bigbtn" id="endBtn">Keep the light again ▸</button></div>
+    <div class="btns">
+      <button class="bigbtn" id="endlessBtn" style="display:none">Walk back into the winter ▸</button>
+      <button class="bigbtn alt" id="endBtn">Keep the light again ▸</button>
+    </div>
   </div>
 </div>
 
@@ -407,6 +413,7 @@ const S = {
   phase:"title",
   sound:false,
   shipsThisNight:0,    // guided count carried into hearth
+  endless:false,       // Endless Winter survival mode (no thaw)
 };
 
 /* board sub-state */
@@ -420,7 +427,7 @@ const SAVE_KEY = "emberkeep.save.v1";
 function saveGame(){
   try{
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      night:S.night, warmth:S.warmth, burned:S.burned, phase:"intro",
+      night:S.night, warmth:S.warmth, burned:S.burned, endless:S.endless, phase:"intro",
     }));
   }catch(e){}
 }
@@ -429,6 +436,40 @@ function loadSave(){
 }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 function memoriesLeft(){ return MEMORIES.filter(m=>!S.burned[m.id]).length; }
+function loadBest(){ try{ return parseInt(localStorage.getItem("emberkeep.best.v1"))||0; }catch(e){ return 0; } }
+function saveBest(n){ try{ if(n>loadBest()) localStorage.setItem("emberkeep.best.v1", String(n)); }catch(e){} }
+
+/* ---------------- LEVEL & DRAIN PROVIDERS (campaign + endless) -----------
+   Nights 1–8 of the story use the hand-authored LEVELS. Endless Winter (and any
+   night past the authored set) draws on a procedural generator that builds
+   guaranteed-solvable beam puzzles of escalating difficulty. The cold curve is
+   the tuned DRAIN array for the story, and a forever-deepening formula for
+   endless.                                                                     */
+const ENDLESS_INTROS = [
+  "The thaw was a lie the wind told. The ice closes again behind the last boat, and the dark settles back over the keep like a held breath. How long can one light last?",
+  "There is no calendar any more, only nights. You stopped counting what you've burned. You keep counting the nights.",
+  "The cold has learned your name — the one you may already have given away. It comes earlier each evening now, and stays later.",
+  "Somewhere a boat still searches for the shore. You cannot remember if it is coming to you or leaving. You light the lamp regardless.",
+  "Each night the sea brings less wood and the dark asks for more. You climb the stairs because there is nothing else left that is yours to do.",
+  "You are no longer sure whether you keep the light, or the light keeps you. Either way: it must not go out.",
+];
+function diffFor(n){
+  return {
+    turns: Math.min(5, 1 + Math.floor(n/3)),
+    ships: Math.min(6, 2 + Math.floor(n/2)),
+    rocks: Math.min(6, Math.floor(n/2)),
+    spare: n<6 ? 2 : 1,
+  };
+}
+function levelFor(n){
+  if(!S.endless && n<=LEVELS.length) return LEVELS[n-1];
+  const d=diffFor(n);
+  return genLevel(d.turns, d.ships, d.rocks, d.spare);
+}
+function drainFor(n){
+  if(S.endless) return Math.round(14 + (n-1)*5 + Math.pow(Math.max(0,n-1),1.5)*0.7);
+  return DRAIN[n-1];
+}
 
 /* --------------------------- AUDIO --------------------------------------- */
 /* Procedural ambient: filtered-noise wind + low sea swell, plus fire crackle
@@ -716,6 +757,92 @@ function computeBeam(){
   B.beam=pts; B.lit=lit;
 }
 
+/* ---------------- PROCEDURAL PUZZLE GENERATOR ----------------------------
+   Builds a guaranteed-solvable puzzle by *construction*: trace a random beam
+   polyline of `turns` right-angle bends inside the grid, drop ships on the
+   straight runs, and record the mirrors at the bends as the intended solution.
+   The player gets that path's mirror count plus `spare`. Decoy rocks are placed
+   only off the path. Every result is re-simulated with the intended mirrors to
+   verify all ships light within budget before it's returned.                   */
+function rnd(n){ return Math.floor(Math.random()*n); }
+function shuffled(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function mirrorFor(di, dOut){
+  const f=reflect(di,"/"); if(f.x===dOut.x && f.y===dOut.y) return "/";
+  const b=reflect(di,"\\"); if(b.x===dOut.x && b.y===dOut.y) return "\\";
+  return null;   // not a 90° turn
+}
+// standalone beam sim (used to verify generated puzzles) — mirrors the engine above
+function simBeam(level, placed){
+  const rock=new Set(level.rocks.map(r=>r.x+","+r.y));
+  const ship=new Set(level.ships.map(s=>s.x+","+s.y));
+  const lit=new Set();
+  let x=level.lamp.x, y=level.lamp.y, dir={...DIRV[level.lamp.dir]};
+  const seen=new Set(); let g=0;
+  while(g++ < GW*GH*8){
+    const nx=x+dir.x, ny=y+dir.y;
+    if(nx<0||ny<0||nx>=GW||ny>=GH) break;
+    if(rock.has(nx+","+ny)) break;
+    const k=nx+","+ny+","+dir.x+","+dir.y; if(seen.has(k)) break; seen.add(k);
+    if(ship.has(nx+","+ny)) lit.add(nx+","+ny);
+    const m=placed.get(nx+","+ny);
+    x=nx; y=ny; if(m) dir=reflect(dir,m);
+  }
+  return lit;
+}
+function genLevel(turns, shipCount, rockCount, spare){
+  for(let attempt=0; attempt<500; attempt++){
+    // lamp on a random edge, beam pointing inward
+    const edge=rnd(4); let lx,ly,ldir;
+    if(edge===0){ lx=rnd(GW); ly=0;    ldir="S"; }
+    else if(edge===1){ lx=GW-1; ly=rnd(GH); ldir="W"; }
+    else if(edge===2){ lx=rnd(GW); ly=GH-1; ldir="N"; }
+    else { lx=0; ly=rnd(GH); ldir="E"; }
+    let cur={x:lx,y:ly}, dir={...DIRV[ldir]};
+    const occupied=new Set([lx+","+ly]);
+    const pathCells=[]; const solMirrors=new Map();
+    let ok=true;
+    for(let leg=0; leg<=turns; leg++){
+      const isLast = leg===turns;
+      // how far can we run straight from cur before leaving grid / hitting our own path
+      let maxRun=0, tx=cur.x+dir.x, ty=cur.y+dir.y;
+      while(tx>=0&&ty>=0&&tx<GW&&ty<GH && !occupied.has(tx+","+ty)){ maxRun++; tx+=dir.x; ty+=dir.y; }
+      if(maxRun<1){ ok=false; break; }
+      const steps = isLast ? maxRun : (1+rnd(Math.min(maxRun,4)));
+      for(let s=0;s<steps;s++){ cur={x:cur.x+dir.x,y:cur.y+dir.y}; occupied.add(cur.x+","+cur.y); pathCells.push({x:cur.x,y:cur.y,mirror:false}); }
+      if(!isLast){
+        // bend left or right at the current cell (it becomes a mirror)
+        const opts = shuffled([{x:-dir.y,y:dir.x},{x:dir.y,y:-dir.x}]);
+        let turned=false;
+        for(const nd of opts){
+          const ax=cur.x+nd.x, ay=cur.y+nd.y;
+          if(ax<0||ay<0||ax>=GW||ay>=GH||occupied.has(ax+","+ay)) continue;
+          const t=mirrorFor(dir,nd); if(!t) continue;
+          const last=pathCells[pathCells.length-1]; last.mirror=true;
+          solMirrors.set(last.x+","+last.y, t);
+          dir=nd; turned=true; break;
+        }
+        if(!turned){ ok=false; break; }
+      }
+    }
+    if(!ok) continue;
+    const cands=pathCells.filter(c=>!c.mirror);
+    if(cands.length<shipCount) continue;
+    const ships=shuffled(cands).slice(0,shipCount).map(c=>({x:c.x,y:c.y}));
+    // decoy rocks off the path
+    const rocks=[]; const occ=new Set(occupied); let guard=0;
+    while(rocks.length<rockCount && guard++<200){
+      const rx=rnd(GW), ry=rnd(GH), k=rx+","+ry;
+      if(occ.has(k)) continue; occ.add(k); rocks.push({x:rx,y:ry});
+    }
+    const level={ lamp:{x:lx,y:ly,dir:ldir}, ships, rocks, mirrors:turns+spare };
+    // verify solvable within budget
+    const lit=simBeam(level, solMirrors);
+    if(solMirrors.size<=level.mirrors && ships.every(s=>lit.has(s.x+","+s.y))) return level;
+  }
+  // safety fallback (should never be reached): a simple two-ship straight shot
+  return { lamp:{x:0,y:3,dir:"E"}, ships:[{x:3,y:3},{x:6,y:3}], rocks:[], mirrors:2 };
+}
+
 function resizeBoard(){
   if(S.phase!=="puzzle") return;
   const stage=$("stage").getBoundingClientRect();
@@ -918,10 +1045,16 @@ function updateTopBar(){
 function startNight(n){
   S.night = n; S.phase="intro"; updateTopBar();
   $("puzzle").classList.remove("show");
-  $("introKick").textContent = n>=TOTAL_NIGHTS ? "The last deep night" : "The deep winter · Night "+n;
-  $("introTitle").textContent = ["First Night","Second Night","Third Night","Fourth Night",
-    "Fifth Night","Sixth Night","Seventh Night","Final Night"][n-1] || ("Night "+n);
-  $("introBody").textContent = INTROS[n-1] || INTROS[INTROS.length-1];
+  if(S.endless){
+    $("introKick").textContent = "Endless Winter · Night "+n;
+    $("introTitle").textContent = "Night "+n;
+    $("introBody").textContent = ENDLESS_INTROS[(n-1)%ENDLESS_INTROS.length];
+  } else {
+    $("introKick").textContent = n>=TOTAL_NIGHTS ? "The last deep night" : "The deep winter · Night "+n;
+    $("introTitle").textContent = ["First Night","Second Night","Third Night","Fourth Night",
+      "Fifth Night","Sixth Night","Seventh Night","Final Night"][n-1] || ("Night "+n);
+    $("introBody").textContent = INTROS[n-1] || INTROS[INTROS.length-1];
+  }
   show("introScreen");
 }
 
@@ -929,7 +1062,7 @@ function startNight(n){
 function enterPuzzle(){
   S.phase="puzzle";
   hideAllScreens();
-  B.level = LEVELS[S.night-1];
+  B.level = levelFor(S.night);
   B.placed = new Map();
   computeBeam();
   $("puzzle").classList.add("show");
@@ -939,10 +1072,10 @@ function enterPuzzle(){
   resizeBoard();
 }
 function puzzleHint(){
-  const n=S.night, ships=LEVELS[n-1].ships.length;
-  if(n===1) return "A ship is lost in the dark. The beam travels in a straight line — it already touches them. <b>Bring them home.</b>";
-  if(n===2) return "This one's off the straight path. Tap a cell to set a <b>mirror</b>, tap again to flip it ◤/◢, and bend the light around.";
-  return `Thread the light through all <b>${ships} ships</b>. Tap to place a mirror, again to flip it, once more to remove.`;
+  const n=S.night, ships=B.level ? B.level.ships.length : 2;
+  if(!S.endless && n===1) return "A ship is lost in the dark. The beam travels in a straight line — it already touches them. <b>Bring them home.</b>";
+  if(!S.endless && n===2) return "This one's off the straight path. Tap a cell to set a <b>mirror</b>, tap again to flip it ◤/◢, and bend the light around.";
+  return `Thread the light through all <b>${ships} ${ships===1?'ship':'ships'}</b>. Tap to place a mirror, again to flip it, once more to remove.`;
 }
 
 /* --- confirm puzzle → collect driftwood → hearth --- */
@@ -962,8 +1095,8 @@ function confirmPuzzle(){
 function enterHearth(){
   S.phase="hearth";
   $("puzzle").classList.remove("show");
-  const drain = DRAIN[S.night-1];
-  $("hearthTitle").textContent = S.night>=TOTAL_NIGHTS ? "The longest night" : "The long night";
+  const drain = drainFor(S.night);
+  $("hearthTitle").textContent = S.endless ? "Another long night" : (S.night>=TOTAL_NIGHTS ? "The longest night" : "The long night");
   let body;
   if(S.shipsThisNight>0)
     body = `You feed the driftwood to the fire and the keep breathes a little easier. But the night ahead is long, and the cold will take its share before dawn.`;
@@ -974,7 +1107,7 @@ function enterHearth(){
   show("hearthScreen");
 }
 function renderHearth(){
-  const drain = DRAIN[S.night-1];
+  const drain = drainFor(S.night);
   const proj = Math.round(S.warmth - drain);
   $("hWarm").textContent = Math.round(S.warmth);
   $("hDrain").textContent = "−"+drain;
@@ -1035,12 +1168,12 @@ function burnMemory(id){
 
 /* --- endure: apply the night's drain, resolve --- */
 function endureNight(){
-  const drain = DRAIN[S.night-1];
+  const drain = drainFor(S.night);
   S.warmth -= drain;
   updateTopBar();
   if(S.warmth<=0){ return deathEnding(); }
   // survived the night
-  if(S.night>=TOTAL_NIGHTS){ return thawEnding(); }
+  if(!S.endless && S.night>=TOTAL_NIGHTS){ return thawEnding(); }
   dawn();
 }
 
@@ -1067,11 +1200,16 @@ function dawn(){
 /* --------------------------- ENDINGS ------------------------------------- */
 function deathEnding(){
   S.phase="end"; clearSave(); AUDIO.knell();
+  const survived = S.night-1;
+  if(S.endless) saveBest(survived);
+  $("endlessBtn").style.display="none";
   $("endKick").textContent="The light goes out";
   $("endTitle").textContent="The Dark";
   $("endTitle").style.background="linear-gradient(135deg,#9fb0c4,#5b8fb0,#3a5670)";
   $("endTitle").style.webkitBackgroundClip="text"; $("endTitle").style.backgroundClip="text";
-  $("endBody").textContent="The last ember sighs and is gone. The cold comes in unhurried, the way the tide comes in, and the great lamp above you slows, and stops. Out on the black water a ship looks for a light that is no longer there. You close your eyes. The winter has what it wanted.";
+  $("endBody").textContent = S.endless
+    ? `The last ember sighs and is gone. After ${survived} ${survived===1?"night":"nights"} of the endless winter, the great lamp slows, and stops. The dark you held back so long folds over the keep, unhurried, complete. Out on the black water a ship looks for a light that is no longer there.`
+    : "The last ember sighs and is gone. The cold comes in unhurried, the way the tide comes in, and the great lamp above you slows, and stops. Out on the black water a ship looks for a light that is no longer there. You close your eyes. The winter has what it wanted.";
   endStats(false);
   $("endBtn").textContent="Light the fire again ▸";
   show("endScreen");
@@ -1103,6 +1241,7 @@ function thawEnding(){
   $("endBody").textContent=body;
   endStats(true);
   $("endBtn").textContent="Keep the light again ▸";
+  $("endlessBtn").style.display="";   // the winter offers to continue, unending
   show("endScreen");
 }
 function endStats(survived){
@@ -1115,22 +1254,38 @@ function endStats(survived){
   } else {
     ledger = `<p class="small" style="margin:.9rem 0 0; font-style:italic">You burned nothing. Every memory is still yours.</p>`;
   }
+  const nights = S.endless ? (S.night-1) : (survived?TOTAL_NIGHTS:S.night-1);
+  const best = loadBest();
+  const bestStat = S.endless
+    ? `<div class="stat"><div class="k">Best run</div><div class="v warm">${best}</div></div>` : "";
   $("endStats").innerHTML = `
-    <div class="stat"><div class="k">Nights endured</div><div class="v warm">${survived?TOTAL_NIGHTS:S.night-1}</div></div>
+    <div class="stat"><div class="k">Nights ${S.endless?"survived":"endured"}</div><div class="v warm">${nights}</div></div>
     <div class="stat"><div class="k">Memories kept</div><div class="v ${left>0?'warm':'cold'}">${left}</div></div>
     <div class="stat"><div class="k">Given to the fire</div><div class="v dim">${burned}</div></div>
+    ${bestStat}
     <div style="flex-basis:100%">${ledger}</div>`;
 }
 
 /* --------------------------- NEW / CONTINUE ------------------------------ */
 function newGame(){
-  S.night=1; S.warmth=WARM_START; S.burned={}; S.shipsThisNight=0;
+  S.night=1; S.warmth=WARM_START; S.burned={}; S.shipsThisNight=0; S.endless=false;
   clearSave(); updateTopBar(); resizeBG();
   startNight(1);
 }
+function startEndless(continued){
+  S.endless=true;
+  if(continued){
+    // walk on past the thaw with whatever warmth and memories remain
+    S.night = S.night + 1;
+  } else {
+    S.night=1; S.warmth=WARM_START; S.burned={}; S.shipsThisNight=0;
+  }
+  clearSave(); updateTopBar(); resizeBG();
+  startNight(S.night);
+}
 function continueGame(sv){
   S.night=sv.night||1; S.warmth=sv.warmth!=null?sv.warmth:WARM_START;
-  S.burned=sv.burned||{}; updateTopBar(); resizeBG();
+  S.burned=sv.burned||{}; S.endless=!!sv.endless; updateTopBar(); resizeBG();
   startNight(S.night);
 }
 
@@ -1144,6 +1299,8 @@ $("resetBtn").onclick = ()=>{ B.placed.clear(); computeBeam(); updatePuzzleUI();
 $("endureBtn").onclick = endureNight;
 $("dawnBtn").onclick = ()=> startNight(S.night);
 $("endBtn").onclick = ()=>{ newGame(); };
+$("endlessBtn").onclick = ()=>{ AUDIO.start(); setSound(true); startEndless(true); };
+$("endlessTitleBtn").onclick = ()=>{ AUDIO.start(); setSound(true); startEndless(false); };
 
 function setSound(on){ S.sound=on; $("soundBtn").textContent = on?"🔊":"🔇"; AUDIO.setOn(on); }
 $("soundBtn").onclick = ()=>{ AUDIO.start(); setSound(!S.sound); };
@@ -1154,11 +1311,13 @@ window.addEventListener("resize", ()=>{ resizeBG(); resizeBoard(); });
 function init(){
   resizeBG();
   requestAnimationFrame(drawBG);
+  const best=loadBest();
+  if(best>0) $("endlessTitleBtn").textContent = `Endless Winter · best ${best} ▸`;
   const sv=loadSave();
-  if(sv && sv.night && sv.night>=1 && sv.night<=TOTAL_NIGHTS){
+  if(sv && sv.night && sv.night>=1){
     // there's a winter in progress: Continue is primary, Begin again is secondary
     $("continueBtn").style.display="";
-    $("continueBtn").textContent = `Return to the keep · Night ${sv.night} ▸`;
+    $("continueBtn").textContent = (sv.endless?"Return to the endless winter · Night ":"Return to the keep · Night ") + sv.night + " ▸";
     $("newBtn").style.display="";
     $("startBtn").style.display="none";
   }
