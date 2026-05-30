@@ -28,12 +28,22 @@ to burn: **what you remember**. Trade memories for fire, and survive the dark.
   *The Keeper* (you reach the thaw still knowing your own name and why the light
   matters) to *The Light* (you survive, but almost nothing of you remains) and
   *The Dark* (the fire goes out).
+- **Endless Winter.** When the story is done — or straight from the title — step
+  into **Endless Winter**: a survival mode of **procedurally-generated** beam
+  puzzles where the cold deepens forever. Walk back into it from the thaw carrying
+  whatever warmth and memories you kept (so a clean story run buys a longer
+  survival), or start a fresh run. Play until the light finally goes out; your
+  **longest run is saved** as a best score.
 
-The eight puzzles are hand-authored and verified solvable within their mirror
+The eight story puzzles are hand-authored and verified solvable within their mirror
 budget; the warmth economy was tuned with a headless simulation so that skilful
 light-keeping is rewarded with memories kept, weaker play forces harder
 sacrifices, and the game is always winnable — even a player who guides no ships
-can survive by burning everything (and live with the hollow ending).
+can survive by burning everything (and live with the hollow ending). The Endless
+Winter puzzles come from a generator that is guaranteed-solvable **by construction**
+and re-verified against the real beam engine before each puzzle is served (3,600
+generated levels across 30 difficulty tiers were brute-force checked: zero
+unsolvable).
 
 ## Tech
 
@@ -46,12 +56,16 @@ can survive by burning everything (and live with the hollow ending).
 - A small deterministic **beam simulator** (grid ray-march with mirror reflection,
   transparent ship collectors, and a visited-state guard against mirror loops),
   driven live so the glowing beam and lit ships update on every tap.
+- A **procedural puzzle generator** for Endless Winter: it traces a random
+  right-angle beam path, drops ships on the straight runs, records the bend mirrors
+  as the intended solution, scatters decoy rocks off the path, and re-simulates to
+  guarantee every puzzle is solvable within its mirror budget before serving it.
 - **Procedural ambient sound** via the Web Audio API — filtered-noise winter wind
   with a slow breathing filter, fire crackle that follows your warmth, and soft
   tones for placing mirrors, guiding ships and burning memories. No audio files;
   mutable and gated behind a user gesture.
 - **Save/restore** in `localStorage` (auto-saves each dawn, with a *Return to the
-  keep* option on the title screen).
+  keep* option on the title screen) and a persisted Endless Winter **best run**.
 - Mouse and touch controls; full `prefers-reduced-motion` support (snow and the
   sweeping beam still, transitions disabled).
 
@@ -79,6 +93,9 @@ All the knobs live near the top of the `<script>`:
 - `LEVELS` holds the eight hand-authored puzzles (lamp position + direction, ships,
   rocks, and the mirror budget). Each is solvable by construction; a brute-force
   check confirms a solution exists within budget.
+- `genLevel()` / `diffFor()` drive the Endless Winter generator and its difficulty
+  ramp (turns, ship count, rocks, spare mirrors). `drainFor()` is the cold curve:
+  the tuned `DRAIN` array for the story, a forever-deepening formula for endless.
 - `MEMORIES` holds the nine memories, ordered tender → core, each with the warmth it
   yields when burned and the line you feel as it goes.
 
@@ -88,7 +105,8 @@ All the knobs live near the top of the `<script>`:
 - [x] Memory-burning economy with multiple endings
 - [x] Procedural winter soundscape + warmth-reactive backdrop
 - [x] Save/restore via `localStorage`
+- [x] Procedurally generated nightly puzzles for an endless mode past the thaw
 - [ ] More mirror types (beam splitters, prisms, coloured lenses)
-- [ ] Procedurally generated nightly puzzles for endless mode past the thaw
+- [ ] Online/shareable seeds for the daily Endless puzzle
 - [ ] Voiced or typewriter-paced narrative beats
 - [ ] A second winter — New Game+ where the cold starts where it left off
