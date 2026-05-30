@@ -69,6 +69,7 @@
   .tool:hover{ color:#fff; }
   .tool.active{ box-shadow:0 0 0 2px currentColor inset; }
   .tool.bus.active{ color:var(--bus);} .tool.rail.active{ color:var(--rail);} .tool.ferry.active{ color:var(--ferry);}
+  .tool.inter.active{ color:#b07fe0;}
   .tool.tool--util.active{ color:var(--olive);}
 
   /* zoom controls */
@@ -230,7 +231,7 @@
         <button id="zoomOut" title="Zoom out">－</button>
         <button id="zoomReset" title="Reset view"><span id="zoomLevel">100%</span></button>
       </div>
-      <div class="maphint">Scroll / pinch to zoom · drag to pan · tap a station to look inside</div>
+      <div class="maphint">Zoom out for the whole region · tap a town to enter it · tap a station to look inside</div>
 
       <div id="drawhint">
         <span id="drawhintText">Pick stops…</span>
@@ -242,6 +243,7 @@
         <button class="tool bus" data-mode="bus">🚌 Bus <small id="costBus">£6k</small></button>
         <button class="tool rail" data-mode="rail">🚊 Rail <small id="costRail">track</small></button>
         <button class="tool ferry" data-mode="ferry">⛴️ Ferry <small id="costFerry">£14k</small></button>
+        <button class="tool inter" data-mode="intercity">🚄 Intercity <small>towns</small></button>
         <button class="tool tool--util" data-mode="heat">🔥 Demand</button>
       </div>
 
@@ -290,7 +292,8 @@
           <table class="mini"><thead><tr><th>From → To</th><th>Riders</th></tr></thead><tbody id="rTop"></tbody></table>
           <h4 class="sec">Network</h4>
           <div class="card">
-            <div class="kv"><span>Stops connected</span><span id="rConn">0 / 18</span></div>
+            <div class="kv"><span>Towns served</span><span id="rTowns">0 / 0</span></div>
+            <div class="kv"><span>Stops connected</span><span id="rConn">0</span></div>
             <div class="kv"><span>Interchange hubs</span><span id="rHubs">0</span></div>
             <div class="kv"><span>Vehicles owned</span><span id="rVeh">0</span></div>
           </div>
@@ -308,10 +311,16 @@
             <b style="color:#fff">1. Trace a line.</b> Choose Bus, Rail or Ferry under the map, then click stops in order. Ferries only link waterside stops. Hit <b>Build line</b>.
           </p></div>
           <div class="card"><p class="muted">
-            <b style="color:#fff">Get around the map.</b> Scroll or pinch to <b>zoom</b> (or use ＋ / －), drag to <b>pan</b>, and <b>tap any station</b> to look inside — you'll see the place, the people queueing, and your vehicles pulling in to pick them up. Press <b>← Back to map</b> or <b>Esc</b> to return.
+            <b style="color:#fff">Region & towns.</b> The map is a whole <b>region</b> of towns. Zoom out (scroll / pinch / －) to see them all and the intercity links; <b>tap a town</b> to dive into its streets. Zoom in to a town to place local stops; zoom out to plan the network. Each town has its own randomised set of places to connect.
           </p></div>
           <div class="card"><p class="muted">
-            <b style="color:#fff">2. Carry passengers.</b> People appear at stops wanting to reach another place. They board your vehicles, transfer at shared <b>interchange</b> stops, and pay a fare on arrival — longer trips and ferries pay more.
+            <b style="color:#fff">Get around.</b> Scroll/pinch to <b>zoom</b> (＋ / －), drag to <b>pan</b>, and in close-up <b>tap any station</b> to look inside — the place, the queue, and your vehicles pulling in. <b>Esc</b> / Back to return.
+          </p></div>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">2. Carry passengers.</b> People appear at stops wanting to reach another place — within a town, or <b>to another town entirely</b>. They board, transfer at <b>interchange</b> stops, and pay a fare on arrival — longer trips, ferries and intercity pay more.
+          </p></div>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">🚄 Go intercity.</b> Pick the <b>Intercity</b> tool and click two or more <b>towns</b> to link their central stations with a fast, high-capacity line. Connect a town's central station to its local stops so travellers can transfer all the way through.
           </p></div>
           <div class="card"><p class="muted">
             <b style="color:#fff">3. Grow & maintain.</b> Add vehicles to busy lines, open new routes, and <b>Service</b> vehicles before wear gets high — neglected vehicles break down, costing money and happiness. Short on cash? The <b>🏦 Bank</b> (Lines tab) lets you <b>borrow</b> to expand and <b>repay</b> as fares roll in — interest accrues daily, so clear debt when you can.
@@ -342,13 +351,13 @@
     <p class="kick">Wild Olive Studios · Transit Tycoon</p>
     <h1>Tidewater Lines</h1>
     <p>The coastal city of <b>Olivehaven</b> is growing, and its people need a way to move. You've been handed the keys to a brand-new clean-transit authority and a modest budget.</p>
-    <p>Stitch the city together with <b>electric buses</b>, sleek <b>light rail</b>, and breezy <b>ferries</b>. Carry real passengers from the university to the beach, from the business district to the opera house. Collect fares, reinvest, and build the network this bay deserves.</p>
+    <p>Stitch the city together with <b>electric buses</b>, sleek <b>light rail</b>, and breezy <b>ferries</b> — then zoom out and grow across a whole <b>region of towns</b>, linking them with fast <b>intercity</b> lines. Carry real passengers near and far, collect fares, reinvest, and build the network this coast deserves.</p>
     <ul>
-      <li>🚌 <b>Trace routes</b> between 18 unique destinations — libraries, an opera house, beaches, a forest park, the harbour and more.</li>
-      <li>👥 <b>Watch live passengers</b> board, transfer at interchanges, and ride to their stops.</li>
-      <li>🔍 <b>Zoom the map and step inside any station</b> — see the place, the queue, and your vehicles pulling in.</li>
-      <li>🏟️ <b>Ride the rhythm of the city</b> — Match Days, festivals and weather shift demand; rough seas slow the ferries.</li>
-      <li>💷 <b>Balance profit & happiness</b> — expand smartly, maintain your fleet, and keep riders smiling.</li>
+      <li>🗺️ <b>A whole region to grow into</b> — your home town plus more towns, each with its own randomised streets and places.</li>
+      <li>🚄 <b>Connect town to town</b> with intercity rail and ferries; passengers travel right across the map.</li>
+      <li>👥 <b>Watch live passengers</b> board, transfer at interchanges, and ride to their stops — zoom in to step inside any station.</li>
+      <li>🏟️ <b>Ride the rhythm of the region</b> — Match Days, festivals and weather shift demand; rough seas slow the ferries.</li>
+      <li>💷 <b>Balance profit & happiness</b> — expand smartly, maintain your fleet, borrow when you must, and keep riders smiling.</li>
     </ul>
     <div class="legend">
       <span><i style="background:var(--bus)"></i>Electric bus</span>
@@ -414,23 +423,27 @@ const CFG = {
   SIM_MIN_PER_SEC: 34,           // at 1× speed: ~42s per day
   DAY_START: 360, DAY_END: 1320, // service runs 06:00 → 22:00; spawns taper off after
   FARE_BASE: 1.25, FARE_PER_UNIT: 0.010, FERRY_PREMIUM: 1.35, RAIL_PREMIUM: 1.08,
-  MAX_PASSENGERS: 420,           // perf cap on concurrent agents
+  MAX_PASSENGERS: 520,           // perf cap on concurrent agents
   PATIENCE_MIN: 36,              // sim-min a rider will wait at a stop before giving up
   TRANSFER_PENALTY: 9,          // min-equivalent cost added per transfer in routing
-  MAX_TRANSFERS: 2,
+  MAX_TRANSFERS: 3,             // allows local → intercity → local town-to-town trips
+  ZOOM_MAX: 13,                 // how far you can zoom into a town
+  INTERCITY_SHARE: 0.24,        // fraction of trips that want another town
   HAPPY_START: 75,
-  WIN_WORTH: 220000,             // net worth needed for the final goal
+  WIN_WORTH: 350000,             // net worth needed for the final goal (regional scale)
   LOAN_MAX_DEBT: 60000,          // total outstanding debt the bank will allow
   LOAN_DAILY_RATE: 0.011,        // daily interest on the outstanding balance (~1.1%)
 };
 
 const MODES = {
   bus:  { name:"Electric Bus", color:"#e7b75f", buy:6000,  cap:28,  speed:21, dailyOp:70,
-          water:false, wearRate:0.00026, infraPerUnit:0,  stopCost:600,  premium:1.0 },
+          water:false, wearRate:0.00026, infraPerUnit:0,  stopCost:600,  premium:1.0, local:true },
   rail: { name:"Light Rail",   color:"#5b8def", buy:17000, cap:80,  speed:34, dailyOp:170,
-          water:false, wearRate:0.00018, infraPerUnit:26, stopCost:3200, premium:CFG.RAIL_PREMIUM },
+          water:false, wearRate:0.00018, infraPerUnit:26, stopCost:3200, premium:CFG.RAIL_PREMIUM, local:true },
   ferry:{ name:"Ferry",        color:"#36c2c9", buy:14000, cap:120, speed:16, dailyOp:150,
-          water:true,  wearRate:0.00020, infraPerUnit:0,  stopCost:4200, premium:CFG.FERRY_PREMIUM },
+          water:true,  wearRate:0.00020, infraPerUnit:0,  stopCost:4200, premium:CFG.FERRY_PREMIUM, local:true },
+  intercity:{ name:"Intercity", color:"#b07fe0", buy:26000, cap:150, speed:64, dailyOp:240,
+          water:false, wearRate:0.00010, infraPerUnit:7, stopCost:1500, premium:1.18, intercity:true },
 };
 
 const SERVICE_BASE = 200;   // £ to service a vehicle (preventive) + wear factor
@@ -439,44 +452,128 @@ const BREAKDOWN_FLOOR = 50; // wear below this never breaks down
 const ADD_VEHICLE_DISCOUNT = 1.0;
 
 /* --------------------------- WORLD DATA ---------------------------------- */
-/* Each location: id, name, emoji, x, y (in world coords), water (ferry access),
-   demand (relative rider weight), pull (how attractive as a destination),
-   peak: "am"|"pm"|"day"|"eve"|"flat" time-of-day flavour.                    */
-const LOCATIONS = [
-  { id:0,  name:"City Centre",        emoji:"🏙️", x:620, y:380, water:false, demand:1.5, pull:1.6, peak:"flat" },
-  { id:1,  name:"Business District",  emoji:"🏢", x:790, y:300, water:false, demand:1.6, pull:1.5, peak:"am"  },
-  { id:2,  name:"Old Town",           emoji:"🏰", x:470, y:520, water:true,  demand:1.0, pull:1.2, peak:"day" },
-  { id:3,  name:"University",         emoji:"🎓", x:840, y:520, water:false, demand:1.5, pull:1.2, peak:"am"  },
-  { id:4,  name:"Shopping Centre",    emoji:"🛍️", x:520, y:300, water:false, demand:1.3, pull:1.4, peak:"day" },
-  { id:5,  name:"Central Library",    emoji:"📚", x:660, y:250, water:false, demand:0.8, pull:0.9, peak:"day" },
-  { id:6,  name:"Opera House",        emoji:"🎶", x:380, y:380, water:false, demand:0.7, pull:1.1, peak:"eve" },
-  { id:7,  name:"Theatre Quarter",    emoji:"🎭", x:300, y:470, water:false, demand:0.7, pull:1.0, peak:"eve" },
-  { id:8,  name:"Art Gallery",        emoji:"🖼️", x:560, y:170, water:false, demand:0.7, pull:0.95,peak:"day" },
-  { id:9,  name:"Waterfront",         emoji:"🌅", x:600, y:640, water:true,  demand:1.0, pull:1.3, peak:"eve" },
-  { id:10, name:"North Beach",        emoji:"🏖️", x:300, y:650, water:true,  demand:1.0, pull:1.4, peak:"day" },
-  { id:11, name:"Forest Park",        emoji:"🌲", x:980, y:170, water:false, demand:0.8, pull:1.2, peak:"day" },
-  { id:12, name:"Harbour",            emoji:"⚓", x:760, y:680, water:true,  demand:0.9, pull:1.0, peak:"day" },
-  { id:13, name:"City Hospital",      emoji:"🏥", x:980, y:400, water:false, demand:1.0, pull:0.9, peak:"flat"},
-  { id:14, name:"Stadium",            emoji:"🏟️", x:1080,y:560, water:false, demand:0.8, pull:1.1, peak:"eve" },
-  { id:15, name:"Botanic Gardens",    emoji:"🌷", x:200, y:300, water:false, demand:0.6, pull:1.0, peak:"day" },
-  { id:16, name:"Airport",            emoji:"✈️", x:1140,y:250, water:false, demand:0.9, pull:1.1, peak:"flat"},
-  { id:17, name:"Marina Island",      emoji:"⛵", x:430, y:700, water:true,  demand:0.7, pull:1.1, peak:"day" },
+/* The world is a REGION of several towns. Town 0 is the handcrafted starter,
+   "Olivehaven"; the rest are generated in its style from a seed (so a save can
+   restore the exact world). Each location: id, town, name, emoji, x, y (region
+   coords), water (ferry access), demand, pull, peak, kind, hub (intercity).    */
+let LOCATIONS=[], TOWNS=[], WATER=[];
+
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+const TOWN_NAMES=["Saltmarsh","Pinecrest","Brightwater","Thornbury","Ashford","Calder Vale","Westport","Ferncombe","Marlow Quay","Redhill","Kestrel Point","Hollowmere","Greywick","Maple Hollow"];
+const LAND_POOL=[
+  {name:"Business Park", emoji:"🏢", kind:"city",    demand:1.4, pull:1.4, peak:"am"},
+  {name:"Shopping Centre",emoji:"🛍️",kind:"shops",   demand:1.3, pull:1.4, peak:"day"},
+  {name:"Market Square", emoji:"🏬", kind:"shops",   demand:1.0, pull:1.1, peak:"day"},
+  {name:"University",    emoji:"🎓", kind:"campus",  demand:1.4, pull:1.2, peak:"am"},
+  {name:"Library",       emoji:"📚", kind:"civic",   demand:0.8, pull:0.9, peak:"day"},
+  {name:"Theatre",       emoji:"🎭", kind:"theatre", demand:0.7, pull:1.0, peak:"eve"},
+  {name:"Concert Hall",  emoji:"🎶", kind:"theatre", demand:0.7, pull:1.1, peak:"eve"},
+  {name:"Art Gallery",   emoji:"🖼️", kind:"gallery", demand:0.7, pull:0.95,peak:"day"},
+  {name:"Hospital",      emoji:"🏥", kind:"civic",   demand:1.0, pull:0.9, peak:"flat"},
+  {name:"Stadium",       emoji:"🏟️", kind:"stadium", demand:0.8, pull:1.1, peak:"eve"},
+  {name:"Park",          emoji:"🌳", kind:"park",    demand:0.7, pull:1.1, peak:"day"},
+  {name:"Gardens",       emoji:"🌷", kind:"park",    demand:0.6, pull:1.0, peak:"day"},
+  {name:"Forest Trail",  emoji:"🌲", kind:"forest",  demand:0.6, pull:1.1, peak:"day"},
+  {name:"Old Quarter",   emoji:"🏰", kind:"old",     demand:0.9, pull:1.1, peak:"day"},
+];
+const WATER_POOL=[
+  {name:"Waterfront", emoji:"🌅", kind:"waterfront", demand:1.0, pull:1.3, peak:"eve", water:true},
+  {name:"Beach",      emoji:"🏖️", kind:"beach",     demand:1.0, pull:1.4, peak:"day", water:true},
+  {name:"Harbour",    emoji:"⚓", kind:"water",      demand:0.9, pull:1.0, peak:"day", water:true},
+  {name:"Marina",     emoji:"⛵", kind:"water",      demand:0.7, pull:1.1, peak:"day", water:true},
+];
+/* Olivehaven — the starter town, in LOCAL coords (centred when placed) */
+const OLIVE=[
+  {name:"City Centre",      emoji:"🏙️", lx:620,ly:380, kind:"city",      demand:1.5,pull:1.6,peak:"flat", hub:true},
+  {name:"Business District",emoji:"🏢", lx:790,ly:300, kind:"city",      demand:1.6,pull:1.5,peak:"am"},
+  {name:"Old Town",         emoji:"🏰", lx:470,ly:520, kind:"old",       demand:1.0,pull:1.2,peak:"day", water:true},
+  {name:"University",       emoji:"🎓", lx:840,ly:520, kind:"campus",    demand:1.5,pull:1.2,peak:"am"},
+  {name:"Shopping Centre",  emoji:"🛍️", lx:520,ly:300, kind:"shops",     demand:1.3,pull:1.4,peak:"day"},
+  {name:"Central Library",  emoji:"📚", lx:660,ly:250, kind:"civic",     demand:0.8,pull:0.9,peak:"day"},
+  {name:"Opera House",      emoji:"🎶", lx:380,ly:380, kind:"theatre",   demand:0.7,pull:1.1,peak:"eve"},
+  {name:"Theatre Quarter",  emoji:"🎭", lx:300,ly:470, kind:"theatre",   demand:0.7,pull:1.0,peak:"eve"},
+  {name:"Art Gallery",      emoji:"🖼️", lx:560,ly:170, kind:"gallery",   demand:0.7,pull:0.95,peak:"day"},
+  {name:"Waterfront",       emoji:"🌅", lx:600,ly:640, kind:"waterfront",demand:1.0,pull:1.3,peak:"eve", water:true},
+  {name:"North Beach",      emoji:"🏖️", lx:300,ly:650, kind:"beach",     demand:1.0,pull:1.4,peak:"day", water:true},
+  {name:"Forest Park",      emoji:"🌲", lx:980,ly:170, kind:"forest",    demand:0.8,pull:1.2,peak:"day"},
+  {name:"Harbour",          emoji:"⚓", lx:760,ly:680, kind:"water",     demand:0.9,pull:1.0,peak:"day", water:true},
+  {name:"City Hospital",    emoji:"🏥", lx:980,ly:400, kind:"civic",     demand:1.0,pull:0.9,peak:"flat"},
+  {name:"Stadium",          emoji:"🏟️", lx:1080,ly:560,kind:"stadium",   demand:0.8,pull:1.1,peak:"eve"},
+  {name:"Botanic Gardens",  emoji:"🌷", lx:200,ly:300, kind:"park",      demand:0.6,pull:1.0,peak:"day"},
+  {name:"Airport",          emoji:"✈️", lx:1140,ly:250,kind:"airport",   demand:0.9,pull:1.1,peak:"flat"},
+  {name:"Marina Island",    emoji:"⛵", lx:430,ly:700, kind:"water",     demand:0.7,pull:1.1,peak:"day", water:true},
 ];
 
-/* Water polygons (world coords) — drawn as the bay & river. Ferry stops sit on/near these. */
-const WATER = [
-  // big bay across the bottom
-  [[120,560],[300,540],[470,560],[600,600],[760,620],[900,660],[1140,700],[1180,800],[80,800]],
-  // river snaking up to Old Town / Marina
-  [[420,560],[460,640],[430,720],[470,800],[560,800],[540,640],[520,560]],
-];
+function shuffle(a,R){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(R()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function oliveWaters(cx,cy){ const m=p=>[cx+(p[0]-640), cy+(p[1]-400)];
+  return [ [[120,560],[300,540],[470,560],[600,600],[760,620],[900,660],[1140,700],[1180,860],[80,860]].map(m),
+           [[420,560],[460,640],[430,760],[470,860],[560,860],[540,640],[520,560]].map(m) ]; }
+function townBay(cx,cy,dir,r,R){ const bx=cx+Math.cos(dir)*r*0.98, by=cy+Math.sin(dir)*r*0.8, br=r*0.72, poly=[];
+  for(let a=0;a<9;a++){ const ang=a/9*Math.PI*2, rr=br*(0.7+0.45*Math.sin(a*1.9+R()*2)); poly.push([bx+Math.cos(ang)*rr, by+Math.sin(ang)*rr*0.8]); } return poly; }
+
+function generateWorld(seed){
+  const R=mulberry32((seed>>>0)||1);
+  const rint=(a,b)=>Math.floor(a+R()*(b-a+1)), pick=arr=>arr[Math.floor(R()*arr.length)];
+  LOCATIONS=[]; TOWNS=[]; WATER=[];
+  let id=0;
+  const SLOTS=[[1,1],[0,0],[2,0],[0,1],[2,1],[1,0],[0,2],[2,2],[1,2]];
+  const SX=1550, SY=1320, MX=820, MY=760, nTowns=7;
+  const names=shuffle([...TOWN_NAMES],R);
+  for(let ti=0; ti<nTowns; ti++){
+    const [gx,gy]=SLOTS[ti];
+    const cx=MX+gx*SX+(R()*240-120), cy=MY+gy*SY+(R()*220-110);
+    const town={ id:ti, name:ti===0?"Olivehaven":names[ti-1], cx, cy, kind:"town", coastal:false, r:400, hub:-1, locIds:[], pop:1 };
+    if(ti===0){
+      town.kind="city"; town.coastal=true; town.r=640; town.pop=1.3;
+      for(const t of OLIVE){
+        const L={ id, town:ti, name:t.name, emoji:t.emoji, x:cx+(t.lx-640), y:cy+(t.ly-400),
+                  water:!!t.water, demand:t.demand, pull:t.pull, peak:t.peak, kind:t.kind, hub:!!t.hub };
+        if(t.hub) town.hub=id;
+        LOCATIONS.push(L); town.locIds.push(id); id++;
+      }
+      for(const poly of oliveWaters(cx,cy)) WATER.push(poly);
+    } else {
+      const roll=R(); let n,sizeF;
+      if(roll<0.28){ town.kind="city"; n=rint(10,13); sizeF=1.08; town.r=560; town.pop=1.2; }
+      else if(roll<0.74){ town.kind="town"; n=rint(7,9); sizeF=0.92; town.r=410; town.pop=0.95; }
+      else { town.kind="village"; n=rint(4,6); sizeF=0.72; town.r=290; town.pop=0.7; }
+      town.coastal = R()<0.5;
+      const coastDir=R()*Math.PI*2;
+      const hub={ id, town:ti, name:town.name+" Central", emoji:"🚉", x:cx, y:cy, water:false,
+                  demand:1.2*sizeF, pull:1.3*sizeF, peak:"flat", kind:"transit", hub:true };
+      town.hub=id; LOCATIONS.push(hub); town.locIds.push(id); id++;
+      const land=shuffle([...LAND_POOL],R); let li=0, wc=0;
+      const wWant = town.coastal ? rint(1,3) : 0;
+      const placed=[{x:cx,y:cy}];
+      for(let k=1;k<n;k++){
+        let tmpl,water=false;
+        if(town.coastal && wc<wWant && R()<0.55){ tmpl=pick(WATER_POOL); water=true; wc++; }
+        else { tmpl=land[li%land.length]; li++; }
+        let px,py,ok=false,tries=0;
+        do{ const ang = water? coastDir+(R()*0.9-0.45) : R()*Math.PI*2;
+            const rad = water? town.r*(0.72+R()*0.32) : town.r*(0.30+R()*0.66);
+            px=cx+Math.cos(ang)*rad; py=cy+Math.sin(ang)*rad*0.82;
+            ok=placed.every(p=>Math.hypot(p.x-px,p.y-py)>118); tries++; } while(!ok && tries<26);
+        placed.push({x:px,y:py});
+        LOCATIONS.push({ id, town:ti, name:town.name+" "+tmpl.name, emoji:tmpl.emoji, x:px, y:py,
+                  water, demand:tmpl.demand*sizeF, pull:tmpl.pull*sizeF, peak:tmpl.peak, kind:tmpl.kind, hub:false });
+        town.locIds.push(id); id++;
+      }
+      if(town.coastal && wc>0) WATER.push(townBay(cx,cy,coastDir,town.r,R));
+    }
+    TOWNS.push(town);
+  }
+  let maxX=0,maxY=0; for(const l of LOCATIONS){ maxX=Math.max(maxX,l.x); maxY=Math.max(maxY,l.y); }
+  CFG.WORLD_W=Math.round(maxX+MX*0.85); CFG.WORLD_H=Math.round(maxY+MY*0.85);
+  S.stops={}; for(const l of LOCATIONS) S.stops[l.id]={wait:[]};
+}
+const townOf = id => TOWNS[loc(id).town];
 
 /* --------------------------- WEATHER & EVENTS ---------------------------- */
-/* Outdoor / leisure stops whose demand swings with the weather. */
-const OUTDOOR = [2,9,10,11,15,17];  // old town, waterfront, beach, forest, botanic, marina
+/* Outdoor / leisure stop kinds whose demand swings with the weather. */
+const OUTDOOR_KINDS = new Set(["beach","waterfront","forest","park","water","old"]);
 
-/* Weather is rolled each morning. It scales ferry speed & wear, shifts demand
-   at outdoor spots, and nudges overall ridership. */
 const WEATHERS = [
   { key:"sunny",  name:"Sunny",     icon:"☀️", w:32, ferrySpeed:1.05, ferryWear:0.95, outdoor:1.45, global:1.05 },
   { key:"fair",   name:"Fair",      icon:"🌤️", w:26, ferrySpeed:1.00, ferryWear:1.00, outdoor:1.10, global:1.00 },
@@ -486,21 +583,22 @@ const WEATHERS = [
   { key:"storm",  name:"Storm",     icon:"⛈️", w:3,  ferrySpeed:0.45, ferryWear:1.45, outdoor:0.30, global:0.88 },
 ];
 
-/* Special event days surge demand at particular venues. `req` (optional) gates an
-   event on the weather key. `mods` maps locId → demand multiplier. */
+/* Special event days surge demand at venues of a given KIND (across all towns).
+   `req` (optional) gates an event on the weather key. */
 const EVENTS = [
-  { key:"normal",  name:"",                icon:"",   w:48, note:"" , mods:{} },
-  { key:"match",   name:"Match Day",       icon:"🏟️", w:11, note:"Big crowds heading to the Stadium tonight.", mods:{14:4.2, 0:1.3, 1:1.2} },
-  { key:"opera",   name:"Opera Night",     icon:"🎶", w:8,  note:"A gala at the Opera House — dress circle's full.", mods:{6:3.4, 7:2.2, 0:1.2} },
-  { key:"festival",name:"Arts Festival",   icon:"🎭", w:7,  note:"The Theatre Quarter is buzzing with festival-goers.", mods:{7:3.0, 6:2.0, 8:1.8} },
-  { key:"market",  name:"Market Day",      icon:"🛍️", w:7,  note:"Market Day packs out the Shopping Centre.", mods:{4:2.4, 0:1.3} },
-  { key:"grad",    name:"Graduation",      icon:"🎓", w:5,  note:"Graduation brings families to the University.", mods:{3:2.6, 13:1.3} },
-  { key:"flight",  name:"Travel Rush",     icon:"✈️", w:5,  note:"A travel rush swells the Airport run.", mods:{16:2.6, 1:1.3} },
-  { key:"beach",   name:"Beach Day",       icon:"🏖️", w:9,  note:"Glorious weather — everyone's off to the coast!", mods:{10:2.6, 9:1.7, 17:1.6}, req:"sunny" },
+  { key:"normal",  name:"",              icon:"",   w:48, note:"", kindMods:{} },
+  { key:"match",   name:"Match Day",     icon:"🏟️", w:11, note:"Big crowds heading to the stadiums tonight.", kindMods:{stadium:4.2} },
+  { key:"opera",   name:"Opera Night",   icon:"🎶", w:8,  note:"Galas fill the concert halls and theatres.", kindMods:{theatre:3.2} },
+  { key:"festival",name:"Arts Festival", icon:"🎭", w:7,  note:"Theatre quarters buzz with festival-goers.", kindMods:{theatre:2.4, gallery:1.9} },
+  { key:"market",  name:"Market Day",    icon:"🛍️", w:7,  note:"Market Day packs out the shopping districts.", kindMods:{shops:2.4} },
+  { key:"grad",    name:"Graduation",    icon:"🎓", w:5,  note:"Graduation brings families to the universities.", kindMods:{campus:2.6} },
+  { key:"flight",  name:"Travel Rush",   icon:"✈️", w:5,  note:"A travel rush swells the airport runs.", kindMods:{airport:2.6} },
+  { key:"beach",   name:"Beach Day",     icon:"🏖️", w:9,  note:"Glorious weather — everyone's off to the coast!", kindMods:{beach:2.6, waterfront:1.7, water:1.4}, req:"sunny" },
 ];
 
 /* --------------------------- STATE --------------------------------------- */
 const S = {
+  seed: 1,
   money: CFG.START_MONEY,
   debt: 0, interestToday: 0,
   day: 1, time: CFG.DAY_START, speed: 1, running: false, paused:false,
@@ -584,6 +682,9 @@ function recomputeInterchanges(){
   for(const ln of S.lines) for(const s of ln.stops) lineServes[s].add(ln.id);
 }
 const isHub = id => lineServes[id] && lineServes[id].size>=2;
+const served = id => lineServes[id] && lineServes[id].size>0;
+function townHasService(tid){ const t=TOWNS[tid]; return t && t.locIds.some(s=>served(s)); }
+function lineSpansTowns(line){ const s=new Set(); for(const id of line.stops) s.add(loc(id).town); return s.size>1; }
 
 /* Dijkstra returning a plan: array of legs {lineId, board, alight, dir} or null.
    State key = location|lineId(currently riding). */
@@ -677,24 +778,32 @@ function updateConditions(){
 
 /* combined demand multiplier for a location from today's event + weather */
 function locDemandMult(id){
-  let m = 1;
-  if(S.event && S.event.mods[id]) m *= S.event.mods[id];
-  if(S.weather && OUTDOOR.includes(id)) m *= S.weather.outdoor;
+  const l=loc(id); let m=1;
+  if(S.event && S.event.kindMods && S.event.kindMods[l.kind]) m *= S.event.kindMods[l.kind];
+  if(S.weather && OUTDOOR_KINDS.has(l.kind)) m *= S.weather.outdoor;
   return m;
 }
 
+/* Destinations: mostly local (gravity within the town), but a fraction of trips
+   want ANOTHER town — weighted by that town's pull and a gentle distance falloff. */
 function pickDestination(oId){
-  let total=0; const w=[];
+  const o=loc(oId);
+  const intercity = TOWNS.length>1 && Math.random()<CFG.INTERCITY_SHARE;
+  let total=0; const w=new Array(LOCATIONS.length).fill(0);
   for(const l of LOCATIONS){
-    if(l.id===oId){ w.push(0); continue; }
-    const d = dist(loc(oId),l);
-    // gravity model: attraction / distance falloff, swayed by today's conditions
-    const val = l.pull * (1/(1+d/260)) * locDemandMult(l.id);
-    w.push(val); total+=val;
+    if(l.id===oId) continue;
+    const sameTown = l.town===o.town;
+    if(intercity ? sameTown : !sameTown) continue;
+    const d=dist(o,l);
+    const falloff = intercity ? 1/(1+d/1500) : 1/(1+d/260);
+    let val = l.pull*falloff*locDemandMult(l.id);
+    if(intercity) val *= (TOWNS[l.town].pop||1);
+    w[l.id]=val; total+=val;
   }
+  if(total<=0) return -1;   // no valid destination (e.g. lone village) → skip
   let r=Math.random()*total;
   for(let i=0;i<w.length;i++){ r-=w[i]; if(r<=0) return i; }
-  return (oId+1)%LOCATIONS.length;
+  return -1;
 }
 
 function spawnPassengers(dtMin){
@@ -714,13 +823,18 @@ function spawnPassengers(dtMin){
     let r=Math.random()*tot, oId=0;
     for(let i=0;i<w.length;i++){ r-=w[i]; if(r<=0){oId=i;break;} }
     const dId = pickDestination(oId);
+    if(dId<0) continue;
     const plan = planTrip(oId,dId);
-    if(!plan){ // unmet demand → feed heatmap, no agent
-      const key=oId<dId?oId+"-"+dId:dId+"-"+oId;
-      S.unmet[key]=(S.unmet[key]||0)+1; continue;
+    if(!plan){ // unmet demand → feed the heatmap near where you already operate
+      if(townHasService(loc(oId).town) || townHasService(loc(dId).town)){
+        const key=oId<dId?oId+"-"+dId:dId+"-"+oId;
+        S.unmet[key]=(S.unmet[key]||0)+1;
+      }
+      continue;
     }
     const p = {
       o:oId, d:dId, plan, leg:0, wait:0, onVeh:null,
+      patience: CFG.PATIENCE_MIN + 16*(plan.length-1),   // longer trips, more patience
       x:loc(oId).x+(Math.random()*16-8), y:loc(oId).y+(Math.random()*16-8),
       hue: 30+Math.random()*180,
     };
@@ -736,7 +850,7 @@ function tickWaiting(dtMin){
     for(let i=q.length-1;i>=0;i--){
       const p=q[i];
       p.wait += dtMin;
-      if(p.wait>CFG.PATIENCE_MIN){
+      if(p.wait > (p.patience||CFG.PATIENCE_MIN)){
         q.splice(i,1);
         removePassenger(p);
         S.lostToday++;        // daily happiness model reacts to the give-up ratio
@@ -1056,15 +1170,18 @@ function endOfDay(){
 /* --------------------------- GOALS --------------------------------------- */
 const GOALS = [
   { id:"firstline", txt:"Open your first line", test:()=>S.lines.length>=1 },
-  { id:"connect8",  txt:"Connect 8 different locations", test:()=>connectedCount()>=8 },
-  { id:"riders200", txt:"Carry 200 riders in a day", test:()=>S._peakRiders>=200 },
+  { id:"connect8",  txt:"Connect 8 stops in your home town", test:()=>connectedCount()>=8 },
+  { id:"riders300", txt:"Carry 300 riders in a day", test:()=>S._peakRiders>=300 },
   { id:"hub",       txt:"Create an interchange hub (2+ lines meet)", test:()=>LOCATIONS.some(l=>isHub(l.id)) },
-  { id:"threemodes",txt:"Run all three modes: bus, rail & ferry", test:()=>["bus","rail","ferry"].every(m=>S.lines.some(l=>l.mode===m)) },
-  { id:"happy90",   txt:"Reach 90% city happiness", test:()=>S.happy>=90 },
-  { id:"connectall",txt:"Connect every location (18)", test:()=>connectedCount()>=18 },
+  { id:"threemodes",txt:"Run all three local modes: bus, rail & ferry", test:()=>["bus","rail","ferry"].every(m=>S.lines.some(l=>l.mode===m)) },
+  { id:"intercity", txt:"Open an intercity line between two towns", test:()=>S.lines.some(l=>lineSpansTowns(l)) },
+  { id:"twotowns",  txt:"Run services in 2 different towns", test:()=>townsServed()>=2 },
+  { id:"happy90",   txt:"Reach 90% network happiness", test:()=>S.happy>=90 },
+  { id:"alltowns",  txt:"Run services in every town", test:()=>townsServed()>=TOWNS.length },
   { id:"worth",     txt:"Reach £"+(CFG.WIN_WORTH/1000)+"k net worth", test:()=>netWorth()>=CFG.WIN_WORTH },
 ];
 function connectedCount(){ const s=new Set(); for(const ln of S.lines) for(const id of ln.stops) s.add(id); return s.size; }
+function townsServed(){ return TOWNS.filter(t=>townHasService(t.id)).length; }
 function checkGoals(){
   let newly=false;
   for(const g of GOALS){
@@ -1091,7 +1208,7 @@ function resize(){
 /* recompute the effective transform from zoom + pan, clamping the pan so the
    map can't be dragged off-screen. All offsets are in device pixels. */
 function applyView(){
-  view.zoom=clamp(view.zoom,1,3.4);
+  view.zoom=clamp(view.zoom,1,CFG.ZOOM_MAX);
   view.eff=view.scale0*view.zoom;
   const ww=CFG.WORLD_W*view.eff, wh=CFG.WORLD_H*view.eff;
   const ox0=(cv.width-ww)/2, oy0=(cv.height-wh)/2;
@@ -1109,7 +1226,7 @@ function s2w(cx,cy){   // cx,cy in CSS px relative to canvas
 /* zoom toward a point (CSS px relative to canvas) keeping that point fixed */
 function zoomAt(factor, cx, cy){
   const wpt=s2w(cx,cy);
-  view.zoom=clamp(view.zoom*factor,1,3.4); applyView();
+  view.zoom=clamp(view.zoom*factor,1,CFG.ZOOM_MAX); applyView();
   const sp=w2s(wpt.x,wpt.y);
   view.panX += cx*view.dpr - sp.x;
   view.panY += cy*view.dpr - sp.y;
@@ -1117,12 +1234,28 @@ function zoomAt(factor, cx, cy){
   updateZoomUI();
 }
 function resetView(){ view.zoom=1; view.panX=0; view.panY=0; applyView(); updateZoomUI(); }
-function updateZoomUI(){ const z=$("zoomLevel"); if(z) z.textContent=Math.round(view.zoom*100)+"%"; }
+function updateZoomUI(){ const z=$("zoomLevel"); if(z) z.textContent= lodDetail()? Math.round(view.zoom*100)+"%" : "Region"; }
+/* below this zoom we show the whole REGION (towns as blobs + intercity links);
+   above it we drop into a town's detailed stops, local lines and vehicles. */
+function lodDetail(){ return view.zoom > 1.7; }
+function centerOn(wx,wy){ applyView(); const sp=w2s(wx,wy); view.panX += cv.width/2 - sp.x; view.panY += cv.height/2 - sp.y; applyView(); updateZoomUI(); }
+function focusTown(tw){
+  const targetEff = Math.min(cv.width,cv.height)*0.62/(tw.r*2);
+  view.zoom = clamp(targetEff/view.scale0, 2.0, CFG.ZOOM_MAX);
+  applyView(); centerOn(tw.cx,tw.cy);
+  toast(`${tw.name} — ${tw.kind}${townHasService(tw.id)?"":" · no service yet"}`,"good");
+}
 function nearestStop(wx,wy){
   let best=null,bd=1e9;
   for(const l of LOCATIONS){ const d=Math.hypot(l.x-wx,l.y-wy); if(d<bd){bd=d;best=l;} }
   return bd<46 ? best : null;
 }
+function nearestTown(wx,wy){
+  let best=null,bd=1e9;
+  for(const t of TOWNS){ const d=Math.hypot(t.cx-wx,t.cy-wy); if(d<bd){bd=d;best=t;} }
+  return (best && bd<best.r*1.25) ? best : null;
+}
+function onScreen(x,y,m){ const s=w2s(x,y); m=(m||0); return s.x>-m && s.x<cv.width+m && s.y>-m && s.y<cv.height+m; }
 
 function setMode(mode){
   if(mode==="heat"){ S.heatmap=!S.heatmap; refreshTools(); return; }
@@ -1153,18 +1286,26 @@ function onTapStop(l){
   build.stops.push(l.id);
   updateDrawHint();
 }
+function onTapTown(tw){            // intercity build: connect town hub stations
+  if(!build.active) return;
+  if(tw.hub<0 || build.stops.includes(tw.hub)) return;
+  build.stops.push(tw.hub);
+  updateDrawHint();
+}
 function updateDrawHint(){
   const h=$("drawhint");
   if(!build.active){ h.classList.remove("show"); return; }
   h.classList.add("show");
   const m=MODES[build.mode];
   const stops=build.stops;
+  const inter=!!m.intercity;
+  const unit = inter? "town" : "stop";
   let txt=`<b>${m.name}</b> — `;
-  if(stops.length===0) txt+="click the first stop on the map.";
-  else if(stops.length===1) txt+="click the next stop.";
+  if(stops.length===0) txt+= inter? "click two or more towns to link them." : "click the first stop on the map.";
+  else if(stops.length===1) txt+= `click the next ${unit}.`;
   else {
     const cost=lineBuildCost(build.mode,stops);
-    txt+=`${stops.length} stops · build cost <b>${fmtMoney(cost)}</b> (incl. 1 vehicle).`;
+    txt+=`${stops.length} ${unit}s · build cost <b>${fmtMoney(cost)}</b> (incl. 1 vehicle).`;
   }
   setHTML("drawhintText",txt);
   $("drawGo").disabled = stops.length<2 || S.money<lineBuildCost(build.mode,stops);
@@ -1198,7 +1339,7 @@ cv.addEventListener("pointermove",e=>{
     const [a,b]=[...ptrs.values()];
     const d=Math.hypot(a.x-b.x,a.y-b.y);
     const mid=localXY({clientX:(a.x+b.x)/2, clientY:(a.y+b.y)/2});
-    const target=clamp(pinch.zoom*(d/pinch.dist),1,3.4);
+    const target=clamp(pinch.zoom*(d/pinch.dist),1,CFG.ZOOM_MAX);
     zoomAt(target/view.zoom, mid.x, mid.y);
     return;
   }
@@ -1212,11 +1353,17 @@ function endPointer(e){
   const had=ptrs.has(e.pointerId); ptrs.delete(e.pointerId);
   if(ptrs.size<2) pinch=null;
   if(ptrs.size===0 && had){
-    if(!dragged){              // a genuine tap → select stop
+    if(!dragged){              // a genuine tap
       const p=localXY(e);
       const w=s2w(p.x,p.y);
-      const l=nearestStop(w.x,w.y);
-      if(l){ if(build.active) onTapStop(l); else openStation(l.id); }
+      if(build.active){
+        if(MODES[build.mode].intercity){ const tw=nearestTown(w.x,w.y); if(tw) onTapTown(tw); }
+        else { const l=nearestStop(w.x,w.y); if(l) onTapStop(l); }
+      } else if(!lodDetail()){   // region view → tap a town to zoom in
+        const tw=nearestTown(w.x,w.y); if(tw) focusTown(tw);
+      } else {                   // detail view → look inside the station
+        const l=nearestStop(w.x,w.y); if(l) openStation(l.id);
+      }
     }
     dragStart=null; panStart=null;
   }
@@ -1245,16 +1392,66 @@ function render(){
   ctx.translate(view.ox,view.oy); ctx.scale(view.eff,view.eff);
 
   drawWater();
-  drawGrid();
-  if(S.heatmap) drawHeat();
-  drawLines();
-  drawDrawing();
-  drawVehicles();
-  drawPassengers();
-  drawStops();
+  if(lodDetail()){
+    drawGrid();
+    if(S.heatmap) drawHeat();
+    drawLines();
+    drawIntercity(true);
+    drawDrawing();
+    drawVehicles();
+    drawPassengers();
+    drawStops();
+  } else {
+    drawRegion();
+    drawIntercity(false);
+    drawDrawing();
+  }
 
   ctx.restore();
   drawWeather();   // full-screen overlay (rain, storm, sun glow)
+}
+
+/* ---- region overview: towns as labelled footprints + intercity links ---- */
+function drawRegion(){
+  for(const t of TOWNS){
+    const svc=townHasService(t.id);
+    // footprint
+    ctx.beginPath(); ctx.ellipse(t.cx,t.cy,t.r*0.95,t.r*0.8,0,0,7);
+    ctx.fillStyle = svc? "rgba(43,179,163,0.10)":"rgba(150,170,166,0.06)";
+    ctx.fill();
+    ctx.lineWidth=3/view.zoom; ctx.strokeStyle= svc? "rgba(43,179,163,0.55)":"rgba(150,170,166,0.30)";
+    ctx.setLineDash(svc?[]:[14,12]); ctx.stroke(); ctx.setLineDash([]);
+    // little cluster of its stops as dots
+    for(const id of t.locIds){ const l=loc(id); ctx.beginPath(); ctx.arc(l.x,l.y,5,0,7);
+      ctx.fillStyle = served(id)? "rgba(243,247,242,0.9)":"rgba(180,200,196,0.5)"; ctx.fill(); }
+    // hub marker
+    const hub=loc(t.hub);
+    ctx.beginPath(); ctx.arc(hub.x,hub.y,12,0,7); ctx.fillStyle="#0e2c29"; ctx.fill();
+    ctx.lineWidth=3; ctx.strokeStyle= t.coastal? "#36c2c9":"#e7b75f"; ctx.stroke();
+    ctx.font="16px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(t.kind==="city"?"🏙️":t.kind==="village"?"🏘️":"🏢",hub.x,hub.y+1);
+    // label
+    ctx.font="700 22px "+CFG.FONT_F; ctx.textBaseline="top";
+    const label=t.name + (svc?"":"  ·  ?");
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle="rgba(8,28,27,0.72)"; roundRect(t.cx-tw/2-8, t.cy+t.r*0.8+6, tw+16, 28, 7); ctx.fill();
+    ctx.fillStyle="#eef3ea"; ctx.fillText(label, t.cx, t.cy+t.r*0.8+10);
+    ctx.font="600 13px "+CFG.FONT_F; ctx.fillStyle="#8fb6b1";
+    ctx.fillText(`${t.locIds.length} places`, t.cx, t.cy+t.r*0.8+38);
+  }
+  ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+}
+
+/* intercity (town-spanning) lines + their vehicles, shown at both zoom levels */
+function drawIntercity(detail){
+  for(const line of S.lines){
+    if(!(MODES[line.mode].intercity || lineSpansTowns(line))) continue;
+    const pts=line.path.pts;
+    ctx.lineJoin="round"; ctx.lineCap="round";
+    ctx.strokeStyle="rgba(0,0,0,0.35)"; ctx.lineWidth=detail?6:8; strokePoly(pts);
+    ctx.strokeStyle=line.color; ctx.lineWidth=detail?4:6; ctx.setLineDash(line.mode==="ferry"?[4,10]:[]); strokePoly(pts); ctx.setLineDash([]);
+    for(const v of line.vehicles){ ctx.beginPath(); ctx.arc(v.x,v.y, detail?5:8, 0,7);
+      ctx.fillStyle=v.broken?"#888":line.color; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle="rgba(0,0,0,0.4)"; ctx.stroke(); }
+  }
 }
 
 function drawWeather(){
@@ -1310,8 +1507,8 @@ function drawWater(){
 }
 function drawGrid(){
   ctx.strokeStyle="rgba(255,255,255,0.025)"; ctx.lineWidth=1;
-  for(let x=0;x<=CFG.WORLD_W;x+=80){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CFG.WORLD_H); ctx.stroke(); }
-  for(let y=0;y<=CFG.WORLD_H;y+=80){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CFG.WORLD_W,y); ctx.stroke(); }
+  for(let x=0;x<=CFG.WORLD_W;x+=200){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CFG.WORLD_H); ctx.stroke(); }
+  for(let y=0;y<=CFG.WORLD_H;y+=200){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CFG.WORLD_W,y); ctx.stroke(); }
 }
 function drawHeat(){
   for(const key in S.unmet){
@@ -1331,6 +1528,7 @@ function laneOffset(line,i){
 }
 function drawLines(){
   for(const line of S.lines){
+    if(MODES[line.mode].intercity || lineSpansTowns(line)) continue;  // intercity drawn separately
     const pts=line.path.pts;
     ctx.lineJoin="round"; ctx.lineCap="round";
     // casing
@@ -1361,15 +1559,18 @@ function drawDrawing(){
   if(!build.active||build.stops.length===0) return;
   const m=MODES[build.mode];
   const pts=build.stops.map(id=>loc(id));
-  ctx.strokeStyle=m.color; ctx.globalAlpha=0.8; ctx.lineWidth=4; ctx.setLineDash([8,8]); ctx.lineDashOffset=-pulse*6;
+  const big = !!m.intercity || !lodDetail();
+  const lw = (big? 6:4)/view.zoom, hr=(big? 30:18)/view.zoom;
+  ctx.strokeStyle=m.color; ctx.globalAlpha=0.85; ctx.lineWidth=Math.max(lw, big?5:3); ctx.setLineDash([10,9]); ctx.lineDashOffset=-pulse*6;
   strokePoly(pts); ctx.setLineDash([]); ctx.globalAlpha=1;
-  // highlight chosen stops
-  for(const l of pts){ ctx.beginPath(); ctx.arc(l.x,l.y,18,0,7); ctx.strokeStyle=m.color; ctx.lineWidth=2.5; ctx.stroke(); }
+  for(const l of pts){ ctx.beginPath(); ctx.arc(l.x,l.y,Math.max(hr, big?34:18),0,7); ctx.strokeStyle=m.color; ctx.lineWidth=Math.max(2.5, 3/view.zoom); ctx.stroke(); }
 }
 
 function drawVehicles(){
   for(const line of S.lines){
+    if(MODES[line.mode].intercity || lineSpansTowns(line)) continue;  // intercity vehicles drawn as dots
     for(const v of line.vehicles){
+      if(!onScreen(v.x,v.y,40)) continue;
       const m=MODES[v.mode];
       ctx.save(); ctx.translate(v.x,v.y);
       // heading
@@ -1399,9 +1600,10 @@ function floatIcon(x,y,em){ ctx.font="12px sans-serif"; ctx.textAlign="center"; 
 function drawPassengers(){
   ctx.save();
   for(const p of S.passengers){
-    ctx.beginPath();
-    ctx.fillStyle = p.onVeh? "rgba(255,255,255,0.0)" : `hsl(${p.hue},55%,70%)`;
     if(p.onVeh) continue; // riding passengers are inside the vehicle
+    if(!onScreen(p.x,p.y,20)) continue;
+    ctx.beginPath();
+    ctx.fillStyle = `hsl(${p.hue},55%,70%)`;
     ctx.arc(p.x,p.y,2.4,0,7); ctx.fill();
   }
   ctx.restore();
@@ -1409,6 +1611,7 @@ function drawPassengers(){
 
 function drawStops(){
   for(const l of LOCATIONS){
+    if(!onScreen(l.x,l.y,60)) continue;
     const hub=isHub(l.id);
     const served=lineServes[l.id]&&lineServes[l.id].size>0;
     const waiting=S.stops[l.id].wait.length;
@@ -1498,8 +1701,8 @@ function updateStationMeta(){
   const served=lineServes[id]?lineServes[id].size:0;
   const waiting=S.stops[id].wait.length;
   const cond=S.weather?`${S.weather.icon} ${S.weather.name}${(S.event&&S.event.key!=="normal")?" · "+S.event.icon+" "+S.event.name:""}`:"";
-  const modeTxt = served? [...new Set(modes)].map(m=>({bus:"🚌",rail:"🚊",ferry:"⛴️"}[m])).join(" ")+` · ${served} line${served===1?"":"s"}${isHub(id)?" · interchange":""}` : "not on the network yet";
-  setHTML("svMeta", `${waiting} waiting · ${modeTxt}<br>${cond}`);
+  const modeTxt = served? [...new Set(modes)].map(m=>({bus:"🚌",rail:"🚊",ferry:"⛴️",intercity:"🚄"}[m])).join(" ")+` · ${served} line${served===1?"":"s"}${isHub(id)?" · interchange":""}` : "not on the network yet";
+  setHTML("svMeta", `${townOf(id).name} · ${waiting} waiting · ${modeTxt}<br>${cond}`);
 }
 
 function stationUpdate(dt){
@@ -1664,16 +1867,17 @@ function drawVehicleSide(c, veh, w, groundY, water){
     if(veh.door>0.5){ c.fillStyle="#1a2a2e"; c.fillRect(x+bw/2-18, vy-bh*0.3, 10, bh*0.55); }
     return;
   }
-  // bus / tram side view sitting on the road
+  // bus / tram / intercity side view sitting on the road
+  const railLike = veh.mode==="rail"||veh.mode==="intercity";
   const vy=groundY+ (Station.h-groundY)*0.42;
-  const bw=veh.mode==="rail"?Math.max(180,w*0.40):Math.max(120,w*0.24), bh=Math.max(38,Station.h*0.13);
-  if(veh.mode==="rail"){ c.strokeStyle="#6a7a7a"; c.lineWidth=2; c.beginPath(); c.moveTo(0,vy+2); c.lineTo(w,vy+2); c.stroke(); // rail
+  const bw=railLike?Math.max(180,w*0.40):Math.max(120,w*0.24), bh=Math.max(38,Station.h*0.13);
+  if(railLike){ c.strokeStyle="#6a7a7a"; c.lineWidth=2; c.beginPath(); c.moveTo(0,vy+2); c.lineTo(w,vy+2); c.stroke(); // rail
     c.strokeStyle="rgba(120,160,220,0.6)"; c.lineWidth=2; c.beginPath(); c.moveTo(x,vy-bh); c.lineTo(x+10,vy-bh-12); c.lineTo(x+30,vy-bh-12); c.stroke(); } // pantograph
   c.fillStyle="rgba(0,0,0,0.2)"; c.beginPath(); c.ellipse(x,vy+4,bw*0.5,6,0,0,7); c.fill();
   c.fillStyle=col; roundRectAt(c,x-bw/2,vy-bh,bw,bh,7); c.fill();
   // windows
   c.fillStyle="rgba(210,235,240,0.92)";
-  const wn=veh.mode==="rail"?7:4;
+  const wn=railLike?7:4;
   for(let i=0;i<wn;i++) c.fillRect(x-bw/2+12+i*((bw-24)/wn), vy-bh+7, (bw-24)/wn-7, bh*0.42);
   // door (opens during boarding)
   c.fillStyle="#16242a"; const dw=12; const dOpen=veh.door;
@@ -1771,7 +1975,8 @@ function renderReport(){
   setText("rInt","−"+fmtMoney(dailyInterest()));
   setText("rRiders",S.ridersToday.toLocaleString());
   setText("rLost",S.lostToday.toLocaleString());
-  setText("rConn", connectedCount()+" / 18");
+  setText("rTowns", townsServed()+" / "+TOWNS.length);
+  setText("rConn", connectedCount()+" / "+LOCATIONS.length);
   setText("rHubs", LOCATIONS.filter(l=>isHub(l.id)).length);
   setText("rVeh", S.vehicles.length);
   const top=Object.entries(S.odToday).sort((a,b)=>b[1]-a[1]).slice(0,6);
@@ -1921,7 +2126,7 @@ function endGame(win,body){
 const SAVE_KEY = "tidewater-lines-save-v1";
 function serialize(){
   return {
-    v:1,
+    v:2, seed:S.seed,
     money:S.money, debt:S.debt, day:S.day, time:S.time, happy:S.happy,
     ridersTotal:S.ridersTotal, ridersToday:S.ridersToday, lostToday:S.lostToday,
     breakdownsToday:S.breakdownsToday, deniedToday:S.deniedToday,
@@ -1934,7 +2139,9 @@ function serialize(){
   };
 }
 function deserialize(d){
-  if(!d || d.v!==1 || !Array.isArray(d.lines)) return false;
+  if(!d || d.v!==2 || !Array.isArray(d.lines) || d.seed==null) return false;
+  S.seed=d.seed>>>0;
+  generateWorld(S.seed);          // rebuild the exact region before restoring lines
   S.passengers=[]; LOCATIONS.forEach(l=>S.stops[l.id]={wait:[]});
   S.vehicles=[]; S.lines=[];
   Object.assign(S,{
@@ -1947,7 +2154,7 @@ function deserialize(d){
     ended:false, running:true, paused:false, speed:1,
   });
   for(const ld of d.lines){
-    if(!MODES[ld.mode] || !ld.stops || ld.stops.length<2) continue;
+    if(!MODES[ld.mode] || !ld.stops || ld.stops.length<2 || ld.stops.some(s=>!loc(s))) continue;
     const line={ id:ld.id, mode:ld.mode, stops:ld.stops.slice(),
                  color:MODES[ld.mode].color, vehicles:[], path:buildPath(ld.stops) };
     for(const vd of (ld.vehicles||[])){
@@ -2025,6 +2232,8 @@ let uiAcc=0;
 /* --------------------------- WIRING -------------------------------------- */
 function startGame(){
   SFX.init();   // kicked off by the Start button gesture (audio autoplay policy)
+  S.seed = (Math.random()*0xffffffff)>>>0;  // a brand-new region each game
+  generateWorld(S.seed);
   // reset
   Object.assign(S,{
     money:CFG.START_MONEY, debt:0, interestToday:0, day:1, time:CFG.DAY_START, speed:1, running:true, paused:false,
@@ -2088,6 +2297,7 @@ window.addEventListener("keydown",e=>{
   else if(e.key===" "){ e.preventDefault(); setSpeed(S.speed>0?0:1); }
 });
 
+generateWorld((Math.random()*0xffffffff)>>>0);   // a region to show behind the title screen
 rebuildGraph();   // populate interchange lookup so the idle map renders before start
 refreshContinueBtn();   // offer "Continue" on the start screen if a save exists
 resize();
