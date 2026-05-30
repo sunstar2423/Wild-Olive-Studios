@@ -71,6 +71,30 @@
   .tool.bus.active{ color:var(--bus);} .tool.rail.active{ color:var(--rail);} .tool.ferry.active{ color:var(--ferry);}
   .tool.tool--util.active{ color:var(--olive);}
 
+  /* zoom controls */
+  #zoomctl{ position:absolute; right:12px; top:12px; z-index:10; display:flex; flex-direction:column; gap:.3rem; }
+  #zoomctl button{ font-family:var(--font); cursor:pointer; border:1px solid var(--line);
+    background:rgba(10,32,30,.86); color:#cfe7e3; border-radius:9px; width:40px; height:34px;
+    font-size:1.05rem; font-weight:700; backdrop-filter:blur(5px); display:grid; place-items:center; }
+  #zoomctl #zoomReset{ font-size:.62rem; }
+  #zoomctl button:hover{ color:#fff; }
+  .maphint{ position:absolute; left:12px; top:12px; z-index:9; font-size:.66rem; color:#8fb6b1;
+    background:rgba(10,32,30,.7); border:1px solid var(--line); padding:.3rem .6rem; border-radius:8px; pointer-events:none; max-width:60%; }
+  @media (max-width:880px){ .maphint{ display:none; } }
+
+  /* station "look inside" scene */
+  #stationView{ position:absolute; inset:0; z-index:16; background:#0a201f; display:flex; flex-direction:column; }
+  #stationView.hidden{ display:none; }
+  .sv-head{ display:flex; align-items:center; gap:.7rem; padding:.5rem .7rem; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#0e2b29,#0a201f); flex-wrap:wrap; }
+  .sv-back{ font-family:var(--font); cursor:pointer; font-weight:700; font-size:.8rem; color:#06231f;
+    background:linear-gradient(135deg,var(--olive),var(--teal)); border:0; border-radius:999px; padding:.4rem .9rem; }
+  .sv-back:hover{ filter:brightness(1.1); }
+  .sv-title{ display:flex; align-items:center; gap:.4rem; font-size:1.05rem; }
+  .sv-title span{ font-size:1.3rem; }
+  .sv-meta{ color:#8fb6b1; font-size:.74rem; margin-left:auto; text-align:right; line-height:1.3; }
+  #svCv{ flex:1; width:100%; min-height:0; display:block; }
+
   /* the build hint / confirm strip */
   #drawhint{ position:absolute; left:50%; top:12px; transform:translateX(-50%);
     background:rgba(10,32,30,.92); border:1px solid var(--line); padding:.5rem .8rem;
@@ -201,6 +225,13 @@
     <div id="stage">
       <canvas id="cv"></canvas>
 
+      <div id="zoomctl">
+        <button id="zoomIn" title="Zoom in">＋</button>
+        <button id="zoomOut" title="Zoom out">－</button>
+        <button id="zoomReset" title="Reset view"><span id="zoomLevel">100%</span></button>
+      </div>
+      <div class="maphint">Scroll / pinch to zoom · drag to pan · tap a station to look inside</div>
+
       <div id="drawhint">
         <span id="drawhintText">Pick stops…</span>
         <button class="mini go" id="drawGo" disabled>Build line</button>
@@ -215,6 +246,16 @@
       </div>
 
       <div id="toasts"></div>
+
+      <!-- station "look inside" scene -->
+      <div id="stationView" class="hidden">
+        <div class="sv-head">
+          <button id="svBack" class="sv-back">← Back to map</button>
+          <div class="sv-title"><span id="svEmoji">🚉</span><b id="svName">Station</b></div>
+          <div class="sv-meta" id="svMeta"></div>
+        </div>
+        <canvas id="svCv"></canvas>
+      </div>
     </div>
 
     <!-- ===================== PANEL ===================== -->
@@ -227,6 +268,7 @@
       </div>
       <div class="tabwrap">
         <div class="tabview active" id="tab-lines">
+          <div id="financeHost"></div>
           <div id="linesHost"></div>
           <div class="card" id="noLines">
             <div class="title">No lines yet 🌊</div>
@@ -240,6 +282,7 @@
             <div class="kv"><span>Fares collected</span><span id="rFare">£0</span></div>
             <div class="kv"><span>Operating cost (proj.)</span><span id="rOp">£0</span></div>
             <div class="kv"><span>Maintenance spend</span><span id="rMaint">£0</span></div>
+            <div class="kv"><span>Loan interest (proj.)</span><span id="rInt">£0</span></div>
             <div class="kv"><span>Riders carried</span><span id="rRiders">0</span></div>
             <div class="kv"><span>Gave up waiting</span><span id="rLost">0</span></div>
           </div>
@@ -265,10 +308,13 @@
             <b style="color:#fff">1. Trace a line.</b> Choose Bus, Rail or Ferry under the map, then click stops in order. Ferries only link waterside stops. Hit <b>Build line</b>.
           </p></div>
           <div class="card"><p class="muted">
+            <b style="color:#fff">Get around the map.</b> Scroll or pinch to <b>zoom</b> (or use ＋ / －), drag to <b>pan</b>, and <b>tap any station</b> to look inside — you'll see the place, the people queueing, and your vehicles pulling in to pick them up. Press <b>← Back to map</b> or <b>Esc</b> to return.
+          </p></div>
+          <div class="card"><p class="muted">
             <b style="color:#fff">2. Carry passengers.</b> People appear at stops wanting to reach another place. They board your vehicles, transfer at shared <b>interchange</b> stops, and pay a fare on arrival — longer trips and ferries pay more.
           </p></div>
           <div class="card"><p class="muted">
-            <b style="color:#fff">3. Grow & maintain.</b> Add vehicles to busy lines, open new routes, and <b>Service</b> vehicles before wear gets high — neglected vehicles break down, costing money and happiness.
+            <b style="color:#fff">3. Grow & maintain.</b> Add vehicles to busy lines, open new routes, and <b>Service</b> vehicles before wear gets high — neglected vehicles break down, costing money and happiness. Short on cash? The <b>🏦 Bank</b> (Lines tab) lets you <b>borrow</b> to expand and <b>repay</b> as fares roll in — interest accrues daily, so clear debt when you can.
           </p></div>
           <div class="card"><p class="muted">
             <b style="color:#fff">4. Watch the numbers.</b> Toggle <b>🔥 Demand</b> to see where people want to travel but can't yet. Each night you get a profit/loss report. Keep funds above zero and riders happy.
@@ -300,6 +346,7 @@
     <ul>
       <li>🚌 <b>Trace routes</b> between 18 unique destinations — libraries, an opera house, beaches, a forest park, the harbour and more.</li>
       <li>👥 <b>Watch live passengers</b> board, transfer at interchanges, and ride to their stops.</li>
+      <li>🔍 <b>Zoom the map and step inside any station</b> — see the place, the queue, and your vehicles pulling in.</li>
       <li>🏟️ <b>Ride the rhythm of the city</b> — Match Days, festivals and weather shift demand; rough seas slow the ferries.</li>
       <li>💷 <b>Balance profit & happiness</b> — expand smartly, maintain your fleet, and keep riders smiling.</li>
     </ul>
@@ -373,6 +420,8 @@ const CFG = {
   MAX_TRANSFERS: 2,
   HAPPY_START: 75,
   WIN_WORTH: 220000,             // net worth needed for the final goal
+  LOAN_MAX_DEBT: 60000,          // total outstanding debt the bank will allow
+  LOAN_DAILY_RATE: 0.011,        // daily interest on the outstanding balance (~1.1%)
 };
 
 const MODES = {
@@ -453,6 +502,7 @@ const EVENTS = [
 /* --------------------------- STATE --------------------------------------- */
 const S = {
   money: CFG.START_MONEY,
+  debt: 0, interestToday: 0,
   day: 1, time: CFG.DAY_START, speed: 1, running: false, paused:false,
   happy: CFG.HAPPY_START,
   lines: [],            // {id, mode, stops:[locId], color, vehicles:[], path:[{x,y}], len, segLen[]}
@@ -919,9 +969,30 @@ function netWorth(){
     assets+=lineInfraCost(ln.mode,ln.stops)*0.5;
     assets+=ln.vehicles.length*MODES[ln.mode].buy*0.6;
   }
-  return S.money+assets;
+  return S.money+assets-S.debt;   // outstanding debt counts against you
 }
 function dailyOpCost(){ let c=0; for(const v of S.vehicles) c+=MODES[v.mode].dailyOp; return c; }
+
+/* ----- loans: bridge financing with daily interest, capped credit limit ----- */
+function creditAvailable(){ return Math.max(0, CFG.LOAN_MAX_DEBT - S.debt); }
+function dailyInterest(){ return Math.round(S.debt*CFG.LOAN_DAILY_RATE); }
+function borrow(amount){
+  if(!S.running) return;
+  const amt=Math.min(amount, creditAvailable());
+  if(amt<=0){ toast("You've reached your credit limit — repay some debt first.","warn"); return; }
+  S.money+=amt; S.debt+=amt;
+  toast(`Borrowed ${fmtMoney(amt)}. Interest runs at ${(CFG.LOAN_DAILY_RATE*100).toFixed(1)}%/day.`,"good");
+  renderPanels(); updateTopbar();
+}
+function repay(amount){
+  if(!S.running) return;
+  if(S.debt<=0){ toast("You have no debt to repay. 🎉","warn"); return; }
+  const amt=Math.min(amount, S.debt, Math.max(0,S.money));
+  if(amt<=0){ toast("Not enough cash on hand to repay.","bad"); return; }
+  S.money-=amt; S.debt-=amt;
+  toast(`Repaid ${fmtMoney(amt)}.${S.debt<=0?" Debt cleared!":""}`,"good");
+  renderPanels(); updateTopbar();
+}
 
 /* --------------------------- DAY CYCLE ----------------------------------- */
 function advanceTime(dtMin){
@@ -935,7 +1006,9 @@ function endOfDay(){
   S.time-=CFG.DAY_MIN;
   const op=dailyOpCost();
   S.money-=op;
-  const profit = S.fareToday - op - S.maintToday;
+  const interest=dailyInterest();   // interest on outstanding loans
+  S.money-=interest; S.interestToday=interest;
+  const profit = S.fareToday - op - S.maintToday - interest;
 
   // --- happiness: smooth drift toward a target set by today's service quality ---
   const demandHandled = S.ridersToday + S.lostToday;
@@ -952,14 +1025,16 @@ function endOfDay(){
   setText("dayTitle","Day "+S.day+" complete");
   setText("daySub", profit>=0 ? "A profitable day on the bay" : "A tough day for the network");
   setText("dFare", fmtMoney(S.fareToday));
-  setText("dCost", "−"+fmtMoney(op+S.maintToday));
+  setText("dCost", "−"+fmtMoney(op+S.maintToday+interest));
   const pe=$("dProfit"); pe.textContent=fmtMoney(profit); pe.className="v "+(profit>=0?"pos":"neg");
   setText("dRiders", S.ridersToday.toLocaleString());
   let note="";
   if(S.lines.length===0) note="Trace your first line to start carrying passengers and earning fares.";
+  else if(S.debt>0 && interest>profit+interest && profit<0) note="Loan interest is eating your margins — repay debt once fares pick up.";
   else if(profit<0 && S.fareToday<op) note="Running costs outweigh fares — focus vehicles on the busiest journeys, or trim idle routes.";
   else if(S.lostToday>S.ridersToday*0.25) note="Lots of riders gave up waiting. Add vehicles or open new connections where the 🔥 demand glows.";
   else if(S.breakdownsToday>2) note="Breakdowns cost you today. Service vehicles before their wear climbs past ~60%.";
+  else if(S.debt>0 && profit>0) note="Turning a profit — consider repaying some debt to cut your daily interest.";
   else if(profit>0) note="Healthy profit — consider reinvesting in a new route or upgrading to light rail / ferries.";
   setText("dNote", note);
 
@@ -969,7 +1044,7 @@ function endOfDay(){
   // roll into next day
   S.day++;
   S.fareToday=0; S.maintToday=0; S.ridersToday=0; S.lostToday=0;
-  S.breakdownsToday=0; S.deniedToday=0;
+  S.breakdownsToday=0; S.deniedToday=0; S.interestToday=0;
   S.odToday={};
   rollDailyConditions();
   announceConditions();
@@ -1001,25 +1076,48 @@ function checkGoals(){
 
 /* --------------------------- INPUT / BUILDING ---------------------------- */
 const cv=$("cv"), ctx=cv.getContext("2d");
-let view={ scale:1, ox:0, oy:0 };       // world→screen
+let view={ scale0:1, zoom:1, panX:0, panY:0, eff:1, ox:0, oy:0, dpr:1 }; // world→screen
 let build={ active:false, mode:null, stops:[] };
 
 function resize(){
   const r=cv.getBoundingClientRect();
   const dpr=Math.min(window.devicePixelRatio||1,2);
   cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr);
-  const s=Math.min(cv.width/CFG.WORLD_W, cv.height/CFG.WORLD_H);
-  view.scale=s;
-  view.ox=(cv.width - CFG.WORLD_W*s)/2;
-  view.oy=(cv.height - CFG.WORLD_H*s)/2;
   view.dpr=dpr;
+  view.scale0=Math.min(cv.width/CFG.WORLD_W, cv.height/CFG.WORLD_H);
+  applyView();
+  if(Station.shown) stationResize();
 }
-const w2s = (x,y)=>({ x:view.ox+x*view.scale, y:view.oy+y*view.scale });
-function s2w(cx,cy){
-  const dpr=view.dpr||1;
-  const px=cx*dpr, py=cy*dpr;
-  return { x:(px-view.ox)/view.scale, y:(py-view.oy)/view.scale };
+/* recompute the effective transform from zoom + pan, clamping the pan so the
+   map can't be dragged off-screen. All offsets are in device pixels. */
+function applyView(){
+  view.zoom=clamp(view.zoom,1,3.4);
+  view.eff=view.scale0*view.zoom;
+  const ww=CFG.WORLD_W*view.eff, wh=CFG.WORLD_H*view.eff;
+  const ox0=(cv.width-ww)/2, oy0=(cv.height-wh)/2;
+  let ox=ox0+view.panX, oy=oy0+view.panY;
+  if(ww<=cv.width)  ox=ox0; else ox=clamp(ox, cv.width-ww, 0);
+  if(wh<=cv.height) oy=oy0; else oy=clamp(oy, cv.height-wh, 0);
+  view.panX=ox-ox0; view.panY=oy-oy0;
+  view.ox=ox; view.oy=oy;
 }
+const w2s = (x,y)=>({ x:view.ox+x*view.eff, y:view.oy+y*view.eff });   // → device px
+function s2w(cx,cy){   // cx,cy in CSS px relative to canvas
+  const px=cx*view.dpr, py=cy*view.dpr;
+  return { x:(px-view.ox)/view.eff, y:(py-view.oy)/view.eff };
+}
+/* zoom toward a point (CSS px relative to canvas) keeping that point fixed */
+function zoomAt(factor, cx, cy){
+  const wpt=s2w(cx,cy);
+  view.zoom=clamp(view.zoom*factor,1,3.4); applyView();
+  const sp=w2s(wpt.x,wpt.y);
+  view.panX += cx*view.dpr - sp.x;
+  view.panY += cy*view.dpr - sp.y;
+  applyView();
+  updateZoomUI();
+}
+function resetView(){ view.zoom=1; view.panX=0; view.panY=0; applyView(); updateZoomUI(); }
+function updateZoomUI(){ const z=$("zoomLevel"); if(z) z.textContent=Math.round(view.zoom*100)+"%"; }
 function nearestStop(wx,wy){
   let best=null,bd=1e9;
   for(const l of LOCATIONS){ const d=Math.hypot(l.x-wx,l.y-wy); if(d<bd){bd=d;best=l;} }
@@ -1076,23 +1174,61 @@ function confirmBuild(){
   if(createLine(build.mode,build.stops)) cancelBuild();
 }
 
-/* pointer handling */
+/* pointer handling — tap to open a station, drag to pan, wheel/pinch to zoom */
+const ptrs=new Map();
+let dragStart=null, panStart=null, dragged=false, pinch=null;
+function localXY(e){ const r=cv.getBoundingClientRect(); return { x:e.clientX-r.left, y:e.clientY-r.top }; }
+
 cv.addEventListener("pointerdown",e=>{
   if(!S.running) return;
-  SFX.resume();   // browsers may suspend audio until a gesture in the page
-  const rect=cv.getBoundingClientRect();
-  const w=s2w(e.clientX-rect.left, e.clientY-rect.top);
-  const l=nearestStop(w.x,w.y);
-  if(l){
-    if(build.active) onTapStop(l);
-    else selectStopInfo(l);
+  SFX.resume();
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===1){ dragStart={x:e.clientX,y:e.clientY}; panStart={x:view.panX,y:view.panY}; dragged=false; }
+  else if(ptrs.size===2){
+    const [a,b]=[...ptrs.values()];
+    pinch={ dist:Math.hypot(a.x-b.x,a.y-b.y), zoom:view.zoom };
+    dragged=true;
   }
 });
-function selectStopInfo(l){
-  const served=lineServes[l.id]? [...lineServes[l.id]].length:0;
-  const waiting=S.stops[l.id].wait.length;
-  toast(`${l.emoji} ${l.name} — ${waiting} waiting · ${served} line${served===1?"":"s"}${isHub(l.id)?" · interchange":""}`,"good");
+cv.addEventListener("pointermove",e=>{
+  if(!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size>=2 && pinch){
+    const [a,b]=[...ptrs.values()];
+    const d=Math.hypot(a.x-b.x,a.y-b.y);
+    const mid=localXY({clientX:(a.x+b.x)/2, clientY:(a.y+b.y)/2});
+    const target=clamp(pinch.zoom*(d/pinch.dist),1,3.4);
+    zoomAt(target/view.zoom, mid.x, mid.y);
+    return;
+  }
+  if(ptrs.size===1 && dragStart){
+    const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
+    if(Math.hypot(dx,dy)>6) dragged=true;
+    if(dragged && !build.active){ view.panX=panStart.x+dx*view.dpr; view.panY=panStart.y+dy*view.dpr; applyView(); }
+  }
+});
+function endPointer(e){
+  const had=ptrs.has(e.pointerId); ptrs.delete(e.pointerId);
+  if(ptrs.size<2) pinch=null;
+  if(ptrs.size===0 && had){
+    if(!dragged){              // a genuine tap → select stop
+      const p=localXY(e);
+      const w=s2w(p.x,p.y);
+      const l=nearestStop(w.x,w.y);
+      if(l){ if(build.active) onTapStop(l); else openStation(l.id); }
+    }
+    dragStart=null; panStart=null;
+  }
 }
+cv.addEventListener("pointerup",endPointer);
+cv.addEventListener("pointercancel",e=>{ ptrs.delete(e.pointerId); pinch=null; dragStart=null; });
+cv.addEventListener("wheel",e=>{
+  if(!S.running) return;
+  e.preventDefault();
+  const p=localXY(e);
+  zoomAt(e.deltaY<0?1.12:1/1.12, p.x, p.y);
+},{passive:false});
 
 /* --------------------------- RENDER -------------------------------------- */
 let pulse=0;
@@ -1106,7 +1242,7 @@ function render(){
   ctx.fillStyle=bg; ctx.fillRect(0,0,cv.width,cv.height);
 
   ctx.save();
-  ctx.translate(view.ox,view.oy); ctx.scale(view.scale,view.scale);
+  ctx.translate(view.ox,view.oy); ctx.scale(view.eff,view.eff);
 
   drawWater();
   drawGrid();
@@ -1311,6 +1447,244 @@ function roundRect(x,y,w,h,r){ ctx.beginPath();
   ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
   ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
+/* ====================== STATION "LOOK INSIDE" SCENE ====================== */
+/* A side-on platform scene for one stop: themed building & scenery, animated
+   people (a queue plus ambient pedestrians), and vehicles arriving to board. */
+const STATION_THEMES = {
+  0:{wall:"#3a4a63",roof:"#28354a",kind:"city"},   1:{wall:"#46566f",roof:"#2c3a4f",kind:"city"},
+  2:{wall:"#7a5a3c",roof:"#5a3f28",kind:"old"},     3:{wall:"#6b5b8a",roof:"#473c5e",kind:"campus"},
+  4:{wall:"#a86a86",roof:"#74465e",kind:"shops"},   5:{wall:"#8a7a4a",roof:"#5e5230",kind:"civic"},
+  6:{wall:"#9a4a4a",roof:"#6a3030",kind:"civic"},   7:{wall:"#7a4a6a",roof:"#522f48",kind:"civic"},
+  8:{wall:"#4a6a7a",roof:"#304a55",kind:"civic"},   9:{wall:"#3a6a6a",roof:"#274a4a",kind:"water"},
+  10:{wall:"#caa86a",roof:"#a07f48",kind:"beach"},  11:{wall:"#3a6a3a",roof:"#274a27",kind:"forest"},
+  12:{wall:"#4a5a6a",roof:"#30404f",kind:"water"},  13:{wall:"#6a8a8a",roof:"#486060",kind:"civic"},
+  14:{wall:"#5a6a4a",roof:"#3e4a30",kind:"stadium"},15:{wall:"#4a7a5a",roof:"#305240",kind:"park"},
+  16:{wall:"#5a6a7a",roof:"#3e4a55",kind:"airport"},17:{wall:"#4a6a7a",roof:"#304a55",kind:"water"},
+};
+const Station={ shown:false, locId:null, cvEl:null, ctx:null, w:0, h:0, dpr:1, t:0,
+  queue:[], ambient:[], clouds:[], veh:null, vehState:"gap", vehTimer:0, modeIdx:0, metaT:0, boardClock:0 };
+
+function makeFig(frac){ return { f:frac, hue:25+Math.random()*210, phase:Math.random()*7, vx:(Math.random()<.5?-1:1)*(0.02+Math.random()*0.03), state:"walk" }; }
+function stationThemeFor(id){ return STATION_THEMES[id]||{wall:"#4a5a63",roof:"#2c3a4f",kind:"civic"}; }
+function stationModes(id){
+  const set=lineServes[id]; if(!set||!set.size) return [];
+  const out=[]; for(const lid of set){ const ln=S.lines.find(l=>l.id===lid); if(ln) out.push(ln.mode); }
+  return out;
+}
+
+function openStation(id){
+  Station.shown=true; Station.locId=id; Station.t=0; Station.metaT=0; Station.boardClock=0;
+  Station.queue=[]; Station.ambient=[]; Station.clouds=[];
+  Station.veh=null; Station.vehState="gap"; Station.vehTimer=0.8; Station.modeIdx=0;
+  const l=loc(id);
+  $("svEmoji").textContent=l.emoji; $("svName").textContent=l.name;
+  Station.cvEl=$("svCv"); Station.ctx=Station.cvEl.getContext("2d");
+  for(let i=0;i<5;i++) Station.clouds.push({x:Math.random(),y:0.08+Math.random()*0.20,s:0.6+Math.random()*0.9,vx:0.004+Math.random()*0.006});
+  for(let i=0;i<5;i++) Station.ambient.push(makeFig(Math.random()));
+  $("stationView").classList.remove("hidden");
+  stationResize(); updateStationMeta();
+}
+function closeStation(){ Station.shown=false; $("stationView").classList.add("hidden"); }
+function stationResize(){
+  const el=Station.cvEl; if(!el) return;
+  const r=el.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  el.width=Math.max(1,Math.round(r.width*dpr)); el.height=Math.max(1,Math.round(r.height*dpr));
+  Station.w=r.width||el.width; Station.h=r.height||el.height; Station.dpr=dpr;
+}
+function updateStationMeta(){
+  const id=Station.locId; if(id==null) return;
+  const modes=stationModes(id);
+  const served=lineServes[id]?lineServes[id].size:0;
+  const waiting=S.stops[id].wait.length;
+  const cond=S.weather?`${S.weather.icon} ${S.weather.name}${(S.event&&S.event.key!=="normal")?" · "+S.event.icon+" "+S.event.name:""}`:"";
+  const modeTxt = served? [...new Set(modes)].map(m=>({bus:"🚌",rail:"🚊",ferry:"⛴️"}[m])).join(" ")+` · ${served} line${served===1?"":"s"}${isHub(id)?" · interchange":""}` : "not on the network yet";
+  setHTML("svMeta", `${waiting} waiting · ${modeTxt}<br>${cond}`);
+}
+
+function stationUpdate(dt){
+  const S0=Station; S0.t+=dt;
+  const id=S0.locId; if(id==null) return;
+  for(const c of S0.clouds){ c.x+=c.vx*dt; if(c.x>1.15) c.x=-0.15; }
+  // ambient pedestrians wander & wrap
+  for(const a of S0.ambient){ a.f+=a.vx*dt; if(a.f>1.1)a.f=-0.1; if(a.f<-0.1)a.f=1.1; }
+  // queue grows toward the real waiting count (capped for display)
+  const QCAP=12;
+  const target=Math.min(QCAP, S.stops[id].wait.length);
+  if(S0.vehState!=="boarding" && S0.queue.length<target && Math.random()<dt*2.2)
+    S0.queue.push({ hue:25+Math.random()*210, phase:Math.random()*7, x:-0.1, state:"enter" });
+  if(S0.queue.length>target && S0.vehState!=="boarding" && Math.random()<dt*1.5) S0.queue.pop();
+  // queue members ease toward their slot
+  S0.queue.forEach((p,i)=>{ const tx=0.60 - 0.035*i; p.x += (tx-p.x)*Math.min(1,dt*4); });
+  // vehicle state machine (only if a line serves this stop)
+  const modes=stationModes(id);
+  switch(S0.vehState){
+    case "gap":
+      S0.vehTimer-=dt;
+      if(S0.vehTimer<=0 && modes.length){
+        const mode=modes[S0.modeIdx%modes.length]; S0.modeIdx++;
+        S0.veh={ mode, x:1.25, door:0 }; S0.vehState="incoming";
+      }
+      break;
+    case "incoming":
+      S0.veh.x-=dt*0.55;
+      if(S0.veh.x<=0.62){ S0.veh.x=0.62; S0.vehState="boarding"; S0.vehTimer=1.9; S0.boardClock=0; }
+      break;
+    case "boarding":
+      S0.veh.door=Math.min(1,S0.veh.door+dt*4);
+      S0.vehTimer-=dt; S0.boardClock-=dt;
+      if(S0.boardClock<=0 && S0.queue.length){ S0.queue.shift(); S0.boardClock=0.22; } // board front of line
+      if(S0.vehTimer<=0){ S0.vehState="leaving"; }
+      break;
+    case "leaving":
+      S0.veh.door=Math.max(0,S0.veh.door-dt*4);
+      S0.veh.x-=dt*0.6;
+      if(S0.veh.x<-0.3){ S0.veh=null; S0.vehState="gap"; S0.vehTimer=1.2+Math.random()*2.4; }
+      break;
+  }
+  S0.metaT-=dt; if(S0.metaT<=0){ S0.metaT=0.4; updateStationMeta(); }
+}
+
+function stationDraw(){
+  const c=Station.ctx; if(!c) return;
+  const w=Station.w, h=Station.h, t=Station.t;
+  c.setTransform(Station.dpr,0,0,Station.dpr,0,0);
+  const l=loc(Station.locId), th=stationThemeFor(Station.locId);
+  const water = th.kind==="water"||th.kind==="beach";
+  const groundY=h*0.70;
+  // ---- sky ----
+  const sky=c.createLinearGradient(0,0,0,groundY);
+  const dusk = S.event&&(S.event.key==="opera"||S.event.key==="festival");
+  if(dusk){ sky.addColorStop(0,"#2a2350"); sky.addColorStop(1,"#5a466e"); }
+  else { sky.addColorStop(0,"#2e6f86"); sky.addColorStop(1,"#a9d7d2"); }
+  c.fillStyle=sky; c.fillRect(0,0,w,groundY);
+  // sun / clouds
+  if(S.weather && (S.weather.key==="sunny"||S.weather.key==="fair")){
+    c.fillStyle="rgba(255,230,150,0.85)"; c.beginPath(); c.arc(w*0.82,h*0.18,h*0.07,0,7); c.fill();
+  }
+  c.fillStyle="rgba(255,255,255,0.75)";
+  for(const cl of Station.clouds){ const cx=cl.x*w, cy=cl.y*h, s=cl.s*h*0.05;
+    c.beginPath(); c.arc(cx,cy,s,0,7); c.arc(cx+s,cy+s*0.3,s*0.8,0,7); c.arc(cx-s,cy+s*0.3,s*0.7,0,7); c.fill(); }
+  // ---- distant skyline for urban kinds ----
+  if(th.kind==="city"||th.kind==="old"||th.kind==="shops"||th.kind==="campus"){
+    c.fillStyle="rgba(20,40,55,0.35)";
+    for(let i=0;i<10;i++){ const bx=i*w/10*1.05, bw=w/12, bh=h*(0.12+((i*7)%5)*0.045); c.fillRect(bx,groundY-bh,bw,bh); }
+  }
+  // ---- ground / road or water ----
+  if(water){
+    const wg=c.createLinearGradient(0,groundY,0,h); wg.addColorStop(0,"#15524f"); wg.addColorStop(1,"#0c3a3c");
+    c.fillStyle=wg; c.fillRect(0,groundY,w,h-groundY);
+    c.strokeStyle="rgba(120,210,205,0.18)"; c.lineWidth=2;
+    for(let y=groundY+14;y<h;y+=16){ c.beginPath(); for(let x=0;x<w;x+=22){ const yy=y+Math.sin(x*0.05+t*1.5+y)*2; x?c.lineTo(x,yy):c.moveTo(x,yy);} c.stroke(); }
+  } else {
+    c.fillStyle="#243a36"; c.fillRect(0,groundY,w,h-groundY);
+    c.fillStyle="#1c2f2c"; c.fillRect(0,groundY+ (h-groundY)*0.42, w, (h-groundY)*0.58); // roadway
+    c.strokeStyle="rgba(231,183,95,0.5)"; c.lineWidth=2; c.setLineDash([16,14]);
+    const ry=groundY+(h-groundY)*0.7; c.beginPath(); c.moveTo(0,ry); c.lineTo(w,ry); c.stroke(); c.setLineDash([]);
+  }
+  // ---- platform slab ----
+  c.fillStyle="#d8e4dd"; c.fillRect(0,groundY-7,w,9);
+  c.fillStyle="rgba(0,0,0,0.12)"; c.fillRect(0,groundY+2,w,3);
+  // ---- station building (themed) ----
+  const bX=w*0.05, bW=Math.max(150,w*0.30), bH=h*0.40, bY=groundY-bH;
+  c.fillStyle="rgba(0,0,0,0.18)"; c.fillRect(bX+6,bY+8,bW,bH); // shadow
+  c.fillStyle=th.wall; c.fillRect(bX,bY,bW,bH);
+  c.fillStyle=th.roof; c.fillRect(bX-6,bY-Math.min(26,bH*0.16),bW+12,Math.min(26,bH*0.16)); // roof band
+  // windows
+  c.fillStyle="rgba(231,225,150,0.85)";
+  const cols=Math.max(3,Math.floor(bW/34)), rows=Math.max(2,Math.floor(bH/40));
+  for(let r=0;r<rows;r++)for(let cc=0;cc<cols;cc++){
+    const lit=((r*cols+cc+Station.locId)%3!==0)||dusk;
+    c.fillStyle=lit?"rgba(245,225,150,0.9)":"rgba(40,55,70,0.6)";
+    c.fillRect(bX+10+cc*((bW-20)/cols), bY+14+r*((bH-24)/rows), (bW-20)/cols-6, (bH-24)/rows-8);
+  }
+  // door
+  c.fillStyle="#1a2a2e"; const dW=Math.min(34,bW*0.16); c.fillRect(bX+bW/2-dW/2, groundY-Math.min(48,bH*0.3), dW, Math.min(48,bH*0.3));
+  // sign with the location's emoji + name
+  c.fillStyle="rgba(8,28,27,0.85)"; const sgY=bY-Math.min(26,bH*0.16)-22; roundRectAt(c,bX+bW/2-70,sgY,140,22,6); c.fill();
+  c.font="600 13px "+CFG.FONT_F; c.fillStyle="#eef3ea"; c.textAlign="center"; c.textBaseline="middle";
+  c.fillText(l.emoji+" "+l.name, bX+bW/2, sgY+11);
+  // ---- scenery accents by kind ----
+  drawSceneryAccents(c,th.kind,w,h,groundY,t);
+  // ---- vehicle ----
+  if(Station.veh) drawVehicleSide(c, Station.veh, w, groundY, water);
+  // ---- people: queue + ambient ----
+  c.textAlign="left"; c.textBaseline="alphabetic";
+  for(const a of Station.ambient) drawFig(c, a.f*w, groundY-2, a.hue, t, a.phase, 0.85);
+  Station.queue.forEach((p)=> drawFig(c, p.x*w, groundY-2, p.hue, t, p.phase, 1));
+  // overflow note
+  const extra=S.stops[Station.locId].wait.length - Station.queue.length;
+  if(extra>0){ c.fillStyle="rgba(238,243,234,0.9)"; c.font="600 12px "+CFG.FONT_F; c.textAlign="left";
+    c.fillText("+"+extra+" more waiting", w*0.62*0.0+ w*0.20, groundY-Math.max(40,h*0.16)); }
+  if(!stationModes(Station.locId).length){
+    c.fillStyle="rgba(238,243,234,0.92)"; c.font="700 15px "+CFG.FONT_F; c.textAlign="center";
+    c.fillText("No service here yet — build a line to this stop!", w/2, h*0.16);
+  }
+}
+function roundRectAt(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+
+function drawFig(c,x,footY,hue,t,phase,sc){
+  const PH=clamp(Station.h*0.085,20,40)*sc;
+  const bob=Math.sin(t*3+phase)*1.2;
+  const hipY=footY-PH*0.45+bob, headR=PH*0.16;
+  // legs
+  c.strokeStyle="#22303a"; c.lineWidth=PH*0.10;
+  c.beginPath(); c.moveTo(x,hipY); c.lineTo(x-PH*0.10,footY+bob); c.moveTo(x,hipY); c.lineTo(x+PH*0.10,footY+bob); c.stroke();
+  // body
+  c.fillStyle=`hsl(${hue},55%,58%)`;
+  roundRectAt(c, x-PH*0.16, footY-PH+bob, PH*0.32, PH*0.6, PH*0.12); c.fill();
+  // head
+  c.fillStyle="#f0c9a8"; c.beginPath(); c.arc(x, footY-PH+bob-headR*0.5, headR, 0,7); c.fill();
+}
+
+function drawSceneryAccents(c,kind,w,h,groundY,t){
+  const tree=(x,sz,col)=>{ c.fillStyle="#5a3f28"; c.fillRect(x-2,groundY-sz*0.5,4,sz*0.5);
+    c.fillStyle=col; c.beginPath(); c.arc(x,groundY-sz*0.6,sz*0.32,0,7); c.arc(x-sz*0.2,groundY-sz*0.45,sz*0.26,0,7); c.arc(x+sz*0.2,groundY-sz*0.45,sz*0.26,0,7); c.fill(); };
+  const lamp=(x)=>{ c.strokeStyle="#3a4a4a"; c.lineWidth=3; c.beginPath(); c.moveTo(x,groundY); c.lineTo(x,groundY-h*0.13); c.stroke();
+    c.fillStyle="rgba(245,225,150,0.9)"; c.beginPath(); c.arc(x,groundY-h*0.13,4,0,7); c.fill(); };
+  if(kind==="forest"||kind==="park"){ tree(w*0.50,h*0.26,"#3f7a3f"); tree(w*0.70,h*0.30,"#357035"); tree(w*0.88,h*0.24,"#3f7a3f"); }
+  else if(kind==="beach"){ c.fillStyle="#e7c98f"; c.fillRect(0,groundY-7,w,9); tree(w*0.86,h*0.26,"#4f9a6a"); // palm-ish
+    c.fillStyle="#e76f6f"; c.fillRect(w*0.46,groundY-h*0.10,6,h*0.10); c.fillStyle="#f0f0f0"; c.beginPath(); c.arc(w*0.49,groundY-h*0.10,10,0,7); c.fill(); }
+  else if(kind==="stadium"){ c.strokeStyle="rgba(231,183,95,0.6)"; c.lineWidth=4; c.beginPath(); c.arc(w*0.7,groundY+10,h*0.16,Math.PI,0); c.stroke(); lamp(w*0.55); lamp(w*0.85); }
+  else if(kind==="airport"){ c.fillStyle="rgba(238,243,234,0.5)"; c.save(); c.translate(w*0.78,h*0.22); c.rotate(-0.2);
+    c.fillRect(-22,-3,44,6); c.fillRect(-4,-12,8,24); c.restore(); }
+  else { lamp(w*0.52); lamp(w*0.9); if(kind!=="water") tree(w*0.72,h*0.22,"#3f7a4f"); }
+}
+
+function drawVehicleSide(c, veh, w, groundY, water){
+  const m=MODES[veh.mode], x=veh.x*w;
+  const col=m.color;
+  if(veh.mode==="ferry"){
+    const vy=groundY+ (Station.h-groundY)*0.34;
+    const bw=Math.max(120,w*0.26), bh=Math.max(34,Station.h*0.10);
+    c.fillStyle="#e9eef0"; roundRectAt(c,x-bw/2,vy-bh,bw,bh*0.7,6); c.fill();           // cabin
+    c.fillStyle=col; c.beginPath();                                                      // hull
+    c.moveTo(x-bw/2,vy-bh*0.3); c.lineTo(x+bw/2,vy-bh*0.3); c.lineTo(x+bw/2-14,vy+bh*0.3); c.lineTo(x-bw/2+14,vy+bh*0.3); c.closePath(); c.fill();
+    c.fillStyle="rgba(20,40,55,0.75)"; for(let i=0;i<5;i++) c.fillRect(x-bw/2+12+i*((bw-24)/5), vy-bh+6, (bw-24)/5-6, bh*0.4);
+    if(veh.door>0.5){ c.fillStyle="#1a2a2e"; c.fillRect(x+bw/2-18, vy-bh*0.3, 10, bh*0.55); }
+    return;
+  }
+  // bus / tram side view sitting on the road
+  const vy=groundY+ (Station.h-groundY)*0.42;
+  const bw=veh.mode==="rail"?Math.max(180,w*0.40):Math.max(120,w*0.24), bh=Math.max(38,Station.h*0.13);
+  if(veh.mode==="rail"){ c.strokeStyle="#6a7a7a"; c.lineWidth=2; c.beginPath(); c.moveTo(0,vy+2); c.lineTo(w,vy+2); c.stroke(); // rail
+    c.strokeStyle="rgba(120,160,220,0.6)"; c.lineWidth=2; c.beginPath(); c.moveTo(x,vy-bh); c.lineTo(x+10,vy-bh-12); c.lineTo(x+30,vy-bh-12); c.stroke(); } // pantograph
+  c.fillStyle="rgba(0,0,0,0.2)"; c.beginPath(); c.ellipse(x,vy+4,bw*0.5,6,0,0,7); c.fill();
+  c.fillStyle=col; roundRectAt(c,x-bw/2,vy-bh,bw,bh,7); c.fill();
+  // windows
+  c.fillStyle="rgba(210,235,240,0.92)";
+  const wn=veh.mode==="rail"?7:4;
+  for(let i=0;i<wn;i++) c.fillRect(x-bw/2+12+i*((bw-24)/wn), vy-bh+7, (bw-24)/wn-7, bh*0.42);
+  // door (opens during boarding)
+  c.fillStyle="#16242a"; const dw=12; const dOpen=veh.door;
+  c.fillRect(x+bw/2-26, vy-bh+7+ (1-dOpen)*0, dw, bh*0.72);
+  // wheels
+  c.fillStyle="#10181c"; const wr=bh*0.16;
+  c.beginPath(); c.arc(x-bw*0.28,vy,wr,0,7); c.arc(x+bw*0.28,vy,wr,0,7); c.fill();
+  // headlight
+  c.fillStyle="rgba(245,235,150,0.9)"; c.beginPath(); c.arc(x-bw/2+5,vy-bh*0.4,3,0,7); c.fill();
+}
+
 /* --------------------------- UI PANELS ----------------------------------- */
 function $(id){ return document.getElementById(id); }
 function setText(id,t){ const e=$(id); if(e) e.textContent=t; }
@@ -1326,10 +1700,38 @@ function updateTopbar(){
 }
 
 function renderPanels(){
-  renderLines(); renderReport(); renderGoals();
+  renderFinance(); renderLines(); renderReport(); renderGoals();
   // update buildbar cost hints
   setText("costBus","£"+(MODES.bus.buy/1000)+"k");
   setText("costFerry","£"+(MODES.ferry.buy/1000)+"k");
+}
+function renderFinance(){
+  const host=$("financeHost"); if(!host) return;
+  const avail=creditAvailable();
+  const interest=dailyInterest();
+  const debtPct=Math.round(S.debt/CFG.LOAN_MAX_DEBT*100);
+  host.innerHTML=`
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="title">🏦 Bank</div>
+        <span class="pill">${S.debt>0?"Owed "+fmtMoney(S.debt):"No debt"}</span>
+      </div>
+      <div class="kv"><span>Cash on hand</span><span>${fmtMoney(S.money)}</span></div>
+      <div class="kv"><span>Credit available</span><span>${fmtMoney(avail)}</span></div>
+      <div class="kv"><span>Interest (per day)</span><span style="color:${interest>0?'#e7b75f':'#8fb6b1'}">−${fmtMoney(interest)}</span></div>
+      <div class="bar"><i style="width:${debtPct}%; background:${debtPct>75?'#e76f6f':debtPct>40?'#e7b75f':'#7fcf6b'}"></i></div>
+      <div class="btnrow">
+        <button class="b small" data-b="b10" ${avail<1?'disabled':''}>Borrow £10k</button>
+        <button class="b small" data-b="b25" ${avail<1?'disabled':''}>Borrow £25k</button>
+        <button class="b small" data-b="r10" ${S.debt<=0||S.money<=0?'disabled':''}>Repay £10k</button>
+        <button class="b primary small" data-b="rall" ${S.debt<=0||S.money<=0?'disabled':''}>Repay all</button>
+      </div>
+      <p class="tiny" style="margin-top:.4rem">Borrow to expand faster — but interest runs at ${(CFG.LOAN_DAILY_RATE*100).toFixed(1)}%/day until you repay.</p>
+    </div>`;
+  host.querySelector('[data-b="b10"]').onclick=()=>borrow(10000);
+  host.querySelector('[data-b="b25"]').onclick=()=>borrow(25000);
+  host.querySelector('[data-b="r10"]').onclick=()=>repay(10000);
+  host.querySelector('[data-b="rall"]').onclick=()=>repay(Infinity);
 }
 function renderLines(){
   const host=$("linesHost"); host.innerHTML="";
@@ -1366,6 +1768,7 @@ function renderReport(){
   setText("rFare",fmtMoney(S.fareToday));
   setText("rOp","−"+fmtMoney(dailyOpCost()));
   setText("rMaint","−"+fmtMoney(S.maintToday));
+  setText("rInt","−"+fmtMoney(dailyInterest()));
   setText("rRiders",S.ridersToday.toLocaleString());
   setText("rLost",S.lostToday.toLocaleString());
   setText("rConn", connectedCount()+" / 18");
@@ -1519,7 +1922,7 @@ const SAVE_KEY = "tidewater-lines-save-v1";
 function serialize(){
   return {
     v:1,
-    money:S.money, day:S.day, time:S.time, happy:S.happy,
+    money:S.money, debt:S.debt, day:S.day, time:S.time, happy:S.happy,
     ridersTotal:S.ridersTotal, ridersToday:S.ridersToday, lostToday:S.lostToday,
     breakdownsToday:S.breakdownsToday, deniedToday:S.deniedToday,
     fareToday:S.fareToday, maintToday:S.maintToday, odToday:S.odToday,
@@ -1535,7 +1938,7 @@ function deserialize(d){
   S.passengers=[]; LOCATIONS.forEach(l=>S.stops[l.id]={wait:[]});
   S.vehicles=[]; S.lines=[];
   Object.assign(S,{
-    money:d.money, day:d.day, time:d.time, happy:d.happy,
+    money:d.money, debt:d.debt||0, interestToday:0, day:d.day, time:d.time, happy:d.happy,
     ridersTotal:d.ridersTotal||0, ridersToday:d.ridersToday||0, lostToday:d.lostToday||0,
     breakdownsToday:d.breakdownsToday||0, deniedToday:d.deniedToday||0,
     fareToday:d.fareToday||0, maintToday:d.maintToday||0, odToday:d.odToday||{},
@@ -1583,6 +1986,7 @@ function loadGame(){
   let ok=false;
   try{ ok=deserialize(JSON.parse(raw)); }catch(e){ ok=false; }
   if(!ok){ toast("That save couldn't be read — start a new city.","bad"); clearSave(); return false; }
+  closeStation(); resetView();
   hideScreens(); resize(); renderPanels(); updateTopbar(); setSpeed(1);
   toast("Welcome back — city restored.","good");
   return true;
@@ -1612,7 +2016,8 @@ function frame(now){
     // periodic UI refresh (not every frame to save work)
     uiAcc+=dtReal; if(uiAcc>0.25){ uiAcc=0; updateTopbar(); renderReport(); renderLines(); checkGoals(); }
   }
-  render();
+  if(Station.shown){ stationUpdate(dtReal); stationDraw(); }  // station scene runs even while paused
+  else render();
   requestAnimationFrame(frame);
 }
 let uiAcc=0;
@@ -1622,7 +2027,7 @@ function startGame(){
   SFX.init();   // kicked off by the Start button gesture (audio autoplay policy)
   // reset
   Object.assign(S,{
-    money:CFG.START_MONEY, day:1, time:CFG.DAY_START, speed:1, running:true, paused:false,
+    money:CFG.START_MONEY, debt:0, interestToday:0, day:1, time:CFG.DAY_START, speed:1, running:true, paused:false,
     happy:CFG.HAPPY_START, lines:[], vehicles:[], passengers:[], spawnAcc:0,
     ridersToday:0, ridersTotal:0, lostToday:0, breakdownsToday:0, deniedToday:0,
     fareToday:0, maintToday:0, odToday:{},
@@ -1633,6 +2038,7 @@ function startGame(){
   clearSave();   // a fresh city replaces any previous save
   rollDailyConditions(); updateConditions();
   rebuildGraph();
+  closeStation(); resetView();
   hideScreens();
   resize();
   renderPanels(); updateTopbar();
@@ -1652,6 +2058,11 @@ $("soundBtn").onclick=()=>SFX.toggle();
 try{ if(localStorage.getItem(SOUND_KEY)==="0") $("soundBtn").textContent="🔇"; }catch(e){}
 $("drawGo").onclick=confirmBuild;
 $("drawCancel").onclick=cancelBuild;
+$("svBack").onclick=closeStation;
+function zoomCenter(f){ const r=cv.getBoundingClientRect(); zoomAt(f, r.width/2, r.height/2); }
+$("zoomIn").onclick=()=>zoomCenter(1.25);
+$("zoomOut").onclick=()=>zoomCenter(1/1.25);
+$("zoomReset").onclick=resetView;
 
 document.querySelectorAll("#buildbar .tool").forEach(b=> b.onclick=()=>setMode(b.dataset.mode));
 document.querySelectorAll("#speed button").forEach(b=> b.onclick=()=>setSpeed(+b.dataset.s));
@@ -1671,7 +2082,9 @@ window.addEventListener("keydown",e=>{
   else if(e.key==="h"||e.key==="H") setMode("heat");
   else if(e.key==="s"||e.key==="S") saveGame(true);
   else if(e.key==="m"||e.key==="M") SFX.toggle();
-  else if(e.key==="Escape") cancelBuild();
+  else if(e.key==="+"||e.key==="=") zoomCenter(1.25);
+  else if(e.key==="-"||e.key==="_") zoomCenter(1/1.25);
+  else if(e.key==="Escape"){ if(Station.shown) closeStation(); else cancelBuild(); }
   else if(e.key===" "){ e.preventDefault(); setSpeed(S.speed>0?0:1); }
 });
 
