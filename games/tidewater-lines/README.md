@@ -1,15 +1,25 @@
 # 🚊 Tidewater Lines
 
-A cozy **transit-network tycoon** set in the coastal city of *Olivehaven*. Stitch
-the city together with **electric buses**, **light rail** and **ferries**, carry
-real passengers from stop to stop, collect fares, and grow a beautiful, profitable
-network — while keeping riders happy and your fleet maintained.
+A cozy **transit-network tycoon** set in the coastal region around *Olivehaven*.
+Stitch each town together with **electric buses**, **light rail** and **ferries**,
+link the towns with fast **intercity** lines, carry real passengers near and far,
+collect fares, and grow an ever-bigger, profitable network — while keeping riders
+happy and your fleet maintained.
 
 ## How it plays
 
-- **Trace routes.** Pick a mode (Bus 🚌 / Rail 🚊 / Ferry ⛴️) and click stops in
+- **A region of towns.** The world is a whole region: your handcrafted home town,
+  *Olivehaven*, plus several **procedurally generated towns** in the same style
+  (each a randomised cluster of places — centres, universities, shopping, parks,
+  beaches, harbours…). Zoom out to see the region and the intercity links; zoom in
+  to work a town's streets; tap a town to dive into it.
+- **Trace local routes.** Pick a mode (Bus 🚌 / Rail 🚊 / Ferry ⛴️) and click stops in
   order to lay a line. Ferries only connect waterside stops; light rail lays track
   (so it costs more up front but moves lots of people fast).
+- **Go intercity.** The Intercity tool 🚄 connects towns' **central stations** with a
+  fast, high-capacity service. Wire each town's centre to its local stops and
+  passengers will transfer all the way from one town's beach to another's business
+  district. Longer trips earn more — long-distance travellers are also more patient.
 - **Carry passengers.** People appear at stops wanting to reach somewhere else,
   chosen by a gravity model (closer + more attractive places pull more trips).
   They route across your network, **transfer at interchange hubs** where two or
@@ -47,9 +57,15 @@ network — while keeping riders happy and your fleet maintained.
 
 - **Single-file HTML5 game** — vanilla JavaScript + Canvas 2D, no engine, no build
   step, no dependencies.
+- A **seeded procedural region** (mulberry32) of multiple towns generated in the
+  style of the handcrafted starter town; the seed is saved so the exact world
+  restores on load.
 - A tick-based simulation with live moving vehicles and individual passenger agents,
-  Dijkstra route-planning with transfer penalties, a gravity demand model, a daily
-  weather/event system, and a wear/maintenance economy.
+  Dijkstra route-planning with transfer penalties (local + intercity), a gravity
+  demand model with an inter-town share, a daily weather/event system, and a
+  wear/maintenance economy.
+- **Level-of-detail map:** zoom out for a region overview (towns as footprints +
+  intercity links), zoom in for a town's detailed stops, lines and vehicles.
 - **Procedural ambient sound** via the Web Audio API — a brown-noise harbour "wave
   wash" with a slow swell, occasional gulls and a buoy bell, plus weather-reactive
   wind and a goal chime. No audio files; mutable and gated behind a user gesture.
