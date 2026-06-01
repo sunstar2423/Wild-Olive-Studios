@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="description" content="World Cup 2026 — a football management sim from Wild Olive Studios. Manage a nation through the real 48-team 2026 World Cup, pick your XI, call the shots in live matches, and chase the trophy." />
+<title>World Cup 2026 — Wild Olive Studios</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0c1610; --bg-2:#0f1d14; --panel:#122318; --panel-2:#16291c;
+    --ink:#eef3ea; --ink-soft:#aebaa6; --olive:#7fb069; --olive-br:#9fcf6b;
+    --gold:#e7b75f; --grass:#2f7a3f; --grass-2:#3a924c;
+    --line:rgba(159,207,107,.16); --danger:#e07a5f; --radius:16px;
+    --serif:"Fraunces",Georgia,serif; --sans:"Space Grotesk",system-ui,sans-serif;
+    --shadow:0 24px 60px -20px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent;}
+  html,body{min-height:100%;}
+  body{
+    font-family:var(--sans); color:var(--ink);
+    background:
+      radial-gradient(140% 90% at 50% -10%, rgba(127,176,105,.10), transparent 60%),
+      radial-gradient(120% 80% at 100% 0%, rgba(231,183,95,.06), transparent 55%),
+      var(--bg);
+    min-height:100dvh; line-height:1.5; padding-bottom:env(safe-area-inset-bottom);
+  }
+  ::selection{background:rgba(159,207,107,.3);}
+  a{color:var(--olive-br);}
+
+  .back{
+    position:fixed; top:12px; left:12px; z-index:40; font-size:.78rem; color:var(--ink-soft);
+    text-decoration:none; background:rgba(0,0,0,.4); padding:.4rem .85rem; border-radius:999px;
+    border:1px solid var(--line); backdrop-filter:blur(6px);
+  }
+  .back:hover{ color:#fff; border-color:var(--olive); }
+
+  .app{ max-width:760px; margin:0 auto; padding:clamp(.8rem,3vw,1.4rem); }
+
+  /* ---- Top bar ---- */
+  .topbar{
+    display:flex; align-items:center; gap:.7rem; padding:.7rem .9rem; margin-bottom:1rem;
+    background:linear-gradient(180deg,var(--panel),var(--bg-2)); border:1px solid var(--line);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+  }
+  .topbar .flag{ font-size:1.7rem; line-height:1; }
+  .topbar__info{ flex:1; min-width:0; }
+  .topbar__team{ font-family:var(--serif); font-weight:600; font-size:1.05rem; }
+  .topbar__sub{ font-size:.72rem; color:var(--ink-soft); letter-spacing:.04em; }
+  .topbar__stage{ text-align:right; }
+  .topbar__stage b{ color:var(--gold); font-size:.85rem; display:block; }
+  .topbar__stage span{ font-size:.66rem; color:var(--ink-soft); }
+
+  .meters{ display:flex; gap:.5rem; margin:-.4rem 0 1rem; }
+  .meter{ flex:1; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:.5rem .6rem; }
+  .meter .lbl{ font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); }
+  .meter .bar{ height:7px; border-radius:99px; background:rgba(255,255,255,.07); margin-top:.35rem; overflow:hidden; }
+  .meter .bar i{ display:block; height:100%; border-radius:99px; transition:width .5s; }
+  .meter .bar i.morale{ background:linear-gradient(90deg,var(--gold),var(--olive-br)); }
+  .meter .bar i.fit{ background:linear-gradient(90deg,var(--grass-2),var(--olive-br)); }
+
+  h1,h2,h3{ font-family:var(--serif); font-weight:600; letter-spacing:-.01em; line-height:1.1; }
+  .display{
+    font-weight:900; font-size:clamp(2.4rem,11vw,4.2rem); line-height:.95; letter-spacing:-.02em;
+    background:linear-gradient(120deg,var(--olive-br),var(--gold) 70%,#fff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .kicker{ color:var(--olive); font-size:.74rem; letter-spacing:.22em; text-transform:uppercase; font-weight:700; }
+  .lead{ color:var(--ink-soft); max-width:46ch; }
+
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:1.1rem 1.1rem; box-shadow:var(--shadow); }
+  .card + .card{ margin-top:.9rem; }
+  .section-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:.7rem; gap:.6rem; }
+  .section-title h3{ font-size:1.15rem; }
+  .section-title .hint{ font-size:.7rem; color:var(--ink-soft); }
+
+  /* ---- Buttons ---- */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:.45rem; cursor:pointer;
+    border:1px solid transparent; font-family:var(--sans); font-weight:700; font-size:.95rem;
+    padding:.8rem 1.4rem; border-radius:999px; color:#0c1610; transition:transform .15s, box-shadow .2s, background .2s;
+    background:linear-gradient(135deg,var(--olive-br),var(--gold)); box-shadow:0 12px 26px -10px rgba(159,207,107,.6);
+    text-decoration:none;
+  }
+  .btn:hover{ transform:translateY(-2px); }
+  .btn:active{ transform:translateY(0); }
+  .btn[disabled]{ opacity:.4; pointer-events:none; }
+  .btn--ghost{ background:transparent; color:var(--ink); border-color:var(--line); box-shadow:none; }
+  .btn--ghost:hover{ border-color:var(--olive); color:#fff; }
+  .btn--block{ width:100%; }
+  .btn--lg{ font-size:1.1rem; padding:1rem 1.8rem; }
+  .btn--sm{ font-size:.8rem; padding:.5rem .9rem; }
+  .btnrow{ display:flex; gap:.6rem; flex-wrap:wrap; }
+  .btnrow .btn{ flex:1; }
+
+  /* ---- Group / team grids ---- */
+  .groups{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:.7rem; }
+  .group{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:.6rem .6rem .4rem; }
+  .group h4{ font-family:var(--sans); font-size:.7rem; letter-spacing:.12em; color:var(--gold); text-transform:uppercase; margin-bottom:.4rem; }
+  .teamrow{
+    display:flex; align-items:center; gap:.5rem; width:100%; text-align:left; cursor:pointer;
+    background:transparent; border:1px solid transparent; border-radius:8px; padding:.32rem .4rem; color:var(--ink);
+    font-family:var(--sans); font-size:.82rem; transition:background .15s,border-color .15s;
+  }
+  .teamrow:hover{ background:var(--panel-2); border-color:var(--line); }
+  .teamrow.sel{ background:rgba(159,207,107,.14); border-color:var(--olive); }
+  .teamrow .flag{ font-size:1.1rem; line-height:1; }
+  .teamrow .nm{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .teamrow .ovr{ font-size:.66rem; color:var(--ink-soft); font-weight:700; }
+  .pills{ display:flex; gap:.4rem; flex-wrap:wrap; }
+  .pill{ font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft);
+    border:1px solid var(--line); border-radius:99px; padding:.18rem .55rem; }
+  .pill.gold{ color:var(--gold); border-color:rgba(231,183,95,.4); }
+
+  /* ---- Squad / pitch ---- */
+  .formtabs{ display:flex; gap:.4rem; flex-wrap:wrap; }
+  .formtabs button{ flex:1; min-width:64px; background:var(--panel-2); color:var(--ink-soft); border:1px solid var(--line);
+    border-radius:10px; padding:.5rem; font-family:var(--sans); font-weight:700; font-size:.82rem; cursor:pointer; }
+  .formtabs button.on{ background:rgba(159,207,107,.16); color:#fff; border-color:var(--olive); }
+  .pitch{
+    position:relative; border-radius:14px; padding:.8rem .5rem; margin-top:.2rem;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 24px, transparent 24px 48px),
+      linear-gradient(180deg,var(--grass),#235e30);
+    border:1px solid rgba(159,207,107,.25);
+  }
+  .pline{ display:flex; justify-content:center; gap:.5rem; margin:.45rem 0; flex-wrap:wrap; }
+  .dot{ width:60px; text-align:center; cursor:pointer; }
+  .dot .disc{ width:38px; height:38px; margin:0 auto; border-radius:50%; display:grid; place-items:center;
+    background:#0c1610; border:2px solid var(--olive-br); font-weight:700; font-size:.78rem; color:#fff; box-shadow:0 4px 10px rgba(0,0,0,.4); }
+  .dot.cap .disc{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(231,183,95,.4); }
+  .dot .nm{ font-size:.62rem; margin-top:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dot .nm b{ color:var(--gold); }
+
+  .roster{ max-height:280px; overflow:auto; margin-top:.4rem; border:1px solid var(--line); border-radius:12px; }
+  .prow{ display:flex; align-items:center; gap:.6rem; padding:.5rem .7rem; border-bottom:1px solid var(--line); font-size:.84rem; }
+  .prow:last-child{ border-bottom:0; }
+  .prow .pos{ width:34px; font-size:.66rem; font-weight:700; color:var(--olive-br); text-align:center; }
+  .prow .nm{ flex:1; min-width:0; }
+  .prow .nm small{ color:var(--ink-soft); }
+  .prow .rt{ font-weight:700; width:30px; text-align:right; }
+  .prow .fitbar{ width:46px; height:6px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .prow .fitbar i{ display:block; height:100%; }
+  .prow.starter{ background:rgba(159,207,107,.08); }
+  .prow .tag{ font-size:.6rem; color:var(--gold); }
+
+  /* ---- Match ---- */
+  .scoreboard{
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:.6rem;
+    background:linear-gradient(180deg,var(--panel),var(--bg-2)); border:1px solid var(--line);
+    border-radius:14px; padding:.9rem; text-align:center;
+  }
+  .scoreboard .side{ display:flex; flex-direction:column; align-items:center; gap:.2rem; }
+  .scoreboard .side .flag{ font-size:2rem; }
+  .scoreboard .side .nm{ font-size:.78rem; font-weight:700; }
+  .scoreboard .mid{ font-family:var(--serif); font-weight:900; font-size:2.4rem; min-width:120px; }
+  .scoreboard .clock{ font-size:.78rem; color:var(--gold); letter-spacing:.06em; font-weight:700; }
+  .venue{ text-align:center; font-size:.7rem; color:var(--ink-soft); margin:.5rem 0; }
+  .commentary{ margin-top:.7rem; height:190px; overflow:auto; display:flex; flex-direction:column; gap:.35rem; padding-right:.2rem; }
+  .cmt{ font-size:.82rem; padding:.45rem .6rem; border-radius:9px; background:var(--panel); border:1px solid var(--line); animation:fadein .3s ease; }
+  .cmt.goal{ border-color:var(--gold); background:rgba(231,183,95,.12); font-weight:700; }
+  .cmt.goal.them{ border-color:var(--danger); background:rgba(224,122,95,.12); }
+  .cmt.key{ border-color:var(--olive); }
+  .cmt .min{ color:var(--olive-br); font-weight:700; margin-right:.4rem; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1;transform:none;} }
+
+  .decision{ margin-top:.7rem; border:1px solid var(--gold); border-radius:12px; padding:.8rem; background:rgba(231,183,95,.08); }
+  .decision p{ font-size:.9rem; margin-bottom:.6rem; }
+  .decision .opts{ display:flex; gap:.5rem; flex-wrap:wrap; }
+  .decision .opts .btn{ flex:1; min-width:110px; }
+
+  /* ---- Bracket / table ---- */
+  table.tbl{ width:100%; border-collapse:collapse; font-size:.82rem; }
+  table.tbl th{ text-align:left; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); padding:.3rem .4rem; border-bottom:1px solid var(--line); }
+  table.tbl td{ padding:.4rem .4rem; border-bottom:1px solid rgba(159,207,107,.08); }
+  table.tbl td.n{ text-align:center; width:26px; color:var(--ink-soft); }
+  table.tbl tr.me td{ background:rgba(159,207,107,.12); }
+  table.tbl tr.me td:first-child{ border-left:2px solid var(--olive); }
+  table.tbl .flag{ margin-right:.35rem; }
+
+  .news{ border-left:3px solid var(--gold); }
+  .news .src{ font-size:.64rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); font-weight:700; }
+  .news h3{ margin:.25rem 0 .5rem; font-size:1.25rem; }
+  .news p{ color:var(--ink-soft); font-size:.92rem; }
+  .effect{ display:inline-flex; align-items:center; gap:.3rem; font-size:.74rem; font-weight:700; margin-top:.6rem; padding:.3rem .6rem; border-radius:99px; }
+  .effect.up{ color:var(--olive-br); background:rgba(159,207,107,.12); }
+  .effect.down{ color:var(--danger); background:rgba(224,122,95,.12); }
+
+  .center{ text-align:center; }
+  .mt{ margin-top:1rem; } .mt2{ margin-top:1.6rem; }
+  .muted{ color:var(--ink-soft); }
+  .hidden{ display:none !important; }
+  .trophy{ font-size:4.5rem; filter:drop-shadow(0 8px 24px rgba(231,183,95,.5)); animation:bob 2.4s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-3deg);} 50%{transform:translateY(-10px) rotate(3deg);} }
+  .pens{ display:flex; gap:.4rem; justify-content:center; margin:.5rem 0; flex-wrap:wrap; }
+  .pen{ width:18px; height:18px; border-radius:50%; border:2px solid var(--line); }
+  .pen.scored{ background:var(--olive-br); border-color:var(--olive-br); }
+  .pen.miss{ background:var(--danger); border-color:var(--danger); }
+
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
+  @media (max-width:480px){ .scoreboard .mid{ font-size:2rem; min-width:96px; } .dot{ width:50px; } }
+</style>
+</head>
+<body>
+<a class="back" href="../../index.html#games">← Back to studio</a>
+<div class="app" id="app"></div>
+
+<script>
+"use strict";
+(function(){
+  // ============================================================
+  //  WORLD CUP 2026 — management sim · Wild Olive Studios
+  //  Real 2026 draw (Groups A–L), real host stadiums.
+  // ============================================================
+  const SAVE_KEY = "wos_wc2026_v1";
+
+  // ---- Real 2026 World Cup draw (48 teams) ----
+  // ovr = overall strength rating used by the sim.
+  const TEAMS = [
+    // Group A
+    {n:"Mexico",f:"🇲🇽",g:"A",ovr:81}, {n:"South Korea",f:"🇰🇷",g:"A",ovr:76}, {n:"South Africa",f:"🇿🇦",g:"A",ovr:70}, {n:"Czechia",f:"🇨🇿",g:"A",ovr:74},
+    // Group B
+    {n:"Canada",f:"🇨🇦",g:"B",ovr:75}, {n:"Switzerland",f:"🇨🇭",g:"B",ovr:80}, {n:"Qatar",f:"🇶🇦",g:"B",ovr:69}, {n:"Bosnia & H.",f:"🇧🇦",g:"B",ovr:72},
+    // Group C
+    {n:"Brazil",f:"🇧🇷",g:"C",ovr:90}, {n:"Morocco",f:"🇲🇦",g:"C",ovr:83}, {n:"Haiti",f:"🇭🇹",g:"C",ovr:66}, {n:"Scotland",f:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",g:"C",ovr:75},
+    // Group D
+    {n:"United States",f:"🇺🇸",g:"D",ovr:79}, {n:"Paraguay",f:"🇵🇾",g:"D",ovr:74}, {n:"Australia",f:"🇦🇺",g:"D",ovr:75}, {n:"Türkiye",f:"🇹🇷",g:"D",ovr:79},
+    // Group E
+    {n:"Germany",f:"🇩🇪",g:"E",ovr:88}, {n:"Côte d'Ivoire",f:"🇨🇮",g:"E",ovr:76}, {n:"Curaçao",f:"🇨🇼",g:"E",ovr:64}, {n:"Ecuador",f:"🇪🇨",g:"E",ovr:78},
+    // Group F
+    {n:"Netherlands",f:"🇳🇱",g:"F",ovr:87}, {n:"Tunisia",f:"🇹🇳",g:"F",ovr:71}, {n:"Japan",f:"🇯🇵",g:"F",ovr:81}, {n:"Italy",f:"🇮🇹",g:"F",ovr:84},
+    // Group G
+    {n:"Belgium",f:"🇧🇪",g:"G",ovr:84}, {n:"Egypt",f:"🇪🇬",g:"G",ovr:76}, {n:"Iran",f:"🇮🇷",g:"G",ovr:75}, {n:"New Zealand",f:"🇳🇿",g:"G",ovr:66},
+    // Group H
+    {n:"Spain",f:"🇪🇸",g:"H",ovr:91}, {n:"Saudi Arabia",f:"🇸🇦",g:"H",ovr:69}, {n:"Uruguay",f:"🇺🇾",g:"H",ovr:83}, {n:"Cabo Verde",f:"🇨🇻",g:"H",ovr:67},
+    // Group I
+    {n:"France",f:"🇫🇷",g:"I",ovr:90}, {n:"Senegal",f:"🇸🇳",g:"I",ovr:81}, {n:"Iraq",f:"🇮🇶",g:"I",ovr:68}, {n:"Norway",f:"🇳🇴",g:"I",ovr:80},
+    // Group J
+    {n:"Argentina",f:"🇦🇷",g:"J",ovr:90}, {n:"Algeria",f:"🇩🇿",g:"J",ovr:76}, {n:"Austria",f:"🇦🇹",g:"J",ovr:79}, {n:"Jordan",f:"🇯🇴",g:"J",ovr:67},
+    // Group K
+    {n:"Portugal",f:"🇵🇹",g:"K",ovr:88}, {n:"DR Congo",f:"🇨🇩",g:"K",ovr:75}, {n:"Uzbekistan",f:"🇺🇿",g:"K",ovr:72}, {n:"Colombia",f:"🇨🇴",g:"K",ovr:83},
+    // Group L
+    {n:"England",f:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",g:"L",ovr:88}, {n:"Croatia",f:"🇭🇷",g:"L",ovr:82}, {n:"Ghana",f:"🇬🇭",g:"L",ovr:75}, {n:"Panama",f:"🇵🇦",g:"L",ovr:70},
+  ];
+  const GROUPS = "ABCDEFGHIJKL".split("");
+
+  // ---- Host venues (real 2026 stadiums) ----
+  const VENUES = {
+    azteca:{s:"Estadio Banorte (Azteca)", c:"Mexico City"},
+    akron:{s:"Estadio Akron", c:"Guadalajara"},
+    bbva:{s:"Estadio BBVA", c:"Monterrey"},
+    bmo:{s:"BMO Field", c:"Toronto"},
+    bcplace:{s:"BC Place", c:"Vancouver"},
+    metlife:{s:"MetLife Stadium", c:"New York / New Jersey"},
+    att:{s:"AT&T Stadium", c:"Dallas"},
+    mbz:{s:"Mercedes-Benz Stadium", c:"Atlanta"},
+    sofi:{s:"SoFi Stadium", c:"Los Angeles"},
+    levis:{s:"Levi's Stadium", c:"San Francisco Bay"},
+    lumen:{s:"Lumen Field", c:"Seattle"},
+    nrg:{s:"NRG Stadium", c:"Houston"},
+    gillette:{s:"Gillette Stadium", c:"Boston"},
+    linc:{s:"Lincoln Financial Field", c:"Philadelphia"},
+    arrow:{s:"Arrowhead Stadium", c:"Kansas City"},
+    hardrock:{s:"Hard Rock Stadium", c:"Miami"},
+  };
+  const VKEYS = Object.keys(VENUES);
+
+  // Knockout round metadata: label + how many of the 32 enter.
+  const KO_ROUNDS = [
+    {key:"R32", label:"Round of 32", short:"R32"},
+    {key:"R16", label:"Round of 16", short:"R16"},
+    {key:"QF",  label:"Quarter-final", short:"QF"},
+    {key:"SF",  label:"Semi-final", short:"SF", venue:["att","mbz"]},
+    {key:"FIN", label:"Final", short:"Final", venue:["metlife"]},
+  ];
+
+  // ---- Formations: counts per line ----
+  const FORMATIONS = {
+    "4-3-3":{DEF:4,MID:3,FWD:3},
+    "4-4-2":{DEF:4,MID:4,FWD:2},
+    "3-5-2":{DEF:3,MID:5,FWD:2},
+    "5-3-2":{DEF:5,MID:3,FWD:2},
+  };
+
+  const TACTICS = {
+    Attacking:{att:+7,def:-5,fatigue:1.25, desc:"Throw bodies forward. More chances — but exposed at the back."},
+    Balanced:{att:0,def:0,fatigue:1.0, desc:"Keep your shape. No major risks."},
+    Defensive:{att:-6,def:+7,fatigue:0.85, desc:"Sit deep, soak pressure, hit on the break."},
+  };
+
+  // ---- Name pools for procedural squads ----
+  const FIRST = ["Leo","Marc","Diego","Kai","Luca","Noah","Adam","Omar","Yusuf","Ivan","Mateo","Hugo","Felix","Theo","Aaron","Nico","Samir","Bruno","Dani","Eric","Jude","Cole","Reece","Aziz","Tomas","Pavel","Karim","Ali","Sven","Lars","Joel","Dario","Milan","Ruben","Saul","Tariq","Kenji","Hiro","Min","Jun","Pedro","Rafa","Mauro","Ezra","Andre","Pau","Vince","Said","Bilal","Emre"];
+  const LAST = ["Silva","Costa","Mendez","Roca","Vargas","Haaland","Mbeki","Okafor","Tanaka","Kim","Novak","Petrov","Bauer","Vogel","Rossi","Conti","Dubois","Laurent","Moreau","Ferreira","Santos","Bauer","Nguyen","Park","Ahmadi","Hassan","Toure","Diop","Larsson","Eriksen","Wright","Bell","Hughes","Reid","Cruz","Soto","Reyes","Yilmaz","Demir","Kovac","Horvat","Ali","Owusu","Mensah","Becker","Schmidt","Romero","Aguero","Kaur","Singh"];
+
+  // ============================================================
+  //  STATE
+  // ============================================================
+  let S = null; // game state
+  let app = document.getElementById("app");
+  let rng = Math.random;
+
+  function freshState(){
+    return {
+      teamName:null,            // managed nation
+      squad:[],                 // 23 players
+      formation:"4-3-3",
+      xi:[],                    // array of 11 player ids
+      captain:null,             // player id
+      tactic:"Balanced",
+      morale:72,
+      stage:"group",            // group | ko
+      groupResults:{},          // group letter -> table built after sim
+      groupFixtureIdx:0,        // 0..2 played
+      myGroupTable:null,
+      koRound:0,                // index into KO_ROUNDS
+      koPool:[],                // names still alive (excl. me)
+      history:[],               // {label, opp, oppFlag, gf, ga, pens}
+      seenNews:[],              // ids used
+      pendingNews:null,
+      finished:false, champion:false,
+    };
+  }
+
+  function myTeam(){ return TEAMS.find(t=>t.n===S.teamName); }
+
+  // ============================================================
+  //  SQUAD GENERATION
+  // ============================================================
+  function genSquad(ovr){
+    const players = [];
+    let id=0;
+    const used = new Set();
+    function name(){
+      let nm;
+      do{ nm = pick(FIRST)[0]+". "+pick(LAST); }while(used.has(nm) && used.size<400);
+      used.add(nm); return nm;
+    }
+    function make(pos, base, spread, count){
+      for(let i=0;i<count;i++){
+        const r = clamp(Math.round(base + (rng()*2-1)*spread + (i===0?3:0)), 55, 99);
+        players.push({id:id++, name:name(), pos, ovr:r, fit:100, injured:false, suspended:false});
+      }
+    }
+    make("GK",  ovr-1, 3, 3);
+    make("DEF", ovr-1, 5, 7);
+    make("MID", ovr,   5, 7);
+    make("FWD", ovr+1, 5, 6);
+    // sort within position by ovr desc
+    players.sort((a,b)=> b.ovr-a.ovr);
+    return players;
+  }
+
+  function p(id){ return S.squad.find(x=>x.id===id); }
+
+  // Auto-pick best available XI for current formation
+  function autoPickXI(){
+    const need = FORMATIONS[S.formation];
+    const avail = S.squad.filter(x=>!x.injured && !x.suspended);
+    const byPos = pos => avail.filter(x=>x.pos===pos).sort((a,b)=> rankScore(b)-rankScore(a));
+    const xi=[];
+    xi.push(byPos("GK")[0]);
+    byPos("DEF").slice(0,need.DEF).forEach(x=>xi.push(x));
+    byPos("MID").slice(0,need.MID).forEach(x=>xi.push(x));
+    byPos("FWD").slice(0,need.FWD).forEach(x=>xi.push(x));
+    S.xi = xi.filter(Boolean).map(x=>x.id);
+    if(!S.captain || !S.xi.includes(S.captain)){
+      // captain = highest rated outfielder
+      const cands = S.xi.map(p).filter(x=>x.pos!=="GK").sort((a,b)=>b.ovr-a.ovr);
+      S.captain = (cands[0]||p(S.xi[0])).id;
+    }
+  }
+  function rankScore(pl){ return pl.ovr + pl.fit*0.08; } // tired players drop in auto-pick
+
+  function xiByPos(posList){ return S.xi.map(p).filter(x=>posList.includes(x.pos)); }
+
+  // Effective match rating of a player (ovr modified by fitness)
+  function eff(pl){ return pl.ovr * (0.7 + 0.3*(pl.fit/100)); }
+
+  // Compute team attack & defense numbers from the selected XI + tactic + morale
+  function computeStrength(){
+    const gk = xiByPos(["GK"]);
+    const def = xiByPos(["DEF"]);
+    const mid = xiByPos(["MID"]);
+    const fwd = xiByPos(["FWD"]);
+    const mean = arr => arr.length? arr.reduce((s,x)=>s+eff(x),0)/arr.length : 60;
+    // attack leans on forwards + midfield + a sliver of width from defenders
+    let attack = mean(fwd)*0.55 + mean(mid)*0.35 + mean(def)*0.10;
+    // more forwards on the pitch = a touch more threat
+    attack += (fwd.length-2)*1.6;
+    let defense = mean(def)*0.55 + mean(mid)*0.30 + mean(gk)*0.15;
+    defense += (def.length-4)*1.4;
+    const t = TACTICS[S.tactic];
+    attack += t.att; defense += t.def;
+    const moraleAdj = (S.morale-70)*0.12;
+    attack += moraleAdj; defense += moraleAdj;
+    return {attack, defense, gk:mean(gk)};
+  }
+
+  // Strength for AI nations (no squad detail)
+  function aiStrength(team){
+    const base = team.ovr;
+    return {attack:base, defense:base, gk:base-2};
+  }
+
+  // ============================================================
+  //  HELPERS
+  // ============================================================
+  function pick(a){ return a[Math.floor(rng()*a.length)]; }
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+  function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+  function teamByName(n){ return TEAMS.find(t=>t.n===n); }
+  function flagOf(n){ const t=teamByName(n); return t?t.f:"🏳️"; }
+  function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+
+  // ============================================================
+  //  SAVE / LOAD
+  // ============================================================
+  function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+  function load(){ try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+  function wipe(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+
+  // ============================================================
+  //  GROUP SIMULATION
+  // ============================================================
+  // Simulate a single match between two strength objects -> {hg, ag}
+  function simGoals(sa, sb){
+    // expected goals from attack vs opponent defense
+    const xgA = clamp(0.9 + (sa.attack - sb.defense)*0.045, 0.15, 4.2);
+    const xgB = clamp(0.9 + (sb.attack - sa.defense)*0.045, 0.15, 4.2);
+    return { hg: poisson(xgA), ag: poisson(xgB) };
+  }
+  function poisson(lambda){
+    let L=Math.exp(-lambda), k=0, prod=1;
+    do{ k++; prod*=rng(); }while(prod>L);
+    return k-1;
+  }
+
+  // Build round-robin results for one group (excluding the player's own match
+  // results, which come from real played matches). We sim ALL non-player matches.
+  function simGroup(letter, played){
+    const teams = TEAMS.filter(t=>t.g===letter);
+    const table = {};
+    teams.forEach(t=> table[t.n]={n:t.n,f:t.f,pld:0,w:0,d:0,l:0,gf:0,ga:0,pts:0});
+    const pairs=[];
+    for(let i=0;i<teams.length;i++) for(let j=i+1;j<teams.length;j++) pairs.push([teams[i],teams[j]]);
+    pairs.forEach(([a,b])=>{
+      let hg,ag;
+      const key = a.n+"|"+b.n, rkey=b.n+"|"+a.n;
+      if(played && (played[key]||played[rkey])){
+        const r = played[key]||(()=>{const x=played[rkey];return {hg:x.ag,ag:x.hg};})();
+        hg=r.hg; ag=r.ag;
+      } else {
+        const r=simGoals(aiStrength(a),aiStrength(b)); hg=r.hg; ag=r.ag;
+      }
+      record(table[a.n],hg,ag); record(table[b.n],ag,hg);
+    });
+    return rankTable(Object.values(table));
+  }
+  function record(row,gf,ga){ row.pld++; row.gf+=gf; row.ga+=ga; if(gf>ga){row.w++;row.pts+=3;} else if(gf===ga){row.d++;row.pts++;} else row.l++; }
+  function rankTable(rows){
+    rows.sort((a,b)=> b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf || (rng()-0.5));
+    rows.forEach((r,i)=> r.rank=i+1);
+    return rows;
+  }
+
+  // ============================================================
+  //  NEWS EVENTS
+  // ============================================================
+  const NEWS = [
+    {id:"injury", src:"Medical Room", t:"Knock in training",
+     body:n=>`Your defender ${star("DEF")} limps out of the final session. The physios aren't sure he'll be right.`,
+     choices:[
+       {label:"Rest him (safe)", apply:()=>{ benchInjure("DEF",false); return fx(-0,"Squad rotated",true); }},
+       {label:"Risk him", apply:()=>{ const ok=rng()<0.5; if(!ok){benchInjure("DEF",true); return fx(-8,"Aggravated injury — out!",false);} return fx(+3,"He's fine — crisis averted",true); }},
+     ]},
+    {id:"presser", src:"Press Conference", t:"The media want answers",
+     body:()=>`A pack of reporters corner you about the pressure of the tournament. Your words will travel back to the dressing room.`,
+     choices:[
+       {label:"Big up the players", apply:()=>fx(+6,"Squad morale lifted",true)},
+       {label:"Demand more", apply:()=>{ const ok=rng()<0.5; return ok?fx(+4,"They responded well",true):fx(-6,"It rattled them",false); }},
+     ]},
+    {id:"fans", src:"Fan Zone", t:"A sea of colour",
+     body:()=>`Thousands of travelling supporters have packed the fan festival, singing your nation's anthem long into the night.`,
+     auto:()=>fx(+5,"The players feel the love",true)},
+    {id:"sponsor", src:"Commercial", t:"Sponsor obligations",
+     body:()=>`A sponsor wants the squad for a full day of filming. It pays the federation handsomely but eats into recovery time.`,
+     choices:[
+       {label:"Do the shoot", apply:()=>{ fatigueAll(8); return fx(0,"Legs a little heavier",false); }},
+       {label:"Politely decline", apply:()=>fx(-3,"Federation grumbles",false)},
+     ]},
+    {id:"rumour", src:"Transfer Desk", t:"Club circling your star",
+     body:n=>`A European giant is reportedly preparing a record bid for ${star("FWD")}. The whispers are everywhere.`,
+     choices:[
+       {label:"Shield him from it", apply:()=>fx(+4,"Focus restored",true)},
+       {label:"Let him hear it", apply:()=>{ return rng()<0.5?fx(+5,"Motivated to impress",true):fx(-5,"Distracted",false); }},
+     ]},
+    {id:"weather", src:"Pitchside", t:"Heat warning",
+     body:()=>`A brutal heatwave is forecast for the next fixture. Hydration breaks will be mandatory.`,
+     auto:()=>{ fatigueAll(6); return fx(0,"Conditions will sap the legs",false); }},
+    {id:"unity", src:"Dressing Room", t:"Players-only meeting",
+     body:()=>`The senior players call a meeting behind closed doors. Whatever was said, the mood shifts.`,
+     auto:()=>fx(+7,"A tighter, hungrier group",true)},
+    {id:"legend", src:"Legacy", t:"A legend visits camp",
+     body:()=>`A World Cup-winning hero of yesteryear drops by to share the trophy and a few war stories with the squad.`,
+     auto:()=>fx(+6,"Inspired",true)},
+    {id:"recover", src:"Medical Room", t:"Recovery week",
+     body:()=>`Sports science report glowing numbers — ice baths, sleep pods and careful loading have the squad fresh.`,
+     auto:()=>{ fatigueAll(-14); return fx(+2,"Legs feel springy",true); }},
+    {id:"red", src:"Discipline", t:"Touchline flashpoint",
+     body:()=>`A scuffle in the tunnel after the last match has the disciplinary panel reviewing footage of your players.`,
+     choices:[
+       {label:"Defend them publicly", apply:()=>fx(+4,"United front",true)},
+       {label:"Apologise & move on", apply:()=>fx(-2,"Heads down, refocus",false)},
+     ]},
+  ];
+  function star(pos){
+    const list=S.squad.filter(x=>x.pos===pos&&!x.injured).sort((a,b)=>b.ovr-a.ovr);
+    return list.length? esc(list[0].name) : "a key man";
+  }
+  function fx(moraleDelta, text, up){ S.morale=clamp(S.morale+moraleDelta,15,100); return {text, up, delta:moraleDelta}; }
+  function fatigueAll(amount){ S.squad.forEach(pl=>{ pl.fit=clamp(pl.fit-amount,20,100); }); }
+  function benchInjure(pos, doIt){
+    if(!doIt) return;
+    const list=S.squad.filter(x=>x.pos===pos&&!x.injured).sort((a,b)=>b.ovr-a.ovr);
+    if(list[0]){ list[0].injured=true; }
+    autoPickXI();
+  }
+  function drawNews(){
+    const fresh = NEWS.filter(e=>!S.seenNews.includes(e.id));
+    const poolN = fresh.length? fresh : NEWS;
+    const ev = pick(poolN);
+    S.seenNews.push(ev.id);
+    return ev;
+  }
+
+  // recover players a little between rounds
+  function recoverBetweenMatches(){
+    S.squad.forEach(pl=>{ pl.fit = clamp(pl.fit + 30, 20, 100); });
+  }
+
+  // ============================================================
+  //  ROUTER / RENDER
+  // ============================================================
+  function render(html){ app.innerHTML = html; window.scrollTo(0,0); }
+
+  function topbar(){
+    const t=myTeam();
+    let stage, sub;
+    if(S.stage==="group"){ stage="Group "+t.g; sub=`Match ${Math.min(S.groupFixtureIdx+1,3)} of 3`; }
+    else { stage=KO_ROUNDS[S.koRound]? KO_ROUNDS[S.koRound].label : "Knockouts"; sub="Win or go home"; }
+    return `
+      <div class="topbar">
+        <span class="flag">${t.f}</span>
+        <div class="topbar__info">
+          <div class="topbar__team">${esc(t.n)}</div>
+          <div class="topbar__sub">${S.formation} · ${S.tactic}</div>
+        </div>
+        <div class="topbar__stage"><b>${stage}</b><span>${sub}</span></div>
+      </div>
+      <div class="meters">
+        <div class="meter"><div class="lbl">Team morale</div><div class="bar"><i class="morale" style="width:${S.morale}%"></i></div></div>
+        <div class="meter"><div class="lbl">Squad freshness</div><div class="bar"><i class="fit" style="width:${avgFit()}%"></i></div></div>
+      </div>`;
+  }
+  function avgFit(){ const x=S.xi.map(p); return Math.round(x.reduce((s,pl)=>s+pl.fit,0)/(x.length||1)); }
+
+  // ---------- Screen: Title ----------
+  function screenTitle(){
+    const saved = load();
+    render(`
+      <div class="center" style="padding-top:8vh">
+        <p class="kicker">Wild Olive Studios presents</p>
+        <h1 class="display">World Cup<br>2026</h1>
+        <p class="lead center" style="margin:1rem auto 0">
+          Take charge of a nation at the first 48-team World Cup across the USA,
+          Mexico &amp; Canada. Pick your XI, live every minute, ride the headlines —
+          and chase football's greatest prize.
+        </p>
+        <div class="card mt2" style="text-align:left">
+          <div class="section-title"><h3>How it works</h3></div>
+          <p class="muted" style="font-size:.9rem">
+            ⚽ <b style="color:var(--ink)">Choose a nation</b> from the real group draw.<br>
+            👕 <b style="color:var(--ink)">Build your team</b> — formation, starting XI &amp; captain.<br>
+            🎯 <b style="color:var(--ink)">Steer the matches</b> — call tactics, make big-moment decisions &amp; subs.<br>
+            📰 <b style="color:var(--ink)">Manage the noise</b> — news events sway morale &amp; fitness.<br>
+            🏆 <b style="color:var(--ink)">Survive group → knockouts</b> and lift the trophy at MetLife Stadium.
+          </p>
+        </div>
+        <div class="mt2 btnrow" style="max-width:380px;margin:1.6rem auto 0">
+          ${saved && !saved.finished ? `<button class="btn btn--lg" id="cont">Continue${saved.teamName?` · ${esc(saved.teamName)}`:""}</button>`:""}
+          <button class="btn ${saved && !saved.finished?'btn--ghost':'btn--lg'}" id="new">New game</button>
+        </div>
+        <p class="muted center mt2" style="font-size:.7rem">Real 2026 draw &amp; host stadiums · A made-with-love sim</p>
+      </div>
+    `);
+    const c=document.getElementById("cont"); if(c) c.onclick=()=>{ S=saved; routeResume(); };
+    document.getElementById("new").onclick=()=>{ wipe(); S=freshState(); screenSelect(); };
+  }
+
+  function routeResume(){
+    if(S.pendingNews){ screenNews(); return; }
+    if(S.stage==="group") screenHub();
+    else screenHub();
+  }
+
+  // ---------- Screen: Select nation ----------
+  function screenSelect(){
+    let sel = S.teamName;
+    const groupsHtml = GROUPS.map(g=>{
+      const rows = TEAMS.filter(t=>t.g===g).map(t=>`
+        <button class="teamrow" data-n="${esc(t.n)}">
+          <span class="flag">${t.f}</span>
+          <span class="nm">${esc(t.n)}</span>
+          <span class="ovr">${t.ovr}</span>
+        </button>`).join("");
+      return `<div class="group"><h4>Group ${g}</h4>${rows}</div>`;
+    }).join("");
+    render(`
+      <div class="center mt"><p class="kicker">Step 1 of 2</p><h1 style="font-size:2rem">Pick your nation</h1>
+      <p class="muted" style="font-size:.85rem">All 48 teams from the real 2026 draw. Higher rating = stronger squad — pick a giant for a smoother ride, or a minnow for glory.</p></div>
+      <div class="card mt"><div class="groups">${groupsHtml}</div></div>
+      <div class="mt center"><button class="btn btn--lg" id="go" disabled>Choose a team to continue</button></div>
+    `);
+    const go=document.getElementById("go");
+    app.querySelectorAll(".teamrow").forEach(b=>{
+      b.onclick=()=>{
+        app.querySelectorAll(".teamrow").forEach(x=>x.classList.remove("sel"));
+        b.classList.add("sel"); sel=b.dataset.n;
+        const t=teamByName(sel);
+        go.disabled=false; go.textContent=`Manage ${sel} ${t.f}`;
+      };
+    });
+    go.onclick=()=>{
+      if(!sel) return;
+      S.teamName=sel;
+      S.squad=genSquad(teamByName(sel).ovr);
+      autoPickXI();
+      screenSquad(true);
+    };
+  }
+
+  // ---------- Screen: Squad / tactics ----------
+  function screenSquad(firstTime){
+    const need=FORMATIONS[S.formation];
+    // Pitch lines (top = FWD)
+    const lineHtml = (posList)=> `<div class="pline">${
+      S.xi.map(p).filter(x=>posList.includes(x.pos)).map(pl=>dotHtml(pl)).join("")
+    }</div>`;
+    const pitch = `
+      <div class="pitch">
+        ${lineHtml(["FWD"])}
+        ${lineHtml(["MID"])}
+        ${lineHtml(["DEF"])}
+        ${lineHtml(["GK"])}
+      </div>`;
+
+    const formTabs = Object.keys(FORMATIONS).map(f=>`<button data-f="${f}" class="${f===S.formation?'on':''}">${f}</button>`).join("");
+    const tacTabs = Object.keys(TACTICS).map(t=>`<button data-t="${t}" class="${t===S.tactic?'on':''}">${t}</button>`).join("");
+
+    // roster grouped
+    const rosterHtml = ["GK","DEF","MID","FWD"].map(pos=>{
+      return S.squad.filter(x=>x.pos===pos).map(pl=>{
+        const starter=S.xi.includes(pl.id);
+        const isCap=S.captain===pl.id;
+        const fitColor = pl.fit>66?"var(--olive-br)":pl.fit>40?"var(--gold)":"var(--danger)";
+        const tag = pl.injured?`<span class="tag" style="color:var(--danger)">✚ injured</span>`:isCap?`<span class="tag">©</span>`:starter?`<span class="tag">XI</span>`:"";
+        return `<div class="prow ${starter?'starter':''}" data-id="${pl.id}">
+          <span class="pos">${pl.pos}</span>
+          <span class="nm">${esc(pl.name)} <small>${tag}</small></span>
+          <span class="fitbar"><i style="width:${pl.fit}%;background:${fitColor}"></i></span>
+          <span class="rt">${pl.ovr}</span>
+        </div>`;
+      }).join("");
+    }).join("");
+
+    const str=computeStrength();
+    render(`${topbar()}
+      <div class="card">
+        <div class="section-title"><h3>${firstTime?"Build your team":"Team sheet"}</h3><span class="hint">Tap a player to swap into XI</span></div>
+        <div class="formtabs">${formTabs}</div>
+        ${pitch}
+        <div style="display:flex;gap:.5rem;margin-top:.7rem;font-size:.74rem" class="muted">
+          <span class="pill gold">ATT ${Math.round(str.attack)}</span>
+          <span class="pill">DEF ${Math.round(str.defense)}</span>
+          <span class="pill">© tap a starter to set captain</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h3>Tactics</h3><span class="hint">${TACTICS[S.tactic].desc}</span></div>
+        <div class="formtabs">${tacTabs}</div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h3>Full squad (23)</h3><span class="hint">freshness · rating</span></div>
+        <div class="roster">${rosterHtml}</div>
+      </div>
+      <div class="mt center"><button class="btn btn--lg" id="confirm">${firstTime?"Head to the tournament →":"Save & go to hub →"}</button></div>
+    `);
+
+    app.querySelectorAll(".formtabs button[data-f]").forEach(b=> b.onclick=()=>{ S.formation=b.dataset.f; autoPickXI(); screenSquad(firstTime); });
+    app.querySelectorAll(".formtabs button[data-t]").forEach(b=> b.onclick=()=>{ S.tactic=b.dataset.t; screenSquad(firstTime); });
+    app.querySelectorAll(".prow").forEach(r=> r.onclick=()=> toggleStarter(parseInt(r.dataset.id,10), firstTime));
+    app.querySelectorAll(".dot").forEach(d=> d.onclick=()=>{ const id=parseInt(d.dataset.id,10); if(p(id).pos!=="GK"||true){ S.captain=id; screenSquad(firstTime);} });
+
+    document.getElementById("confirm").onclick=()=>{ save(); screenHub(); };
+  }
+
+  function dotHtml(pl){
+    const cap = S.captain===pl.id;
+    const short = pl.name.split(" ").slice(-1)[0];
+    return `<div class="dot ${cap?'cap':''}" data-id="${pl.id}">
+      <div class="disc">${pl.ovr}</div>
+      <div class="nm">${cap?'<b>© </b>':''}${esc(short)}</div>
+    </div>`;
+  }
+
+  function toggleStarter(id, firstTime){
+    const pl=p(id);
+    if(pl.injured) return;
+    const need=FORMATIONS[S.formation];
+    if(S.xi.includes(id)){
+      // can't drop if it breaks minimum shape for that position
+      const sameStarters=S.xi.map(p).filter(x=>x.pos===pl.pos);
+      const minNeed = pl.pos==="GK"?1:need[pl.pos];
+      if(sameStarters.length<=minNeed){ flashHint("You need a replacement in that position first."); return; }
+      S.xi=S.xi.filter(x=>x!==id);
+      if(S.captain===id) S.captain=S.xi.find(x=>p(x).pos!=="GK")||S.xi[0];
+    } else {
+      // bring in: bench the weakest starter of same position
+      const sameStarters=S.xi.map(p).filter(x=>x.pos===pl.pos).sort((a,b)=>eff(a)-eff(b));
+      if(pl.pos==="GK"){ S.xi=S.xi.filter(x=>p(x).pos!=="GK"); S.xi.push(id); }
+      else {
+        const cap = need[pl.pos];
+        if(sameStarters.length>=cap){ S.xi=S.xi.filter(x=>x!==sameStarters[0].id); }
+        S.xi.push(id);
+      }
+    }
+    screenSquad(firstTime);
+  }
+  function flashHint(msg){
+    let el=document.getElementById("hintbar");
+    if(!el){ el=document.createElement("div"); el.id="hintbar";
+      el.style.cssText="position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);color:var(--ink);padding:.6rem 1rem;border-radius:99px;font-size:.8rem;z-index:60;box-shadow:var(--shadow)";
+      document.body.appendChild(el);
+    }
+    el.textContent=msg; el.style.opacity="1";
+    clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.opacity="0"; },2200);
+  }
+
+  // ---------- Screen: Hub (tournament progress) ----------
+  function screenHub(){
+    save();
+    if(S.finished){ screenEnd(); return; }
+    // Decide context: group fixtures or knockout
+    if(S.stage==="group"){
+      renderGroupHub();
+    } else {
+      renderKoHub();
+    }
+  }
+
+  function groupFixtures(){
+    // round-robin order for a group of 4 (standard rotation), from MY team's perspective
+    const teams=TEAMS.filter(t=>t.g===myTeam().g);
+    const me=myTeam();
+    const others=teams.filter(t=>t.n!==me.n);
+    return others; // I play each of the other three once
+  }
+
+  function renderGroupHub(){
+    const me=myTeam();
+    const opps=groupFixtures();
+    const idx=S.groupFixtureIdx;
+    const done = idx>=3;
+    // live group table (player matches recorded so far + sim the rest provisionally for display once done)
+    let tableRows="";
+    if(S.myGroupTable){
+      tableRows=S.myGroupTable.map(r=> tblRow(r)).join("");
+    } else {
+      // provisional: only show fixtures
+      tableRows = TEAMS.filter(t=>t.g===me.g).sort((a,b)=>b.ovr-a.ovr)
+        .map(t=>`<tr class="${t.n===me.n?'me':''}"><td class="n">–</td><td><span class="flag">${t.f}</span>${esc(t.n)}</td><td class="n">0</td><td class="n">0</td><td class="n">0</td></tr>`).join("");
+    }
+
+    const fixtureList = opps.map((o,i)=>{
+      const h=S.history[i];
+      let res;
+      if(h){ res=`<b style="color:${h.gf>h.ga?'var(--olive-br)':h.gf<h.ga?'var(--danger)':'var(--gold)'}">${h.gf}–${h.ga}</b>`; }
+      else if(i===idx){ res=`<span class="pill gold">next</span>`; }
+      else { res=`<span class="muted">—</span>`; }
+      return `<div class="prow"><span class="pos">M${i+1}</span><span class="nm"><span class="flag">${o.f}</span>${esc(o.n)} <small class="muted">· ${VENUES[o._v||(o._v=pick(VKEYS))].c}</small></span><span class="rt">${res}</span></div>`;
+    }).join("");
+
+    render(`${topbar()}
+      <div class="card">
+        <div class="section-title"><h3>Group ${me.g} · your fixtures</h3><span class="hint">round robin</span></div>
+        <div class="roster" style="max-height:none">${fixtureList}</div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h3>Group ${me.g} table</h3><span class="hint">top 2 + best 3rds advance</span></div>
+        <table class="tbl"><thead><tr><th></th><th>Team</th><th class="n">Pld</th><th class="n">GD</th><th class="n">Pts</th></tr></thead><tbody>${tableRows}</tbody></table>
+      </div>
+      <div class="btnrow mt">
+        <button class="btn btn--ghost" id="team">Team sheet</button>
+        ${done
+          ? `<button class="btn" id="advance">See who advances →</button>`
+          : `<button class="btn" id="play">Play match ${idx+1} →</button>`}
+      </div>
+    `);
+    document.getElementById("team").onclick=()=>screenSquad(false);
+    if(done){ document.getElementById("advance").onclick=()=>resolveGroupStage(); }
+    else {
+      document.getElementById("play").onclick=()=>{
+        // Trigger a news event before every match
+        S.pendingNews = drawNews().id;
+        S._matchOpp = opps[idx].n;
+        screenNews();
+      };
+    }
+  }
+
+  function tblRow(r){
+    const me=myTeam();
+    return `<tr class="${r.n===me.n?'me':''}"><td class="n">${r.rank}</td><td><span class="flag">${r.f}</span>${esc(r.n)}</td><td class="n">${r.pld}</td><td class="n">${(r.gf-r.ga>0?'+':'')+(r.gf-r.ga)}</td><td class="n"><b>${r.pts}</b></td></tr>`;
+  }
+
+  // ---------- Screen: News event ----------
+  function screenNews(){
+    save();
+    const ev=NEWS.find(e=>e.id===S.pendingNews);
+    if(!ev){ S.pendingNews=null; afterNews(); return; }
+    const me=myTeam();
+    const body = typeof ev.body==="function"? ev.body(me.n) : ev.body;
+    let optionsHtml="";
+    if(ev.choices){
+      optionsHtml=`<div class="decision"><div class="opts">${ev.choices.map((c,i)=>`<button class="btn" data-i="${i}">${esc(c.label)}</button>`).join("")}</div></div>`;
+    } else {
+      optionsHtml=`<div class="mt center"><button class="btn btn--lg" id="ok">Continue →</button></div>`;
+    }
+    render(`${topbar()}
+      <div class="card news">
+        <div class="src">📰 ${esc(ev.src)}</div>
+        <h3>${esc(ev.t)}</h3>
+        <p>${body}</p>
+        <div id="result"></div>
+        ${optionsHtml}
+      </div>
+    `);
+    const finish=(r)=>{
+      const res=document.getElementById("result");
+      res.innerHTML=`<span class="effect ${r.up?'up':'down'}">${r.up?'▲':'▼'} ${esc(r.text)}${r.delta?` (${r.delta>0?'+':''}${r.delta} morale)`:''}</span>
+        <div class="mt center"><button class="btn btn--lg" id="proceed">Continue →</button></div>`;
+      app.querySelectorAll(".decision .btn").forEach(b=>b.disabled=true);
+      const ok=document.getElementById("ok"); if(ok) ok.classList.add("hidden");
+      document.getElementById("proceed").onclick=()=>{ S.pendingNews=null; afterNews(); };
+      // refresh meters
+      app.querySelector(".meter .morale").style.width=S.morale+"%";
+      app.querySelector(".meter .fit").style.width=avgFit()+"%";
+    };
+    if(ev.choices){
+      app.querySelectorAll(".decision .btn").forEach(b=> b.onclick=()=>{ const r=ev.choices[parseInt(b.dataset.i,10)].apply(); finish(r); });
+    } else {
+      document.getElementById("ok").onclick=()=>{ const r=ev.auto(); finish(r); };
+    }
+  }
+  function afterNews(){
+    save();
+    // go to the match we queued
+    if(S._matchOpp){ startMatch(S._matchOpp); }
+    else screenHub();
+  }
+
+  // ============================================================
+  //  LIVE MATCH ENGINE
+  // ============================================================
+  let M = null; // active match state
+
+  function venueForCurrent(opp){
+    if(S.stage==="group"){ const o=TEAMS.find(t=>t.n===opp); return VENUES[o._v||(o._v=pick(VKEYS))]; }
+    const r=KO_ROUNDS[S.koRound];
+    if(r.venue){ return VENUES[pick(r.venue)]; }
+    return VENUES[pick(VKEYS)];
+  }
+
+  function startMatch(oppName){
+    const opp=teamByName(oppName);
+    const isFinal = S.stage==="ko" && KO_ROUNDS[S.koRound].key==="FIN";
+    const opening = S.stage==="group" && S.groupFixtureIdx===0 && myTeam().g==="A";
+    M={
+      opp, oppName,
+      venue: (S.stage==="group" && myTeam().n==="Mexico" && S.groupFixtureIdx===0)?VENUES.azteca:venueForCurrent(oppName),
+      my:0, th:0, min:0, log:[], running:false, speed:550,
+      myStr:computeStrength(), thStr:aiStrength(opp),
+      subsLeft:3, halftimeDone:false, decisionOpen:false, finished:false,
+      knockout:S.stage==="ko", pendingChance:null,
+      myPossBias:0,
+      tempMyAtt:0, tempMyDef:0,
+    };
+    // possession bias based on strength
+    screenMatch();
+    addCmt(0, `Kick-off at ${M.venue.s}, ${M.venue.c}.`, "key");
+    if(myTeam().n==="Mexico" && S.stage==="group" && S.groupFixtureIdx===0){
+      addCmt(0, `A roaring home crowd packs the Azteca for the tournament opener!`, "key");
+    }
+    setTimeout(()=>{ M.running=true; tick(); }, 700);
+  }
+
+  function curMyAtt(){ return M.myStr.attack + M.tempMyAtt; }
+  function curMyDef(){ return M.myStr.defense + M.tempMyDef; }
+
+  function screenMatch(){
+    const me=myTeam();
+    render(`${topbar()}
+      <div class="scoreboard">
+        <div class="side"><span class="flag">${me.f}</span><span class="nm">${esc(me.n)}</span></div>
+        <div><div class="mid" id="score">${M.my}–${M.th}</div><div class="clock" id="clock">${M.min}'</div></div>
+        <div class="side"><span class="flag">${M.opp.f}</span><span class="nm">${esc(M.opp.n)}</span></div>
+      </div>
+      <div class="venue">📍 ${M.venue.s} · ${M.venue.c}${M.knockout?' · '+KO_ROUNDS[S.koRound].label:''}</div>
+      <div class="card" style="padding:.8rem">
+        <div class="commentary" id="cmt"></div>
+        <div id="decision"></div>
+        <div class="btnrow mt" id="controls">
+          <button class="btn btn--ghost btn--sm" id="speed">▶▶ Fast</button>
+          <button class="btn btn--ghost btn--sm" id="subBtn">Sub (3)</button>
+          <button class="btn btn--ghost btn--sm" id="tacBtn">Tactic: ${S.tactic}</button>
+        </div>
+      </div>
+    `);
+    document.getElementById("speed").onclick=toggleSpeed;
+    document.getElementById("subBtn").onclick=openSub;
+    document.getElementById("tacBtn").onclick=openTac;
+    renderLog();
+  }
+  function toggleSpeed(){
+    M.speed = M.speed>300? 230 : 550;
+    document.getElementById("speed").textContent = M.speed>300? "▶▶ Fast" : "▶ Normal";
+  }
+  function renderLog(){
+    const c=document.getElementById("cmt"); if(!c) return;
+    c.innerHTML=M.log.map(l=>`<div class="cmt ${l.cls||''}"><span class="min">${l.min}'</span>${l.text}</div>`).join("");
+    c.scrollTop=c.scrollHeight;
+  }
+  function addCmt(min,text,cls){ M.log.push({min,text,cls}); renderLog(); }
+  function updateScore(){ const s=document.getElementById("score"); if(s) s.textContent=`${M.my}–${M.th}`; }
+  function updateClock(){ const c=document.getElementById("clock"); if(c) c.textContent=M.min+"'"; }
+
+  function tick(){
+    if(!M.running||M.finished||M.decisionOpen) return;
+    M.min++;
+    updateClock();
+    // halftime
+    if(M.min===45 && !M.halftimeDone){ M.halftimeDone=true; M.running=false; halftime(); return; }
+    // fatigue drain
+    if(M.min%10===0){ drainFitness(); }
+    // chance generation
+    maybeChance();
+    if(M.min>=90){ endRegulation(); return; }
+    setTimeout(tick, M.speed);
+  }
+
+  function drainFitness(){
+    const f=TACTICS[S.tactic].fatigue;
+    S.xi.map(p).forEach(pl=>{ pl.fit=clamp(pl.fit - (1.4*f), 8, 100); });
+    M.myStr=computeStrength(); // strength fades as legs tire
+    const fb=app && app.querySelector(".meter .fit"); if(fb) fb.style.width=avgFit()+"%";
+  }
+
+  function maybeChance(){
+    const myA=curMyAtt(), myD=curMyDef();
+    const thA=M.thStr.attack, thD=M.thStr.defense;
+    // total chance pressure per minute
+    const pMine = clamp(0.018 + (myA-thD)*0.0014, 0.006, 0.06);
+    const pThem = clamp(0.018 + (thA-myD)*0.0014, 0.006, 0.06);
+    const r=rng();
+    if(r<pMine){ myChance(); }
+    else if(r<pMine+pThem){ theirChance(); }
+  }
+
+  function myChance(){
+    // big chance? -> interactive decision
+    const big = rng()<0.4;
+    if(big){ openDecision(); return; }
+    // auto resolve
+    const quality = clamp(0.30 + (curMyAtt()-M.thStr.defense)*0.006, 0.12, 0.62);
+    if(rng()<quality){ goalMine(); }
+    else { addCmt(M.min, `${flag('me')} ${pickScorer().txt} works an opening but ${pick(["drags it wide","is denied by the keeper","scuffs the finish","is flagged offside"])}.`); }
+  }
+  function theirChance(){
+    const quality = clamp(0.30 + (M.thStr.attack-curMyDef())*0.006, 0.10, 0.60);
+    // your keeper can bail you out
+    const save = rng()< (M.myStr.gk/180);
+    if(rng()<quality && !save){ goalTheirs(); }
+    else { addCmt(M.min, `${M.opp.f} ${esc(M.opp.n)} ${save?'are denied by a stunning save from your keeper!':pick(["blaze over","hit the side netting","are crowded out","fire straight at the keeper"])}.`, save?"key":""); }
+  }
+
+  function goalMine(){ M.my++; updateScore(); const sc=pickScorer(); addCmt(M.min, `⚽ GOAL! ${flag('me')} ${sc.txt} ${pick(["smashes it home","slots it past the keeper","heads in","curls a beauty into the top corner"])}! ${myTeam().n} lead the noise.`, "goal"); bumpMeter(); }
+  function goalTheirs(){ M.th++; updateScore(); addCmt(M.min, `⚽ Goal for ${M.opp.f} ${esc(M.opp.n)}. ${pick(["A defensive lapse punished.","Clinical finish.","Against the run of play.","They make it count."])}`, "goal them"); }
+  function bumpMeter(){ S.morale=clamp(S.morale+1,15,100); const mb=app&&app.querySelector(".meter .morale"); if(mb) mb.style.width=S.morale+"%"; }
+
+  function flag(side){ return side==='me'? myTeam().f : M.opp.f; }
+  function pickScorer(){
+    const atk=S.xi.map(p).filter(x=>x.pos==="FWD"||x.pos==="MID");
+    // weight by ovr
+    atk.sort((a,b)=>b.ovr-a.ovr);
+    const plr= rng()<0.6? atk[Math.floor(rng()*Math.min(3,atk.length))] : pick(atk);
+    return {txt: plr?esc(plr.name):"the striker", pl:plr};
+  }
+
+  // ----- Interactive big-chance decision -----
+  function openDecision(){
+    M.decisionOpen=true;
+    const sc=pickScorer();
+    const scenarios=[
+      {q:`${flag('me')} <b>${sc.txt}</b> breaks through one-on-one with the keeper! What's the call?`,
+       opts:[
+         {l:"Shoot first time", base:0.55},
+         {l:"Round the keeper", base:0.42, swing:0.25},
+         {l:"Square it across", base:0.5, swing:0.1},
+       ]},
+      {q:`Free-kick in a dangerous spot, ${flag('me')} <b>${sc.txt}</b> stands over it.`,
+       opts:[
+         {l:"Go for goal", base:0.32},
+         {l:"Whip it into the box", base:0.40},
+         {l:"Play it short & build", base:0.30, swing:0.08},
+       ]},
+      {q:`Counter-attack! ${flag('me')} ${myTeam().n} are 3-on-2 and flying forward.`,
+       opts:[
+         {l:"Release the runner", base:0.5},
+         {l:"Take it yourself", base:0.45, swing:0.2},
+         {l:"Slow it & keep it", base:0.18},
+       ]},
+      {q:`Penalty appeal — and the referee points to the spot! ${flag('me')} Up steps your taker.`,
+       opts:[
+         {l:"Blast down the middle", base:0.7},
+         {l:"Side-foot the corner", base:0.78},
+         {l:"Cheeky panenka", base:0.55, swing:0.35},
+       ], pen:true},
+    ];
+    const sc2 = pick(scenarios);
+    const d=document.getElementById("decision");
+    d.innerHTML=`<div class="decision"><p>${sc2.q}</p><div class="opts">${
+      sc2.opts.map((o,i)=>`<button class="btn" data-i="${i}">${esc(o.l)}</button>`).join("")
+    }</div></div>`;
+    d.querySelectorAll(".btn").forEach(b=> b.onclick=()=>{
+      const o=sc2.opts[parseInt(b.dataset.i,10)];
+      d.innerHTML="";
+      M.decisionOpen=false;
+      // finishing influenced by attack strength
+      let prob=o.base + (curMyAtt()-M.thStr.defense)*0.004;
+      if(o.swing){ prob += (rng()<0.5? o.swing : -o.swing); }
+      prob=clamp(prob,0.05,0.95);
+      if(rng()<prob){ goalMine(); }
+      else { addCmt(M.min, `${flag('me')} ${sc.txt} ${sc2.pen?'sees the spot-kick saved!':pick(["can't finish it off!","is denied!","drags it wide!","hits the post!"])}`, "key"); }
+      if(M.min>=90){ endRegulation(); return; }
+      setTimeout(tick, M.speed);
+    });
+  }
+
+  // ----- Halftime -----
+  function halftime(){
+    const d=document.getElementById("decision");
+    const lead = M.my>M.th? "ahead" : M.my<M.th? "behind" : "level";
+    d.innerHTML=`<div class="decision"><p>⏸ <b>Half-time.</b> You're ${lead} at ${M.my}–${M.th}. Team talk?</p>
+      <div class="opts">
+        <button class="btn" data-k="fire">🔥 Fire them up</button>
+        <button class="btn" data-k="calm">🧊 Stay calm</button>
+        <button class="btn btn--ghost" data-k="sub">↔ Make a sub</button>
+        <button class="btn btn--ghost" data-k="tac">⚙ Change tactic</button>
+      </div>
+      <div class="mt center"><button class="btn btn--lg" data-k="resume">Play second half →</button></div>
+    </div>`;
+    d.querySelectorAll("[data-k]").forEach(b=> b.onclick=()=>{
+      const k=b.dataset.k;
+      if(k==="fire"){ const ok=rng()<0.65; S.morale=clamp(S.morale+(ok?7:-4),15,100); M.tempMyAtt+=ok?2:-1; addCmt(45,ok?"The dressing room responds to your words — they come out flying.":"Maybe too much — they look tense.","key"); refreshMeter(); afterTalk(); }
+      else if(k==="calm"){ S.morale=clamp(S.morale+3,15,100); refreshMeter(); addCmt(45,"Calm, composed instructions. Keep doing what works.","key"); afterTalk(); }
+      else if(k==="sub"){ openSub(true); }
+      else if(k==="tac"){ openTac(true); }
+      else if(k==="resume"){ resumeSecondHalf(); }
+    });
+  }
+  function afterTalk(){
+    // re-render halftime menu minus the talk options, allow sub/tac/resume
+    const d=document.getElementById("decision");
+    d.innerHTML=`<div class="decision"><p>Anything else before the restart?</p>
+      <div class="opts">
+        <button class="btn btn--ghost" data-k="sub">↔ Make a sub (${M.subsLeft})</button>
+        <button class="btn btn--ghost" data-k="tac">⚙ Tactic: ${S.tactic}</button>
+      </div>
+      <div class="mt center"><button class="btn btn--lg" data-k="resume">Play second half →</button></div></div>`;
+    d.querySelectorAll("[data-k]").forEach(b=> b.onclick=()=>{
+      const k=b.dataset.k;
+      if(k==="sub") openSub(true);
+      else if(k==="tac") openTac(true);
+      else resumeSecondHalf();
+    });
+  }
+  function resumeSecondHalf(){
+    document.getElementById("decision").innerHTML="";
+    M.running=true; setTimeout(tick,M.speed);
+  }
+  function refreshMeter(){ const mb=app&&app.querySelector(".meter .morale"); if(mb) mb.style.width=S.morale+"%"; }
+
+  // ----- Substitutions -----
+  function openSub(fromHalftime){
+    if(M.subsLeft<=0){ flashHint("No substitutions left."); if(fromHalftime) afterTalk(); return; }
+    const wasRunning=M.running; M.running=false;
+    const onPitch=S.xi.map(p);
+    const bench=S.squad.filter(x=>!S.xi.includes(x.id)&&!x.injured);
+    const d=document.getElementById("decision");
+    d.innerHTML=`<div class="decision"><p>↔ Substitution (${M.subsLeft} left) — pick who comes <b>off</b>:</p>
+      <div class="opts" id="offList">${onPitch.map(pl=>`<button class="btn btn--ghost btn--sm" data-off="${pl.id}">${pl.pos} ${esc(pl.name.split(' ').slice(-1)[0])} · ${Math.round(pl.fit)}%</button>`).join("")}</div>
+      <div class="mt center"><button class="btn btn--ghost btn--sm" id="cancelSub">Cancel</button></div></div>`;
+    d.querySelector("#cancelSub").onclick=()=>{ if(fromHalftime) afterTalk(); else { document.getElementById("decision").innerHTML=""; M.running=wasRunning; if(wasRunning) setTimeout(tick,M.speed);} };
+    d.querySelectorAll("[data-off]").forEach(b=> b.onclick=()=>{
+      const offId=parseInt(b.dataset.off,10); const off=p(offId);
+      const opts=bench.filter(x=>x.pos===off.pos);
+      const fallback = opts.length?opts:bench;
+      d.innerHTML=`<div class="decision"><p>Bring <b>on</b> for ${esc(off.name)} (${off.pos}):</p>
+        <div class="opts">${fallback.map(pl=>`<button class="btn btn--sm" data-on="${pl.id}">${pl.pos} ${esc(pl.name.split(' ').slice(-1)[0])} · ${pl.ovr} · ${Math.round(pl.fit)}%</button>`).join("")}</div></div>`;
+      d.querySelectorAll("[data-on]").forEach(bb=> bb.onclick=()=>{
+        const onId=parseInt(bb.dataset.on,10);
+        S.xi=S.xi.map(x=>x===offId?onId:x);
+        if(S.captain===offId) S.captain=onId;
+        M.subsLeft--; M.myStr=computeStrength();
+        addCmt(M.min||45, `↔ ${flag('me')} Substitution: ${esc(p(onId).name)} on for ${esc(off.name)}.`, "key");
+        const sb=document.getElementById("subBtn"); if(sb) sb.textContent=`Sub (${M.subsLeft})`;
+        const fb=app&&app.querySelector(".meter .fit"); if(fb) fb.style.width=avgFit()+"%";
+        if(fromHalftime) afterTalk();
+        else { document.getElementById("decision").innerHTML=""; M.running=wasRunning; if(wasRunning) setTimeout(tick,M.speed); }
+      });
+    });
+  }
+
+  // ----- Tactic change mid-match -----
+  function openTac(fromHalftime){
+    const wasRunning=M.running; M.running=false;
+    const d=document.getElementById("decision");
+    d.innerHTML=`<div class="decision"><p>⚙ Switch tactic:</p>
+      <div class="opts">${Object.keys(TACTICS).map(t=>`<button class="btn ${t===S.tactic?'':'btn--ghost'} btn--sm" data-t="${t}">${t}</button>`).join("")}</div>
+      <p class="muted" style="font-size:.72rem;margin-top:.5rem">${TACTICS[S.tactic].desc}</p></div>`;
+    d.querySelectorAll("[data-t]").forEach(b=> b.onclick=()=>{
+      S.tactic=b.dataset.t; M.myStr=computeStrength();
+      addCmt(M.min||45, `⚙ ${flag('me')} ${myTeam().n} switch to a ${S.tactic} approach.`, "key");
+      const tb=document.getElementById("tacBtn"); if(tb) tb.textContent=`Tactic: ${S.tactic}`;
+      if(fromHalftime) afterTalk();
+      else { document.getElementById("decision").innerHTML=""; M.running=wasRunning; if(wasRunning) setTimeout(tick,M.speed); }
+    });
+  }
+
+  // ----- End of regulation -----
+  function endRegulation(){
+    M.running=false; M.finished=true;
+    addCmt(90, `Full time at ${M.venue.c}: ${myTeam().n} ${M.my}–${M.th} ${M.opp.n}.`, "key");
+    if(M.knockout && M.my===M.th){
+      // extra time then pens
+      addCmt(90, "Level after 90 — we go to extra time!", "key");
+      setTimeout(extraTime, 900);
+    } else {
+      setTimeout(matchResult, 900);
+    }
+  }
+
+  function extraTime(){
+    // two quick simulated half-chances each, then pens if still level
+    M.min=90; M.finished=false; M.running=true;
+    let steps=0;
+    const et=()=>{
+      if(steps>=6){ M.running=false; if(M.my===M.th){ addCmt(120,"Still level after extra time — penalties will decide it!","key"); setTimeout(()=>penaltyShootout(),900); } else { M.finished=true; addCmt(120,`After extra time: ${myTeam().n} ${M.my}–${M.th} ${M.opp.n}.`,"key"); setTimeout(matchResult,900);} return; }
+      M.min+=5; updateClock();
+      const r=rng();
+      if(r<0.16){ if(rng()<clamp(0.32+(curMyAtt()-M.thStr.defense)*0.006,0.12,0.6)) goalMine(); else addCmt(M.min,`${flag('me')} Half-chance in extra time, no goal.`); }
+      else if(r<0.30){ if(rng()<clamp(0.32+(M.thStr.attack-curMyDef())*0.006,0.1,0.58)) goalTheirs(); else addCmt(M.min,`${M.opp.f} ${esc(M.opp.n)} threaten but can't score.`); }
+      steps++;
+      if(M.my!==M.th && steps>=4){ /* allow it to run a touch */ }
+      setTimeout(et, M.speed+120);
+    };
+    setTimeout(et, M.speed);
+  }
+
+  // ----- Penalty shootout (interactive) -----
+  function penaltyShootout(){
+    const ps={my:[], th:[], round:0, suddenDeath:false};
+    const d=document.getElementById("decision");
+    const me=myTeam();
+    function dots(arr){ return arr.map(v=>`<span class="pen ${v?'scored':'miss'}"></span>`).join(""); }
+    function render(){
+      d.innerHTML=`<div class="decision">
+        <p>🥅 <b>Penalty shootout</b></p>
+        <div style="margin:.3rem 0"><span class="flag">${me.f}</span> ${dots(ps.my)} <span class="muted">(${ps.my.filter(Boolean).length})</span></div>
+        <div style="margin:.3rem 0"><span class="flag">${M.opp.f}</span> ${dots(ps.th)} <span class="muted">(${ps.th.filter(Boolean).length})</span></div>
+        <p id="penPrompt" class="mt">Pick your corner:</p>
+        <div class="opts" id="penOpts">
+          <button class="btn" data-c="L">⬅ Left</button>
+          <button class="btn" data-c="M">⬆ Middle</button>
+          <button class="btn" data-c="R">Right ➡</button>
+        </div>
+      </div>`;
+      d.querySelectorAll("[data-c]").forEach(b=> b.onclick=()=> takeMyPen(b.dataset.c));
+    }
+    function decided(){
+      const a=ps.my.filter(Boolean).length, b=ps.th.filter(Boolean).length;
+      const myShots=ps.my.length, thShots=ps.th.length;
+      const remMy=Math.max(0,5-myShots), remTh=Math.max(0,5-thShots);
+      if(!ps.suddenDeath){
+        if(a> b+remTh) return "me";
+        if(b> a+remMy) return "them";
+        if(myShots>=5 && thShots>=5 && a!==b) return a>b?"me":"them";
+        if(myShots>=5 && thShots>=5 && a===b){ ps.suddenDeath=true; }
+      } else {
+        if(myShots===thShots && myShots>=5 && a!==b) return a>b?"me":"them";
+      }
+      return null;
+    }
+    function takeMyPen(corner){
+      // keeper guesses; quality from your attackers
+      const guess=pick(["L","M","R"]);
+      const taker=pickScorer().pl;
+      const skill=clamp(0.62 + ((taker?taker.ovr:75)-75)*0.01, 0.55, 0.9);
+      let scored = rng()<skill;
+      if(guess===corner && rng()<0.55) scored=false; // keeper got the right way
+      ps.my.push(scored);
+      addCmt(120, `${me.f} ${taker?esc(taker.name):'Penalty'}: ${scored?'SCORES! 🎯':'SAVED! 🧤'}`, scored?"goal":"goal them");
+      let res=decided(); if(res) return finish(res);
+      // opponent's turn (auto, you 'dive')
+      setTimeout(()=>theirPen(), 650);
+      d.querySelector("#penPrompt").textContent="…the keeper gets set.";
+      d.querySelector("#penOpts").innerHTML="";
+    }
+    function theirPen(){
+      const skill=clamp(0.6 + (M.opp.ovr-75)*0.01,0.5,0.88);
+      const saved = rng()<(M.myStr.gk/300);
+      const scored = !saved && rng()<skill;
+      ps.th.push(scored);
+      addCmt(120, `${M.opp.f} ${esc(M.opp.n)}: ${scored?'scores.':saved?'SAVED by your keeper! 🧤':'misses!'}`, scored?"goal them":"goal");
+      let res=decided(); if(res) return finish(res);
+      render();
+    }
+    function finish(who){
+      const myScore=ps.my.filter(Boolean).length, thScore=ps.th.filter(Boolean).length;
+      M.penText=`${myScore}–${thScore} on penalties`;
+      M.my= who==="me"? M.my+0.0001 : M.my; // marker; we set winner explicitly below
+      M.shootoutWinner=who;
+      addCmt(120, who==="me"? `🏆 ${me.n} WIN the shootout ${myScore}–${thScore}!` : `Heartbreak — ${M.opp.n} win the shootout ${thScore}–${myScore}.`, who==="me"?"goal":"goal them");
+      M.finished=true;
+      setTimeout(matchResult, 1100);
+    }
+    render();
+  }
+
+  // ----- Match result handling -----
+  function matchResult(){
+    // determine outcome ('W' / 'D' / 'L')
+    let outcome;
+    if(M.shootoutWinner){ outcome = M.shootoutWinner==="me"?"W":"L"; }
+    else { outcome = M.my>M.th?"W": M.my<M.th?"L":"D"; }
+
+    // morale shift
+    S.morale=clamp(S.morale + (outcome==="W"?8: outcome==="D"?1:-7), 15,100);
+
+    // store history (use integer scores)
+    const gf=Math.round(M.my), ga=Math.round(M.th);
+    const rec={label: S.stage==="group"?`Group · M${S.groupFixtureIdx+1}`:KO_ROUNDS[S.koRound].label,
+      opp:M.opp.n, oppFlag:M.opp.f, gf,ga, pens:M.penText||null, venue:M.venue.c, outcome};
+
+    const me=myTeam();
+    const resultColor = outcome==="W"?"var(--olive-br)":outcome==="L"?"var(--danger)":"var(--gold)";
+    const headline = outcome==="W"? pick(["A famous win!","Job done.","Get in!","The dream stays alive."])
+      : outcome==="D"? "A share of the spoils." : pick(["Gutted.","Not our night.","Back to the drawing board."]);
+
+    render(`${topbar()}
+      <div class="card center">
+        <p class="kicker" style="color:${resultColor}">${esc(rec.label)} · ${esc(M.venue.c)}</p>
+        <div class="scoreboard mt" style="border-color:${resultColor}">
+          <div class="side"><span class="flag">${me.f}</span><span class="nm">${esc(me.n)}</span></div>
+          <div><div class="mid">${gf}–${ga}</div>${M.penText?`<div class="clock">${esc(M.penText)}</div>`:''}</div>
+          <div class="side"><span class="flag">${M.opp.f}</span><span class="nm">${esc(M.opp.n)}</span></div>
+        </div>
+        <h2 class="mt" style="color:${resultColor}">${headline}</h2>
+      </div>
+      <div class="mt center"><button class="btn btn--lg" id="next">Continue →</button></div>
+    `);
+
+    document.getElementById("next").onclick=()=>{
+      S._matchOpp=null;
+      recoverBetweenMatches();
+      // clear any injuries flagged as one-match? keep injuries persistent (drama)
+      if(S.stage==="group"){
+        S.history.push(rec);
+        S.groupFixtureIdx++;
+        save();
+        screenHub();
+      } else {
+        handleKoResult(rec, outcome);
+      }
+      M=null;
+    };
+    save();
+  }
+
+  // ============================================================
+  //  GROUP -> KNOCKOUT TRANSITION
+  // ============================================================
+  function resolveGroupStage(){
+    const me=myTeam();
+    // Build my group's table from my real results + sim of the other 3 fixtures.
+    const played={};
+    // my three matches:
+    S.history.forEach((h,i)=>{ played[me.n+"|"+h.opp]={hg:h.gf,ag:h.ga}; });
+    const myTable=simGroup(me.g, played);
+    S.myGroupTable=myTable;
+
+    // Determine all 12 group tables & qualifiers (top 2 each + best 8 thirds)
+    const allTables={};
+    GROUPS.forEach(g=>{ allTables[g]= g===me.g? myTable : simGroup(g,null); });
+    const winners=[], runners=[], thirds=[];
+    GROUPS.forEach(g=>{ const t=allTables[g]; winners.push(t[0]); runners.push(t[1]); thirds.push(t[2]); });
+    thirds.sort((a,b)=> b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf);
+    const bestThirds=thirds.slice(0,8);
+    const qualifiers=[...winners,...runners,...bestThirds];
+    const qNames=qualifiers.map(q=>q.n);
+
+    const myRow=myTable.find(r=>r.n===me.n);
+    const advanced = qNames.includes(me.n);
+
+    // Show group result screen
+    const tableRows=myTable.map(r=> tblRow(r)).join("");
+    const myPos=myRow.rank;
+    render(`${topbar()}
+      <div class="card">
+        <div class="section-title"><h3>Group ${me.g} — final table</h3><span class="hint">P${myRow.pts} · ${myRow.w}W ${myRow.d}D ${myRow.l}L</span></div>
+        <table class="tbl"><thead><tr><th></th><th>Team</th><th class="n">Pld</th><th class="n">GD</th><th class="n">Pts</th></tr></thead><tbody>${tableRows}</tbody></table>
+      </div>
+      <div class="card center">
+        ${advanced
+          ? `<h2 style="color:var(--olive-br)">Through to the knockouts! 🎉</h2>
+             <p class="muted">${esc(me.n)} finished ${ordinal(myPos)} in Group ${me.g}${myPos<=2?'':' — and squeaked in as one of the best third-placed teams'}. 32 teams remain.</p>`
+          : `<h2 style="color:var(--danger)">Group stage exit</h2>
+             <p class="muted">${esc(me.n)} finished ${ordinal(myPos)} and didn't make the cut. Not every campaign ends in glory — but there's always next time.</p>`}
+      </div>
+      <div class="mt center">
+        ${advanced? `<button class="btn btn--lg" id="ko">Enter the Round of 32 →</button>`
+                  : `<button class="btn btn--lg" id="end">See final summary →</button>`}
+      </div>
+    `);
+    if(advanced){
+      document.getElementById("ko").onclick=()=>{
+        S.stage="ko"; S.koRound=0;
+        S.koPool=qNames.filter(n=>n!==me.n);
+        save(); screenHub();
+      };
+    } else {
+      S.finished=true; S.champion=false;
+      document.getElementById("end").onclick=()=> screenEnd();
+    }
+  }
+  function ordinal(n){ return n+(["th","st","nd","rd"][(n%100>>3^1)&&n%10<4?n%10:0]); }
+
+  // ============================================================
+  //  KNOCKOUT HUB & RESULTS
+  // ============================================================
+  function renderKoHub(){
+    const me=myTeam();
+    const round=KO_ROUNDS[S.koRound];
+    // pick my opponent for this round from the pool (deterministic-ish)
+    if(!S._koOpp){ S._koOpp = pickKoOpponent(); }
+    const opp=teamByName(S._koOpp);
+    const progress = KO_ROUNDS.slice(0,S.koRound+1).map((r,i)=>`<span class="pill ${i===S.koRound?'gold':''}">${r.short}</span>`).join(" ");
+    const venue = round.venue? VENUES[round.venue[0]] : null;
+
+    // history list
+    const histHtml = S.history.filter(h=>h.label!==undefined).map(h=>{
+      const c=h.outcome==="W"?"var(--olive-br)":h.outcome==="L"?"var(--danger)":"var(--gold)";
+      return `<div class="prow"><span class="pos">${esc((KO_ROUNDS.find(r=>r.label===h.label)||{}).short||"GRP")}</span><span class="nm"><span class="flag">${h.oppFlag}</span>${esc(h.opp)}</span><span class="rt" style="color:${c}">${h.gf}–${h.ga}${h.pens?' (p)':''}</span></div>`;
+    }).join("");
+
+    render(`${topbar()}
+      <div class="card center">
+        <p class="kicker">Knockout stage</p>
+        <h2>${round.label}</h2>
+        <div class="mt" style="display:flex;gap:.3rem;justify-content:center;flex-wrap:wrap">${progress}</div>
+        <div class="scoreboard mt">
+          <div class="side"><span class="flag">${me.f}</span><span class="nm">${esc(me.n)}</span></div>
+          <div><div class="mid" style="font-size:1.4rem">vs</div><div class="clock">${round.short}</div></div>
+          <div class="side"><span class="flag">${opp.f}</span><span class="nm">${esc(opp.n)}</span></div>
+        </div>
+        <p class="muted mt" style="font-size:.8rem">📍 ${venue?venue.s+' · '+venue.c:'Win or you go home — draws settled by extra time &amp; penalties.'}</p>
+        <p class="muted" style="font-size:.78rem">${S.koPool.length+1} teams remain in the tournament.</p>
+      </div>
+      ${histHtml?`<div class="card"><div class="section-title"><h3>Your campaign</h3></div><div class="roster" style="max-height:none">${histHtml}</div></div>`:''}
+      <div class="btnrow mt">
+        <button class="btn btn--ghost" id="team">Team sheet</button>
+        <button class="btn" id="play">Play the ${round.short} →</button>
+      </div>
+    `);
+    document.getElementById("team").onclick=()=>screenSquad(false);
+    document.getElementById("play").onclick=()=>{
+      S.pendingNews=drawNews().id;
+      S._matchOpp=S._koOpp;
+      screenNews();
+    };
+  }
+
+  function pickKoOpponent(){
+    // choose a plausible opponent: prefer a mid/strong team for drama, random from pool
+    if(!S.koPool.length) return null;
+    const pool=S.koPool.slice();
+    // weight slightly by closeness in strength to keep it competitive-ish but fair
+    return pick(pool);
+  }
+
+  function handleKoResult(rec, outcome){
+    S.history.push(rec);
+    const me=myTeam();
+    // remove my opponent from pool
+    S.koPool=S.koPool.filter(n=>n!==S._koOpp);
+    if(outcome==="L"){
+      // eliminated
+      S.finished=true; S.champion=false; S._koOpp=null;
+      save(); screenEnd(); return;
+    }
+    // advance: halve the rest of the field (simulate the other ties)
+    S.koPool = halveField(S.koPool);
+    S._koOpp=null;
+    S.koRound++;
+    if(S.koRound>=KO_ROUNDS.length){
+      // won the final
+      S.finished=true; S.champion=true;
+      save(); screenEnd(); return;
+    }
+    save(); screenHub();
+  }
+
+  // Simulate the rest of the bracket: randomly pair survivors and keep winners.
+  function halveField(pool){
+    const arr=shuffle(pool);
+    const survivors=[];
+    for(let i=0;i<arr.length;i+=2){
+      if(i+1>=arr.length){ survivors.push(arr[i]); break; }
+      const a=teamByName(arr[i]), b=teamByName(arr[i+1]);
+      const r=simGoals(aiStrength(a),aiStrength(b));
+      let win;
+      if(r.hg>r.ag) win=a.n; else if(r.ag>r.hg) win=b.n;
+      else win = (a.ovr+rng()*8) >= (b.ovr+rng()*8)? a.n:b.n; // pens
+      survivors.push(win);
+    }
+    return survivors;
+  }
+
+  // ============================================================
+  //  END SCREEN
+  // ============================================================
+  function screenEnd(){
+    const me=myTeam();
+    const champ=S.champion;
+    const reached = champ? "Champions of the World" :
+      (S.stage==="ko"? (KO_ROUNDS[Math.min(S.koRound,KO_ROUNDS.length-1)].label) : "Group stage");
+    const lastKo = S.history.filter(h=>KO_ROUNDS.some(r=>r.label===h.label));
+    const allHist=S.history;
+    const histHtml=allHist.map(h=>{
+      const c=h.outcome==="W"?"var(--olive-br)":h.outcome==="L"?"var(--danger)":"var(--gold)";
+      return `<div class="prow"><span class="pos" style="width:54px">${esc(shortLabel(h.label))}</span><span class="nm"><span class="flag">${h.oppFlag}</span>${esc(h.opp)} <small class="muted">· ${esc(h.venue||'')}</small></span><span class="rt" style="color:${c}">${h.gf}–${h.ga}${h.pens?' (p)':''}</span></div>`;
+    }).join("");
+    const wins=allHist.filter(h=>h.outcome==="W").length;
+    const gf=allHist.reduce((s,h)=>s+h.gf,0), ga=allHist.reduce((s,h)=>s+h.ga,0);
+
+    render(`
+      <div class="center mt">
+        ${champ
+          ? `<div class="trophy">🏆</div><p class="kicker" style="color:var(--gold)">19 July 2026 · MetLife Stadium</p>
+             <h1 class="display">CHAMPIONS</h1>
+             <p class="lead center" style="margin:.6rem auto 0">${me.f} <b>${esc(me.n)}</b> are the World Cup 2026 winners! From the group stage to glory in New York — you did it.</p>`
+          : `<p class="kicker">Your 2026 campaign</p>
+             <h1 style="font-size:2.2rem">${me.f} ${esc(me.n)}</h1>
+             <p class="lead center" style="margin:.4rem auto 0">Final standing: <b style="color:var(--gold)">${esc(reached)}</b>. ${pick(["A campaign to build on.","So close. The dream lives for next time.","Heads high — that was a real run."])}</p>`}
+      </div>
+      <div class="card mt">
+        <div class="section-title"><h3>The road traveled</h3><span class="hint">${wins} wins · ${gf} for / ${ga} against</span></div>
+        <div class="roster" style="max-height:none">${histHtml}</div>
+      </div>
+      <div class="btnrow mt2" style="max-width:420px;margin-left:auto;margin-right:auto">
+        <button class="btn" id="again">Play again</button>
+        <a class="btn btn--ghost" href="../../index.html#games">More games</a>
+      </div>
+      <p class="muted center mt2" style="font-size:.7rem">Wild Olive Studios · World Cup 2026</p>
+    `);
+    wipe();
+    document.getElementById("again").onclick=()=>{ S=freshState(); screenSelect(); };
+  }
+  function shortLabel(l){ const r=KO_ROUNDS.find(x=>x.label===l); return r?r.short:"Group"; }
+
+  // ============================================================
+  //  BOOT
+  // ============================================================
+  screenTitle();
+})();
+</script>
+</body>
+</html>
