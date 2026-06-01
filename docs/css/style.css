@@ -296,8 +296,8 @@ main, .nav, .footer, .marquee { position: relative; z-index: 1; }
   position: absolute; top: .8rem; left: .8rem; z-index: 2;
   font-size: .72rem; font-weight: 700; letter-spacing: .03em;
   padding: .3rem .7rem; border-radius: 999px;
-  background: rgba(0,0,0,0.55); color: #fff; backdrop-filter: blur(4px);
-  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(22, 163, 74, 0.75); color: #fff; backdrop-filter: blur(4px);
+  border: 1px solid rgba(134, 239, 172, 0.45);
 }
 .game-card__body { padding: 1.4rem; display: flex; flex-direction: column; gap: .8rem; flex: 1; }
 .game-card__tags { display: flex; flex-wrap: wrap; gap: .4rem; }
