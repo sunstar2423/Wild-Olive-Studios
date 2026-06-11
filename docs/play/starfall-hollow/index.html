@@ -1,0 +1,2650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta name="description" content="Starfall Hollow — a story adventure from Wild Olive Studios. A star has fallen and the Heartlamp is dark. Explore an ever-growing world, befriend its characters, solve puzzles, gather star shards and bring the light home." />
+<title>Starfall Hollow — Wild Olive Studios</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --gold:#ffd166; --leaf:#7ad77a; --sky:#6fc7e8; --rose:#ff9bb0; --lav:#b18cff;
+    --bg:#0a0d16; --panel:#141a2c; --panel2:#1b2340; --line:#2b3558; --line2:#3c4a7e;
+    --paper:#eef0fa; --muted:#8e97c0; --dim:#5d6690;
+    --good:#5ee69a; --bad:#ff6b6b;
+    --ui:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{ box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    font-family:var(--ui); color:var(--paper);
+    background:
+      radial-gradient(1000px 600px at 80% -10%, rgba(255,209,102,.07), transparent 60%),
+      radial-gradient(900px 700px at -10% 110%, rgba(111,199,232,.08), transparent 60%),
+      var(--bg);
+    overflow:hidden; user-select:none; -webkit-user-select:none; touch-action:none;
+  }
+  button{ font-family:var(--ui); cursor:pointer; }
+
+  #app{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #stage{ position:relative; }
+  canvas#cv{ display:block; image-rendering:pixelated; image-rendering:crisp-edges;
+    border-radius:14px; box-shadow:0 18px 60px -18px rgba(0,0,0,.85), 0 0 0 1px var(--line);
+    background:#0a0d16; }
+
+  /* ============ HUD ============ */
+  #hud{ position:absolute; top:8px; left:10px; right:10px; display:flex; align-items:flex-start;
+    gap:.45rem; pointer-events:none; z-index:20; }
+  .pill{ display:flex; align-items:center; gap:.34rem; font-size:.82rem; font-weight:700;
+    background:rgba(10,13,22,.72); border:1px solid var(--line); border-radius:999px;
+    padding:.22rem .66rem; backdrop-filter:blur(4px); }
+  .pill .ico{ font-size:.9rem; }
+  #hud .spacer{ flex:1; }
+  .hudbtn{ pointer-events:auto; border:1px solid var(--line); background:rgba(10,13,22,.72);
+    color:var(--paper); font-size:.8rem; font-weight:700; border-radius:999px; padding:.24rem .7rem;
+    backdrop-filter:blur(4px); }
+  .hudbtn:hover{ border-color:var(--line2); background:rgba(27,35,64,.85); }
+  #locname{ position:absolute; top:46px; left:50%; transform:translateX(-50%);
+    font-size:.95rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--gold); text-shadow:0 2px 12px rgba(0,0,0,.8); opacity:0; transition:opacity .5s;
+    pointer-events:none; z-index:20; white-space:nowrap; }
+  #toast{ position:absolute; top:80px; left:50%; transform:translateX(-50%);
+    background:rgba(10,13,22,.88); border:1px solid var(--line2); border-radius:10px;
+    padding:.4rem .9rem; font-size:.82rem; font-weight:500; opacity:0; transition:opacity .35s;
+    pointer-events:none; z-index:30; max-width:80%; text-align:center; }
+  #toast b{ color:var(--gold); }
+
+  /* ============ dialogue ============ */
+  #dlg{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%);
+    width:min(92%, 560px); display:none; z-index:40; }
+  #dlg.on{ display:block; }
+  #dlgbox{ background:rgba(13,17,30,.93); border:1px solid var(--line2); border-radius:14px;
+    padding:.7rem .9rem .6rem; box-shadow:0 12px 40px -10px rgba(0,0,0,.8);
+    backdrop-filter:blur(6px); }
+  #dlgname{ display:inline-flex; align-items:center; gap:.4rem; font-size:.78rem; font-weight:700;
+    color:var(--gold); letter-spacing:.06em; margin-bottom:.3rem; }
+  #dlgname .face{ font-size:1.05rem; }
+  #dlgtext{ font-size:.95rem; line-height:1.45; min-height:2.7em; }
+  #dlgtext b{ color:var(--gold); } #dlgtext i{ color:var(--sky); font-style:normal; }
+  #dlgmore{ text-align:right; color:var(--muted); font-size:.8rem; animation:bob 1s infinite; height:1em; }
+  @keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(3px)} }
+  #dlgopts{ display:flex; flex-direction:column; gap:.35rem; margin-top:.5rem; }
+  #dlgopts button{ text-align:left; font-size:.88rem; font-weight:500; color:var(--paper);
+    background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:10px;
+    padding:.45rem .7rem; }
+  #dlgopts button:hover,#dlgopts button.sel{ border-color:var(--gold); background:rgba(255,209,102,.1); }
+
+  /* ============ panels (journal / shop / pause) ============ */
+  .panel{ position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(5,7,13,.72); backdrop-filter:blur(3px); z-index:60; border-radius:14px; }
+  .panel.on{ display:flex; }
+  .panel .card{ width:min(92%, 520px); max-height:88%; overflow:auto; background:var(--panel);
+    border:1px solid var(--line2); border-radius:16px; padding:1rem 1.1rem;
+    box-shadow:0 20px 60px -16px rgba(0,0,0,.9); }
+  .panel h2{ font-size:1.05rem; letter-spacing:.04em; margin-bottom:.6rem; display:flex;
+    align-items:center; justify-content:space-between; }
+  .panel h2 .x{ border:1px solid var(--line); background:transparent; color:var(--muted);
+    border-radius:8px; font-size:.8rem; padding:.18rem .55rem; }
+  .panel h2 .x:hover{ color:#fff; border-color:var(--line2); }
+  .tabs{ display:flex; gap:.3rem; margin-bottom:.6rem; }
+  .tabs button{ flex:1; border:1px solid var(--line); background:transparent; color:var(--muted);
+    font-size:.78rem; font-weight:700; border-radius:8px; padding:.32rem 0; }
+  .tabs button.on{ color:#0a0d16; background:var(--gold); border-color:var(--gold); }
+  .qitem{ border:1px solid var(--line); border-radius:10px; padding:.5rem .65rem; margin-bottom:.45rem; }
+  .qitem b{ font-size:.88rem; } .qitem.done b{ color:var(--good); }
+  .qitem p{ font-size:.78rem; color:var(--muted); margin-top:.15rem; line-height:1.4; }
+  .qitem .tag{ float:right; font-size:.66rem; font-weight:700; letter-spacing:.08em;
+    color:var(--gold); border:1px solid var(--line); border-radius:999px; padding:.1rem .5rem; }
+  .qitem.done .tag{ color:var(--good); }
+  .igrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:.45rem; }
+  .islot{ border:1px solid var(--line); border-radius:10px; padding:.45rem .5rem; font-size:.78rem;
+    display:flex; gap:.45rem; align-items:center; }
+  .islot .em{ font-size:1.25rem; } .islot b{ display:block; font-size:.78rem; }
+  .islot span{ color:var(--muted); font-size:.68rem; }
+  .empty{ color:var(--dim); font-size:.82rem; text-align:center; padding:1rem 0; }
+
+  /* shop */
+  .srow{ display:flex; align-items:center; gap:.6rem; border:1px solid var(--line);
+    border-radius:10px; padding:.5rem .6rem; margin-bottom:.45rem; }
+  .srow .em{ font-size:1.4rem; }
+  .srow .inf{ flex:1; } .srow .inf b{ font-size:.86rem; }
+  .srow .inf p{ font-size:.74rem; color:var(--muted); line-height:1.35; }
+  .srow .buy{ border:1px solid var(--gold); color:var(--gold); background:transparent;
+    border-radius:8px; font-weight:700; font-size:.78rem; padding:.3rem .6rem; white-space:nowrap; }
+  .srow .buy:hover:not(:disabled){ background:rgba(255,209,102,.12); }
+  .srow .buy:disabled{ opacity:.38; cursor:default; border-color:var(--line); color:var(--muted); }
+  #shopcoins{ text-align:right; font-size:.8rem; color:var(--gold); font-weight:700; margin-bottom:.5rem; }
+
+  /* pause */
+  .prow{ display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+    padding:.45rem 0; border-bottom:1px solid var(--line); font-size:.86rem; }
+  .prow:last-child{ border-bottom:0; }
+  .prow input[type=range]{ width:140px; accent-color:var(--gold); }
+  .pbtn{ width:100%; margin-top:.6rem; border:1px solid var(--line2); background:var(--panel2);
+    color:var(--paper); font-weight:700; font-size:.85rem; border-radius:10px; padding:.55rem 0; }
+  .pbtn:hover{ border-color:var(--gold); }
+  .pbtn.warn{ border-color:rgba(255,107,107,.5); color:var(--bad); background:transparent; }
+
+  /* ============ title screen ============ */
+  #title{ position:absolute; inset:0; z-index:80; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1rem; border-radius:14px; overflow:hidden;
+    background:
+      radial-gradient(700px 420px at 50% 115%, rgba(122,215,122,.16), transparent 60%),
+      radial-gradient(600px 380px at 75% -10%, rgba(255,209,102,.12), transparent 55%),
+      linear-gradient(180deg,#0b1024 0%, #101831 55%, #16243c 100%); }
+  #title.off{ display:none; }
+  .tstars{ position:absolute; inset:0; pointer-events:none; }
+  .tstars i{ position:absolute; width:3px; height:3px; border-radius:50%; background:#fff;
+    animation:tw 2.6s infinite; }
+  @keyframes tw{ 0%,100%{opacity:.15} 50%{opacity:.95} }
+  #title .fall{ position:absolute; font-size:1.4rem; animation:fall 7s linear infinite; opacity:.9; }
+  @keyframes fall{ 0%{ transform:translate(40px,-60px) rotate(-12deg); opacity:0 }
+    8%{opacity:.95} 60%{opacity:.95} 100%{ transform:translate(-340px,420px) rotate(-12deg); opacity:0 } }
+  #title h1{ font-size:clamp(1.9rem,6vw,3rem); letter-spacing:.04em; text-align:center; line-height:1.05;
+    background:linear-gradient(120deg,var(--gold),#fff 50%,var(--sky));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 6px 24px rgba(255,209,102,.25)); z-index:2; }
+  #title .sub{ font-size:.8rem; letter-spacing:.34em; text-transform:uppercase; color:var(--muted); z-index:2; }
+  #title .tag{ font-size:.86rem; color:#cfd6f2; max-width:34ch; text-align:center; line-height:1.5; z-index:2; }
+  #title .btns{ display:flex; flex-direction:column; gap:.55rem; margin-top:.4rem; z-index:2; width:min(78%,260px); }
+  #title .btns button{ border-radius:12px; padding:.7rem 0; font-size:.95rem; font-weight:700; border:0; }
+  #tnew{ background:linear-gradient(120deg,var(--gold),#f0a93c); color:#1c1503;
+    box-shadow:0 8px 30px -8px rgba(255,209,102,.55); }
+  #tnew:hover{ filter:brightness(1.07); }
+  #tcont{ background:rgba(255,255,255,.07); color:var(--paper); border:1px solid var(--line2) !important; }
+  #tcont:disabled{ opacity:.35; cursor:default; }
+  #title .keys{ font-size:.7rem; color:var(--dim); z-index:2; text-align:center; line-height:1.6; }
+  #title .back{ position:absolute; top:12px; left:12px; z-index:3; font-size:.72rem; color:#b9b2dd;
+    text-decoration:none; background:rgba(255,255,255,.05); padding:.32rem .7rem; border-radius:999px;
+    border:1px solid var(--line); }
+  #title .back:hover{ color:#fff; border-color:var(--line2); }
+
+  /* ============ ending / credits ============ */
+  #credits{ z-index:90; }
+  #credits .card{ text-align:center; }
+  #credits h3{ font-size:1.3rem; color:var(--gold); margin-bottom:.5rem; }
+  #credits p{ font-size:.86rem; color:#cfd6f2; line-height:1.55; margin-bottom:.5rem; }
+  #credits .stat{ font-size:.8rem; color:var(--muted); }
+  #credits .stat b{ color:var(--gold); }
+
+  /* ============ touch controls ============ */
+  #touch{ position:absolute; inset:0; pointer-events:none; z-index:50; display:none; }
+  body.touch #touch{ display:block; }
+  #dpad{ position:absolute; left:14px; bottom:14px; width:128px; height:128px; pointer-events:auto; }
+  #dpad div{ position:absolute; width:44px; height:44px; border-radius:11px;
+    background:rgba(20,26,44,.6); border:1px solid var(--line2); display:flex; align-items:center;
+    justify-content:center; color:var(--muted); font-size:1rem; }
+  #dpad div.on{ background:rgba(255,209,102,.25); color:#fff; }
+  #du{ left:42px; top:0 } #dd{ left:42px; bottom:0 } #dl{ left:0; top:42px } #dr{ right:0; top:42px }
+  #abtn{ position:absolute; right:18px; bottom:26px; width:64px; height:64px; border-radius:50%;
+    pointer-events:auto; background:rgba(255,209,102,.2); border:1.5px solid var(--gold);
+    color:var(--gold); font-weight:700; font-size:1rem; display:flex; align-items:center;
+    justify-content:center; }
+  #abtn.on{ background:rgba(255,209,102,.45); color:#fff; }
+
+  @media (max-width:560px){
+    #dlg{ bottom:8px; } #dlgtext{ font-size:.88rem; }
+    .pill{ font-size:.72rem; padding:.18rem .5rem; }
+    .hudbtn{ font-size:.7rem; padding:.2rem .55rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="cv"></canvas>
+
+    <div id="hud">
+      <div class="pill"><span class="ico">🪙</span><span id="hudcoins">0</span></div>
+      <div class="pill"><span class="ico">✦</span><span id="hudshards">0 / 5</span></div>
+      <div class="spacer"></div>
+      <button class="hudbtn" id="bjournal">📖 Journal</button>
+      <button class="hudbtn" id="bsound">🔊</button>
+      <button class="hudbtn" id="bmenu">☰</button>
+    </div>
+    <div id="locname"></div>
+    <div id="toast"></div>
+
+    <div id="dlg">
+      <div id="dlgbox">
+        <div id="dlgname"><span class="face"></span><span class="who"></span></div>
+        <div id="dlgtext"></div>
+        <div id="dlgopts"></div>
+        <div id="dlgmore">▼</div>
+      </div>
+    </div>
+
+    <div id="touch">
+      <div id="dpad">
+        <div id="du">▲</div><div id="dd">▼</div><div id="dl">◀</div><div id="dr">▶</div>
+      </div>
+      <div id="abtn">A</div>
+    </div>
+
+    <!-- Journal -->
+    <div class="panel" id="journal">
+      <div class="card">
+        <h2>Traveller's Journal <button class="x" data-close="journal">✕ close</button></h2>
+        <div class="tabs">
+          <button data-tab="quests" class="on">Quests</button>
+          <button data-tab="items">Satchel</button>
+          <button data-tab="world">World</button>
+        </div>
+        <div id="jbody"></div>
+      </div>
+    </div>
+
+    <!-- Shop -->
+    <div class="panel" id="shop">
+      <div class="card">
+        <h2 id="shoptitle">Trading Post <button class="x" data-close="shop">✕ leave</button></h2>
+        <div id="shopcoins"></div>
+        <div id="shopbody"></div>
+      </div>
+    </div>
+
+    <!-- Pause / settings -->
+    <div class="panel" id="pause">
+      <div class="card">
+        <h2>Paused <button class="x" data-close="pause">✕ close</button></h2>
+        <div class="prow"><span>Music volume</span><input type="range" id="vmus" min="0" max="100" value="60"></div>
+        <div class="prow"><span>Sound effects</span><input type="range" id="vsfx" min="0" max="100" value="80"></div>
+        <div class="prow"><span>Walk speed</span>
+          <select id="spd" style="background:var(--panel2);color:var(--paper);border:1px solid var(--line);border-radius:8px;padding:.2rem .4rem;font-family:var(--ui)">
+            <option value="1">Normal</option><option value="1.3">Brisk</option>
+          </select></div>
+        <button class="pbtn" id="btitle">Save &amp; return to title</button>
+        <button class="pbtn warn" id="breset">Erase saved adventure</button>
+      </div>
+    </div>
+
+    <!-- Ending credits -->
+    <div class="panel" id="credits">
+      <div class="card">
+        <h3>The Heartlamp Shines Again</h3>
+        <div id="credbody"></div>
+        <button class="pbtn" id="bfree">Keep exploring the Hollow ✦</button>
+      </div>
+    </div>
+
+    <!-- Title screen -->
+    <div id="title">
+      <a class="back" href="../../index.html">← Wild Olive Studios</a>
+      <div class="tstars" id="tstars"></div>
+      <span class="fall" style="left:78%; top:6%; animation-delay:.5s">🌠</span>
+      <span class="fall" style="left:90%; top:-2%; animation-delay:4s">🌠</span>
+      <div class="sub">A Wild Olive story adventure</div>
+      <h1>Starfall<br>Hollow</h1>
+      <p class="tag">A star has fallen, and the village Heartlamp has gone dark.
+        Lace your boots, little keeper — the Hollow is bigger than you know.</p>
+      <div class="btns">
+        <button id="tnew">✦ New adventure</button>
+        <button id="tcont">Continue journey</button>
+      </div>
+      <p class="keys">Move: WASD / arrow keys · Talk &amp; interact: <b>E</b> or Space<br>
+        Journal: <b>J</b> · Menu: <b>Esc</b> · On touch screens, use the pad &amp; A button</p>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   STARFALL HOLLOW — a story adventure
+   Wild Olive Studios · single file, no dependencies, no assets.
+   World, art, music and sound are all generated in code.
+   ===================================================================== */
+
+/* ---------- tiny helpers ---------- */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp = (v,a,b) => v<a?a:(v>b?b:v);
+const lerp  = (a,b,t) => a+(b-a)*t;
+// deterministic 2D hash for tile variation
+function hash2(x,y){ let h = (x*374761393 + y*668265263)|0; h = (h^(h>>13))*1274126177|0; return ((h^(h>>16))>>>0)/4294967295; }
+const choiceArr = (arr,r) => arr[Math.floor(r*arr.length)%arr.length];
+
+/* ---------- constants ---------- */
+const T = 32;                 // tile size (world px)
+const VW = 480, VH = 320;     // logical viewport
+const SCALE = 2;              // canvas backing scale
+const SAVE_KEY = "wos_starfall_save_v1";
+const OPT_KEY  = "wos_starfall_opts_v1";
+
+const cv = $("#cv");
+cv.width = VW*SCALE; cv.height = VH*SCALE;
+const ctx = cv.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+ctx.scale(SCALE,SCALE);
+
+function fitStage(){
+  const pad = 16;
+  const aw = innerWidth-pad, ah = innerHeight-pad;
+  const s = Math.min(aw/VW, ah/VH);
+  cv.style.width  = Math.floor(VW*s)+"px";
+  cv.style.height = Math.floor(VH*s)+"px";
+}
+addEventListener("resize", fitStage); fitStage();
+
+/* ---------- game state ---------- */
+// Mode: title | play | dialog | panel | ending
+let mode = "title";
+let S = null;           // the save-state (created by newGame / load)
+
+function freshState(){
+  return {
+    map:"village", x:16*T, y:12*T, dir:"down",
+    coins:0, shards:0,
+    items:{},          // itemId -> count
+    flags:{},          // story flags
+    quests:{},         // questId -> "on" | "done"
+    got:{},            // one-shot pickups/chests collected: id -> true
+    plod:{},           // maps where Sir Plod was greeted
+    steps:0,
+  };
+}
+function flag(f){ return !!S.flags[f]; }
+function setFlag(f){ S.flags[f]=true; }
+function itemCount(id){ return S.items[id]||0; }
+function hasItem(id){ return itemCount(id)>0; }
+
+function save(){
+  if(!S) return;
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){}
+}
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return null;
+    const s = JSON.parse(raw);
+    if(!s || typeof s!=="object" || !s.map) return null;
+    return Object.assign(freshState(), s);
+  }catch(e){ return null; }
+}
+
+/* options */
+const OPTS = (()=>{ try{ return Object.assign({mus:.6,sfx:.8,spd:1,mute:false},
+  JSON.parse(localStorage.getItem(OPT_KEY)||"{}")); }catch(e){ return {mus:.6,sfx:.8,spd:1,mute:false}; }})();
+function saveOpts(){ try{ localStorage.setItem(OPT_KEY, JSON.stringify(OPTS)); }catch(e){} }
+
+/* ---------- HUD ---------- */
+function refreshHUD(){
+  if(!S) return;
+  $("#hudcoins").textContent = S.coins;
+  $("#hudshards").textContent = S.shards+" / 5";
+}
+let toastTimer = 0;
+function toast(html, ms=2200){
+  const t = $("#toast"); t.innerHTML = html; t.style.opacity = 1;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.style.opacity = 0, ms);
+}
+let locTimer = 0;
+function showLocName(name){
+  const l = $("#locname"); l.textContent = name; l.style.opacity = 1;
+  clearTimeout(locTimer);
+  locTimer = setTimeout(()=> l.style.opacity = 0, 2400);
+}
+
+/* ---------- items & quests registries ---------- */
+const ITEMS = {
+  lantern:  { em:"🏮", name:"Glow Lantern",   d:"Pushes back deep dark. Needed for sea caves." },
+  cloak:    { em:"🧥", name:"Warm Cloak",     d:"Knitted with mountain wool. Laughs at blizzards." },
+  honeycake:{ em:"🍯", name:"Honeycake",      d:"Sticky, golden, irresistible to foxes." },
+  berry:    { em:"🫐", name:"Moonberry",      d:"Plump forest berry. Tilda pays well for these." },
+  map:      { em:"🗺️", name:"Explorer's Map", d:"Adds notes about every region to your journal." },
+  charm:    { em:"💫", name:"Star Charm",     d:"Leaves a trail of stardust as you walk." },
+  kite:     { em:"🪁", name:"Pip's Kite",     d:"A red kite, slightly chewed by a tree." },
+  mitten:   { em:"🧤", name:"Yura's Mitten",  d:"Enormous. Smells faintly of pine." },
+  pearl:    { em:"🫧", name:"Pearl Charm",    d:"A gift from Cousin Pinch. Hums near secrets." },
+  medal:    { em:"🥇", name:"Plod's Medal",   d:"Awarded for out-walking the slowest knight alive." },
+  starkey:  { em:"🗝️", name:"Star Key",      d:"Opens the old observatory gate at the crater." },
+};
+const SHARDS = [
+  { id:"hearth",  em:"🔥", name:"Shard of Hearth"  },
+  { id:"whisper", em:"🍃", name:"Shard of Whispers"},
+  { id:"tide",    em:"🌊", name:"Shard of Tides"   },
+  { id:"frost",   em:"❄️", name:"Shard of Frost"   },
+  { id:"light",   em:"⭐", name:"Shard of Light"   },
+];
+const QUESTS = {
+  main1:{ name:"The Dark Lantern",    d:"Grandmother Elm says a star shard sleeps in the Old Mill. Solve the miller's levers." },
+  main2:{ name:"Whispering Woods",    d:"A shard rests with the Owl Sage deep in the woods. Bramble the fox knows the way — for a price." },
+  main3:{ name:"Glimmer Cove",        d:"A shard glows in the tide cave east of the cove. Too dark to enter without a lantern." },
+  main4:{ name:"Frostpeak",           d:"A shard waits past the ice cave on Frostpeak. You'll freeze without a warm cloak." },
+  main5:{ name:"The Fallen Star",     d:"Four shards found! Open the observatory gate in the village and cross into Starfall Crater." },
+  relight:{ name:"Light the Heartlamp", d:"Bring all five shards to the Heartlamp in the village square." },
+  kite: { name:"Pip's Runaway Kite",  d:"Pip's red kite blew into the Whispering Woods. Rescue it from the trees." },
+  berries:{ name:"Tilda's Berry Order", d:"Baker Tilda needs 5 moonberries from the forest bushes for her famous honeycakes." },
+  mitten:{ name:"The Lost Mitten",    d:"Yura the yeti lost a mitten somewhere in the ice cave. Yeti paws get cold too." },
+  plod: { name:"The Slowest Knight",  d:"Sir Plod is questing across all five regions… at snail pace. Find and greet him everywhere." },
+};
+function startQuest(id){
+  if(S.quests[id]) return;
+  S.quests[id]="on";
+  toast("📜 New quest — <b>"+QUESTS[id].name+"</b>");
+  sfx("quest");
+  save();
+}
+function doneQuest(id){
+  if(S.quests[id]==="done") return;
+  S.quests[id]="done";
+  toast("✅ Quest complete — <b>"+QUESTS[id].name+"</b>");
+  sfx("done");
+  save();
+}
+function give(id,n=1){
+  S.items[id]=(S.items[id]||0)+n;
+  const it=ITEMS[id];
+  toast(it.em+" Got <b>"+it.name+(n>1?" ×"+n:"")+"</b>");
+  sfx("item");
+  save();
+}
+function take(id,n=1){
+  S.items[id]=Math.max(0,(S.items[id]||0)-n);
+  if(!S.items[id]) delete S.items[id];
+  save();
+}
+function addCoins(n){
+  S.coins+=n;
+  if(n>0) toast("🪙 +"+n+" coins");
+  refreshHUD(); sfx("coin"); save();
+}
+function gainShard(i){ // i = index 0..4
+  S.shards++;
+  setFlag("shard_"+SHARDS[i].id);
+  refreshHUD(); save();
+}
+
+/* =====================================================================
+   WORLD DATA — tiles, maps, warps, entities
+   Map legend:  . grass  , flowers  ; tall grass  = path  # tree  T snowy tree
+   t palm  ~ water  b bridge/pier  s sand  * snow  i ice  r rock  c cave floor
+   w wall  ^ roof  d door  f fence  m plaza/mosaic  _ wood floor  o boulder
+   ===================================================================== */
+/*WORLD-START*/
+const SOLID = new Set(["#","T","t","~","r","w","^","f","o"]);
+const SLIDE = new Set(["i"]);
+
+const MAPS = {
+village:{
+  name:"Willowdale Village", song:"village", amb:"pollen", outdoor:true,
+  rows:[
+  "################==################",
+  "#######,........==........,#######",
+  "##....,,........==........,,....##",
+  "##..^^^^^.......==.......^^^^^..##",
+  "##..wwwww.......==.......wwwww..##",
+  "##..wwdww.......==.......wwdww..##",
+  "##....=.........==.........=....##",
+  "##....=.........==.........=....##",
+  "##....======================....##",
+  "##.........mmmmmmmmmmmm.........##",
+  "##.......,.mmmmmmmmmmmm.,.......##",
+  "==.........mmmmmmmmmmmm.........==",
+  "==.........mmmmmmmmmmmm.........==",
+  "##.........mmmmmmmmmmmm.........##",
+  "##..............==..............##",
+  "##....,,........==.......,,.....##",
+  "##..^^^^^.......==.......^^^^^..##",
+  "##..wwwww.......==.......wwwww..##",
+  "##..wwdww.......==.......wwdww..##",
+  "##....=.........==.........=....##",
+  "##....======================....##",
+  "##..............==......~~~~....##",
+  "##.....;;.......==......~~~~....##",
+  "################==################",
+  ],
+  warps:[
+    {x:16,y:0,w:2,h:1, to:["forest",21,32,"up"],
+      req:()=>flag("shard_hearth")||"The forest gate is bolted tight. Grandmother Elm will know what to do."},
+    {x:16,y:23,w:2,h:1, to:["crater",13,1,"down"],
+      req:()=>hasItem("starkey")||"A heavy star-iron gate blocks the old observatory path. It needs a special key."},
+    {x:0,y:11,w:1,h:2, to:["peak",35,14,"left"],
+      req:()=>!flag("shard_tide") ? "An icy wind howls down the western trail. Something tells you it isn't time yet."
+            : (hasItem("cloak")||"Brrr! Three steps up the trail your teeth start rattling. You need something warm to wear.")},
+    {x:33,y:11,w:1,h:2, to:["cove",2,12,"right"],
+      req:()=>flag("shard_whisper")||"The boardwalk east is smashed up. Joss the fisher is still mending it."},
+    {x:27,y:5,w:1,h:1, to:["mill",7,9,"up"]},
+  ],
+  ents:()=>[
+    {x:14,y:11,kind:"heartlamp"},
+    {x:13,y:10,kind:"npc",id:"elm",name:"Grandmother Elm",em:"👵",cols:["#b8b8d0","#7d6b94"],dlg:"elm"},
+    {x:20,y:21,kind:"npc",id:"pip",name:"Pip",em:"🧒",cols:["#ffd166","#d2691e"],dlg:"pip"},
+    {x:8,y:19,kind:"npc",id:"tilda",name:"Baker Tilda",em:"👩‍🍳",cols:["#ff9bb0","#a0522d"],dlg:"tilda"},
+    {x:29,y:19,kind:"npc",id:"marlo",name:"Marlo",em:"🧔",cols:["#6fc7e8","#444"],dlg:"marlo"},
+    {x:30,y:12,kind:"npc",id:"joss",name:"Joss the Fisher",em:"🎣",cols:["#7ad77a","#335"],dlg:"joss"},
+    {x:10,y:15,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+    {x:18,y:13,kind:"sign",text:"Willowdale — heart of the Hollow. Please don't lick the Heartlamp."},
+    {x:15,y:1,kind:"sign",text:"North: the Whispering Woods. Wanderers, mind the fox toll."},
+    {x:6,y:5,kind:"doormsg",text:"Grandmother Elm's cottage. It smells of mint tea and old maps."},
+    {x:6,y:18,kind:"doormsg",text:"Tilda's bakery. The whole street smells of warm honeycake."},
+    {x:27,y:18,kind:"shopdoor"},
+    {x:3,y:22,kind:"chest",id:"v_c1",coins:10},
+    {x:31,y:2,kind:"chest",id:"v_c2",coins:8},
+    {x:4,y:2,kind:"sparkle",id:"v_s1"},
+    {x:30,y:21,kind:"sparkle",id:"v_s2"},
+  ],
+},
+
+mill:{
+  name:"The Old Mill", song:"mill", amb:"dust",
+  rows:[
+  "wwwwwwwwwwwwwwww",
+  "w______________w",
+  "w______________w",
+  "w______________w",
+  "w______________w",
+  "w______________w",
+  "w______________w",
+  "w______________w",
+  "w______________w",
+  "w______________w",
+  "wwwwwwwdwwwwwwww",
+  ],
+  warps:[ {x:7,y:10,w:1,h:1, to:["village",27,6,"down"]} ],
+  ents:()=>[
+    {x:2,y:5,kind:"lever",id:"W"},
+    {x:7,y:2,kind:"lever",id:"N"},
+    {x:13,y:5,kind:"lever",id:"E"},
+    {x:7,y:7,kind:"lever",id:"S"},
+    {x:7,y:4,kind:"pedestal",shard:0,need:"mill_solved"},
+    {x:4,y:8,kind:"sign",text:"The Miller's Rhyme — 'WEST wakes the wheel, NORTH turns it true, EAST lets the grain run, SOUTH sings it through.'"},
+    {x:12,y:2,kind:"sign",text:"A dusty note: 'Greased all four levers — sunset, midnight, sunrise, noon. In that order she purrs like a cat.'"},
+    {x:13,y:8,kind:"chest",id:"m_c1",coins:12},
+  ],
+},
+
+forest:{
+  name:"Whispering Woods", song:"forest", amb:"fireflies", outdoor:true,
+  rows:[
+  "############################################",
+  "############################################",
+  "############################################",
+  "##,,..,,..,,..############..........,,..,.##",
+  "##..,......,..############..####..####....##",
+  "##............############..#..........#..##",
+  "##....,.......############..#..######..#..##",
+  "##............############..#..#....#..#..##",
+  "##,,.......,,.############..#..........#..##",
+  "##.....,......############..############..##",
+  "##........................................##",
+  "##..,,..........................,,........##",
+  "###################.########################",
+  "###################.########################",
+  "###################.########################",
+  "###################.########################",
+  "###################.########################",
+  "##......,,........................,,......##",
+  "##;;;;;;..##....................##........##",
+  "##;;;;;;..##....................##........##",
+  "##;;;;;;......#........#..................##",
+  "##;;;;;;..................................##",
+  "##......##......##............##..........##",
+  "##........................................##",
+  "##....#...........#.............#.........##",
+  "##..,,....................................##",
+  "##................##......#...............##",
+  "##,,..........,,......................,,..##",
+  "####################....####################",
+  "####################....####################",
+  "####################....####################",
+  "#####################..#####################",
+  "#####################..#####################",
+  "#####################..#####################",
+  "############################################",
+  ],
+  warps:[ {x:21,y:33,w:2,h:1, to:["village",16,2,"down"]} ],
+  ents:()=>{
+    const e=[
+      {x:8,y:6,kind:"npc",id:"quill",name:"Quill the Owl Sage",em:"🦉",cols:["#c9a86a","#7a5c3a"],dlg:"quill"},
+      {x:6,y:7,kind:"pedestal",shard:1,need:"owl_done"},
+      {x:28,y:26,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+      {x:35,y:19,kind:"kitetree"},
+      {x:21,y:30,kind:"sign",text:"Whispering Woods. The trees gossip. Try not to take it personally."},
+      {x:20,y:11,kind:"sign",text:"The deep pass. Beyond: the Elderwood, home of the Owl Sage."},
+      {x:33,y:7,kind:"chest",id:"f_c1",coins:15},
+      {x:9,y:25,kind:"chest",id:"f_c2",coins:10},
+      {x:4,y:11,kind:"sparkle",id:"f_s1"},
+      {x:40,y:4,kind:"sparkle",id:"f_s2"},
+      {x:35,y:25,kind:"sparkle",id:"f_s3"},
+      {x:3,y:18,kind:"bush",id:"b1"},{x:5,y:18,kind:"bush",id:"b2"},
+      {x:2,y:19,kind:"bush",id:"b3"},{x:6,y:19,kind:"bush",id:"b4"},
+      {x:4,y:20,kind:"bush",id:"b5"},{x:7,y:20,kind:"bush",id:"b6"},
+      {x:3,y:21,kind:"bush",id:"b7"},{x:6,y:21,kind:"bush",id:"b8"},
+    ];
+    if(!flag("fox_friend")) e.push({x:19,y:14,kind:"npc",id:"fox",name:"Bramble the Fox",em:"🦊",cols:["#e8833a","#fff"],dlg:"fox"});
+    else e.push({x:17,y:17,kind:"npc",id:"fox",name:"Bramble the Fox",em:"🦊",cols:["#e8833a","#fff"],dlg:"fox"});
+    return e;
+  },
+},
+
+cove:{
+  name:"Glimmer Cove", song:"cove", amb:"seaspark", outdoor:true,
+  rows:[
+  "######################################",
+  "######################################",
+  "##..,,.........t...........t........##",
+  "##..................................##",
+  "##.....#..........#.................##",
+  "##...........................rrrrrrr##",
+  "##...........................rrrrrrr##",
+  "##...........................rrrdrrr##",
+  "##..................................##",
+  "##ssssssssssssssssssssssssssssssssss##",
+  "##ssssssssssssssssssssssssssssssssss##",
+  "##ssssssssssssssssssssssssssssssssss##",
+  "==ssssssssssssssssssssssssssssssssss##",
+  "==ssssssssssssssssssssssssssssssssss##",
+  "##ssssssssssssssssssssssssssssssssss##",
+  "##sssssstsssssssssssssssssstssssssss##",
+  "##ssssssssssssssssssssssssssssssssss##",
+  "##ssssssssssssssssbsssssssssssssssss##",
+  "##~~~~~~~~~~~~~~~~b~~~~~~~~~~~~~~~~~##",
+  "##~~~~~~~~~~~~~~~~b~~~~~~~~~~~~~~~~~##",
+  "##~~~~~~~~~~~~~~~~b~~~~~~~~~~~~~~~~~##",
+  "##~~~~~~~~~~~~~~~~b~~~~~~~~~~~~~~~~~##",
+  "##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##",
+  "##~~~~~~~~~~o~~~~~~~~~~~~~~~o~~~~~~~##",
+  "##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##",
+  "######################################",
+  ],
+  warps:[
+    {x:0,y:12,w:2,h:2, to:["village",31,12,"left"]},
+    {x:32,y:7,w:1,h:1, to:["tidecave",11,15,"up"],
+      req:()=>hasItem("lantern")||"It's pitch-black in there — like the inside of a whale. You'd need a lantern."},
+  ],
+  ents:()=>[
+    {x:24,y:13,kind:"npc",id:"pinch",name:"Cousin Pinch",em:"🦀",cols:["#ff6b6b","#ffd166"],dlg:"pinch"},
+    {x:6,y:14,kind:"npc",id:"marra",name:"Captain Marra",em:"⚓",cols:["#6fc7e8","#234"],dlg:"marra"},
+    {x:5,y:14,kind:"boat"},
+    {x:30,y:16,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+    {x:3,y:12,kind:"sign",text:"Glimmer Cove — mind the tide, and whatever you do, don't owe Cousin Pinch a favour."},
+    {x:31,y:8,kind:"sign",text:"Tide Cave. Dark as a squid's pocket in there."},
+    {x:18,y:21,kind:"chest",id:"c_c1",coins:14},
+    {x:4,y:4,kind:"sparkle",id:"c_s1"},
+    {x:34,y:16,kind:"sparkle",id:"c_s2"},
+  ],
+},
+
+tidecave:{
+  name:"Tide Cave", song:"cave", amb:"drip", dark:true,
+  rows:[
+  "rrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrccccc~~cccc~~cccccrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrccgcccccccccccgccrrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrcccccccccccccccccrrrr",
+  "rrrrrrrrrrccccrrrrrrrrrr",
+  "rrrrrrrrrrccccrrrrrrrrrr",
+  "rrrrrrrrrrccccrrrrrrrrrr",
+  "rrrrrrrrrrrccrrrrrrrrrrr",
+  "rrrrrrrrrrrccrrrrrrrrrrr",
+  ],
+  warps:[ {x:11,y:17,w:2,h:1, to:["cove",33,8,"down"]} ],
+  ents:()=>[
+    {x:12,y:2,kind:"pedestal",shard:2,need:"shells_done"},
+    {x:8,y:4,kind:"shell",i:0},{x:10,y:4,kind:"shell",i:1},{x:12,y:4,kind:"shell",i:2},
+    {x:14,y:4,kind:"shell",i:3},{x:16,y:4,kind:"shell",i:4},
+    {x:12,y:8,kind:"sign",text:"Five shells sing in the dark. Listen to their song, then answer it back, note for note."},
+    {x:4,y:11,kind:"chest",id:"t_c1",coins:20},
+    {x:19,y:11,kind:"sparkle",id:"t_s1"},
+  ],
+},
+
+peak:{
+  name:"Frostpeak", song:"peak", amb:"snow", outdoor:true,
+  rows:[
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+  "TT********************rrrrrrrr******TT",
+  "TT********************rrrrrrrr******TT",
+  "TT********************rrrdrrrr******TT",
+  "TT**********************************TT",
+  "TT****T************************T****TT",
+  "TT**********************************TT",
+  "TT********T****************T********TT",
+  "TTrrrrrrrrrrrr**rrrrrrrrrrrrrrrrrrrrTT",
+  "TT**********************************TT",
+  "TT***T**************************T***TT",
+  "TT**********************************TT",
+  "TT******************ii******ii******TT",
+  "TT************************************",
+  "TT************************************",
+  "TT******T********************T******TT",
+  "TT**********************************TT",
+  "TT**********************************TT",
+  "TT***T*********T*********T**********TT",
+  "TT**********************************TT",
+  "TT**********************************TT",
+  "TT********T**************T**********TT",
+  "TT**********************************TT",
+  "TT**********************************TT",
+  "TT******T***********T***************TT",
+  "TT**********************************TT",
+  "TT**********************************TT",
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+  ],
+  warps:[
+    {x:36,y:14,w:2,h:2, to:["village",1,11,"right"]},
+    {x:25,y:4,w:1,h:1, to:["icecave",11,13,"up"]},
+  ],
+  ents:()=>[
+    {x:12,y:6,kind:"npc",id:"yura",name:"Yura the Yeti",em:"🦣",cols:["#e8f4ff","#9bb8d4"],dlg:"yura"},
+    {x:13,y:6,kind:"fire"},
+    {x:20,y:17,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+    {x:33,y:14,kind:"sign",text:"Frostpeak trail. If you can still feel your nose, you're not high enough yet."},
+    {x:23,y:5,kind:"sign",text:"Ice Hollow. Slippier than a buttered penguin. Walk with care."},
+    {x:6,y:22,kind:"chest",id:"p_c1",coins:18},
+    {x:30,y:20,kind:"sparkle",id:"p_s1"},
+    {x:4,y:10,kind:"sparkle",id:"p_s2"},
+  ],
+},
+
+icecave:{
+  name:"Ice Hollow", song:"cave", amb:"snow", twilight:true,
+  rows:[
+  "rrrrrrrrrrrrrrrrrrrrrr",
+  "rrrrrrrrrccccrrrrrrrrr",
+  "rrrrrrrrrccccrrrrrrrrr",
+  "rriiiiiiiiiiiiiiiiiirr",
+  "rriiiiiiiiiiiiiiiiiirr",
+  "rriiiiiiiiiiiiiiiiiirr",
+  "rriiiiiiiiiiiiiiiiiirr",
+  "rriiiiiiiiiiiiiiiiiirr",
+  "rriiiiiiiiiiiiiiiiiirr",
+  "rriiiiiiiiiiiiiiiiiirr",
+  "rriiiiiiiiiiiiiiiiiirr",
+  "rriiiiiiiiiiiiiiiiiirr",
+  "rrccccccccccccccccccrr",
+  "rrccccccccccccccccccrr",
+  "rrrrrrrrrrrccrrrrrrrrr",
+  "rrrrrrrrrrrccrrrrrrrrr",
+  ],
+  warps:[ {x:11,y:15,w:2,h:1, to:["peak",25,5,"down"]} ],
+  ents:()=>{
+    const e=[
+      {x:10,y:1,kind:"pedestal",shard:3,need:null},
+      {x:12,y:12,kind:"sign",text:"The ice remembers every step — and won't let you stop halfway. Slide wisely."},
+      {x:4,y:4,kind:"boulder"},{x:13,y:4,kind:"boulder"},
+      {x:10,y:5,kind:"boulder"},{x:18,y:5,kind:"boulder"},
+      {x:6,y:6,kind:"boulder"},{x:12,y:6,kind:"boulder"},
+      {x:11,y:7,kind:"boulder"},{x:16,y:8,kind:"boulder"},
+      {x:9,y:9,kind:"boulder"},{x:7,y:10,kind:"boulder"},
+    ];
+    if(!flag("got_mitten")) e.push({x:19,y:3,kind:"mitten"});
+    return e;
+  },
+},
+
+crater:{
+  name:"Starfall Crater", song:"crater", amb:"starbits",
+  rows:[
+  "rrrrrrrrrrrrrccrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrrccrrrrrrrrrrrrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrcccccmmmmmmmmmmmmmmcccccrr",
+  "rrcccccmmmmmmmmmmmmmmcccccrr",
+  "rrcccccmmmmmmmmmmmmmmcccccrr",
+  "rrcccccmmmmmmmmmmmmmmcccccrr",
+  "rrcccccmmmmmmmmmmmmmmcccccrr",
+  "rrcccccmmmmmmmmmmmmmmcccccrr",
+  "rrcccccmmmmmmmmmmmmmmcccccrr",
+  "rrcccccmmmmmmmmmmmmmmcccccrr",
+  "rrcccccmmmmmmmmmmmmmmcccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+  ],
+  warps:[ {x:13,y:0,w:2,h:1, to:["village",16,22,"up"]} ],
+  ents:()=>{
+    const e=[
+      {x:13,y:4,kind:"sign",text:"A cracked mural: 'First the FLAME that warms the hearth, then the LEAF that whispers, then the WAVE that wanders, and last the quiet SNOW.'"},
+      {x:9,y:10,kind:"pillar",sym:"flame"},
+      {x:18,y:10,kind:"pillar",sym:"leaf"},
+      {x:9,y:16,kind:"pillar",sym:"wave"},
+      {x:18,y:16,kind:"pillar",sym:"snow"},
+      {x:5,y:7,kind:"ruin"},{x:22,y:7,kind:"ruin"},{x:4,y:19,kind:"ruin"},{x:23,y:20,kind:"ruin"},
+      {x:22,y:20,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+      {x:3,y:5,kind:"sparkle",id:"cr_s1"},
+      {x:24,y:21,kind:"sparkle",id:"cr_s2"},
+      {x:20,y:3,kind:"chest",id:"cr_c1",coins:16},
+    ];
+    if(flag("pillars_done") && !flag("shard_light"))
+      e.push({x:13,y:13,kind:"npc",id:"lumen",name:"Lumen",em:"⭐",cols:["#fff6c9","#ffd166"],dlg:"lumen"});
+    return e;
+  },
+},
+};
+/*WORLD-END*/
+
+/* normalize maps: pad rows, compute dims */
+for(const id in MAPS){
+  const m = MAPS[id];
+  m.w = Math.max(...m.rows.map(r=>r.length));
+  m.h = m.rows.length;
+  m.rows = m.rows.map(r=>r.padEnd(m.w, r[r.length-1]));
+  m.id = id;
+}
+function tileAt(m,tx,ty){
+  if(tx<0||ty<0||tx>=m.w||ty>=m.h) return "#";
+  return m.rows[ty][tx];
+}
+
+/* =====================================================================
+   DIALOGUE ENGINE — async scripts with typewriter text & choices
+   ===================================================================== */
+const dlgEl=$("#dlg"), dlgText=$("#dlgtext"), dlgOpts=$("#dlgopts"), dlgMore=$("#dlgmore");
+let dlgResolve=null, dlgChoiceResolve=null, dlgTyping=false, dlgFull="", dlgShown=0, dlgTimer=null, dlgSel=0;
+
+function dlgSetSpeaker(em,who){
+  $("#dlgname .face").textContent=em||"";
+  $("#dlgname .who").textContent=who||"";
+}
+function typeStep(){
+  // reveal next char, skipping whole html tags
+  if(dlgShown>=dlgFull.length){ dlgTyping=false; clearInterval(dlgTimer); dlgMore.style.visibility="visible"; return; }
+  if(dlgFull[dlgShown]==="<"){ const close=dlgFull.indexOf(">",dlgShown); dlgShown=(close<0?dlgFull.length:close+1); }
+  else dlgShown++;
+  dlgText.innerHTML=dlgFull.slice(0,dlgShown);
+  if(dlgShown%3===0) sfx("blip");
+}
+function say(em,who,text){
+  return new Promise(res=>{
+    mode="dialog"; dlgEl.classList.add("on");
+    dlgSetSpeaker(em,who);
+    dlgOpts.innerHTML=""; dlgMore.style.visibility="hidden";
+    dlgFull=text; dlgShown=0; dlgTyping=true;
+    dlgText.innerHTML="";
+    clearInterval(dlgTimer); dlgTimer=setInterval(typeStep,16);
+    dlgResolve=res;
+  });
+}
+function choice(em,who,text,options){
+  return new Promise(res=>{
+    mode="dialog"; dlgEl.classList.add("on");
+    dlgSetSpeaker(em,who);
+    dlgText.innerHTML=text; dlgFull=text; dlgShown=text.length; dlgTyping=false;
+    dlgMore.style.visibility="hidden";
+    dlgOpts.innerHTML=""; dlgSel=0; dlgChoiceResolve=res;
+    options.forEach((o,i)=>{
+      const b=document.createElement("button");
+      b.innerHTML=o; if(i===0) b.classList.add("sel");
+      b.addEventListener("click",ev=>{ ev.stopPropagation(); resolveChoice(i); });
+      dlgOpts.appendChild(b);
+    });
+  });
+}
+function resolveChoice(i){
+  if(!dlgChoiceResolve) return;
+  const r=dlgChoiceResolve; dlgChoiceResolve=null;
+  sfx("blip2"); dlgOpts.innerHTML="";
+  r(i);
+}
+function dlgAdvance(){
+  if(dlgChoiceResolve){ resolveChoice(dlgSel); return; }
+  if(dlgTyping){ // reveal all
+    dlgShown=dlgFull.length; dlgText.innerHTML=dlgFull; dlgTyping=false;
+    clearInterval(dlgTimer); dlgMore.style.visibility="visible"; return;
+  }
+  if(dlgResolve){ const r=dlgResolve; dlgResolve=null; r(); }
+}
+function dlgMoveSel(d){
+  if(!dlgChoiceResolve) return;
+  const btns=[...dlgOpts.children]; if(!btns.length) return;
+  dlgSel=(dlgSel+d+btns.length)%btns.length;
+  btns.forEach((b,i)=>b.classList.toggle("sel",i===dlgSel));
+  sfx("blip");
+}
+let dlgBusy=false;
+async function runDlg(fn){
+  if(dlgBusy) return;
+  dlgBusy=true; mode="dialog";
+  try{ await fn(); }catch(e){ console.error(e); }
+  dlgBusy=false;
+  dlgEl.classList.remove("on");
+  if(mode==="dialog") mode="play";
+  save(); refreshHUD();
+}
+const N=["🌠","",]; // narrator face/name shorthand
+
+/* =====================================================================
+   SHOPS
+   ===================================================================== */
+const SHOPS={
+  marlo:{ title:"Marlo's Trading Post", items:[
+    {id:"lantern",price:25,once:true},
+    {id:"cloak",price:40,once:true},
+    {id:"honeycake",price:10},
+    {id:"map",price:15,once:true},
+    {id:"charm",price:60,once:true},
+  ]},
+};
+function openShop(id){
+  const sh=SHOPS[id]; mode="panel";
+  $("#shoptitle").childNodes[0].textContent=sh.title+" ";
+  renderShop(id);
+  $("#shop").classList.add("on");
+}
+function renderShop(id){
+  const sh=SHOPS[id];
+  $("#shopcoins").innerHTML="Your pouch: 🪙 "+S.coins;
+  const body=$("#shopbody"); body.innerHTML="";
+  sh.items.forEach(en=>{
+    const it=ITEMS[en.id];
+    const owned=en.once&&hasItem(en.id);
+    const row=document.createElement("div"); row.className="srow";
+    row.innerHTML='<span class="em">'+it.em+'</span><div class="inf"><b>'+it.name+
+      "</b><p>"+it.d+"</p></div>";
+    const btn=document.createElement("button"); btn.className="buy";
+    btn.textContent=owned?"Owned":"🪙 "+en.price;
+    btn.disabled=owned||S.coins<en.price;
+    btn.addEventListener("click",()=>{
+      if(S.coins<en.price) return;
+      S.coins-=en.price; give(en.id); sfx("buy"); refreshHUD(); renderShop(id);
+      if(en.id==="lantern") toast("🏮 The tide cave won't be so dark now!");
+      if(en.id==="cloak") toast("🧥 Frostpeak, here you come!");
+    });
+    row.appendChild(btn); body.appendChild(row);
+  });
+}
+
+/* =====================================================================
+   NPC DIALOGUE SCRIPTS
+   ===================================================================== */
+const DLGS={
+
+async elm(){
+  const E=["👵","Grandmother Elm"];
+  if(!flag("intro_done")){
+    await say("🌠","", "Three nights ago, a star fell over the Hollow. The sky cracked like an egg of light… and the village <b>Heartlamp</b> went dark.");
+    await say(...E,"There you are, little keeper. Don't look so worried — old lamps and old ladies are tougher than they seem.");
+    await say(...E,"When the star fell, it <b>shattered</b>. Five shards, scattered across the Hollow. The Heartlamp won't wake until every one comes home.");
+    await say(...E,"Without it, the cold creeps in. Gardens wilt. Soup goes lukewarm. <i>Lukewarm soup</i>, child. We cannot allow it.");
+    const c=await choice(...E,"Will you gather the shards for us?",["I'll do it!","Five?! That's a lot of shards…"]);
+    if(c===1) await say(...E,"Ha! One at a time, dear. Even mountains are climbed in steps.");
+    await say(...E,"The first shard fell close — folk saw a glow in the <b>Old Mill</b>, north-east of the square. The miller locked his levers in a riddle, mind you. Read everything you find.");
+    await say(...E,"Off you go. And take the path — the flowerbeds have suffered enough this week.");
+    setFlag("intro_done");
+    startQuest("relight"); startQuest("main1");
+    return;
+  }
+  if(flag("shard_hearth")&&!flag("elm_c1")){
+    setFlag("elm_c1");
+    await say(...E,"You found it! Look at it glow — like a baby sun in your satchel. The Heartlamp flickered just now, I <i>felt</i> it.");
+    await say(...E,"The second shard fell into the <b>Whispering Woods</b>. I've had the north gate unbolted for you.");
+    await say(...E,"The Owl Sage <b>Quill</b> guards the deep wood. Wise old bird, terribly fond of riddles. And watch for the fox — he runs a 'toll'. Foxes, honestly.");
+    await say(...E,"Here — pocket money for a brave keeper. Spend it at Marlo's; he stocks useful things.");
+    addCoins(20);
+    startQuest("main2");
+    return;
+  }
+  if(flag("shard_whisper")&&!flag("elm_c2")){
+    setFlag("elm_c2");
+    await say(...E,"Two shards! The lamp gave a little hum this morning, like a kettle thinking about boiling.");
+    await say(...E,"The third sleeps in the <b>tide cave</b> at Glimmer Cove, east of here. Joss has finally mended the boardwalk.");
+    await say(...E,"That cave is darker than the inside of a closed book. Buy a <b>lantern</b> from Marlo before you go — promise me.");
+    addCoins(15);
+    startQuest("main3");
+    return;
+  }
+  if(flag("shard_tide")&&!flag("elm_c3")){
+    setFlag("elm_c3");
+    await say(...E,"Three! You smell of seaweed and victory, child.");
+    await say(...E,"The fourth shard fell on <b>Frostpeak</b>, west of the village. The wind up there steals noses. A <b>warm cloak</b> from Marlo's is not optional.");
+    await say(...E,"They say a yeti lives by the ice hollow. Be kind to it. Everyone deserves kindness — especially anyone stuck with cold paws.");
+    addCoins(15);
+    startQuest("main4");
+    return;
+  }
+  if(flag("shard_frost")&&!flag("elm_c4")){
+    setFlag("elm_c4");
+    await say(...E,"Four shards! The Heartlamp is murmuring in its sleep now. One left… and I know where.");
+    await say(...E,"The star itself came down in the <b>crater</b> beyond the old observatory, south of the square. This key opens the star-iron gate.");
+    give("starkey");
+    await say(...E,"Whatever you find down there, remember: it fell a very long way, and it is probably frightened. Lead with kindness, little keeper.");
+    addCoins(15);
+    startQuest("main5");
+    return;
+  }
+  if(S.shards>=5&&!flag("ended")){
+    await say(...E,"All five! Child, the whole square is holding its breath. Go on — <b>touch the shards to the Heartlamp!</b>");
+    return;
+  }
+  if(flag("ended")){
+    await say(...E,"Warm soup, warm toes, and a sky that owes us a favour. You did that, little keeper. Now go play — the Hollow is yours.");
+    return;
+  }
+  // default hints by chapter
+  if(!flag("shard_hearth")) await say(...E,"The Old Mill, dear — north-east of the square. The miller's rhyme is the key. Read the signs, top to bottom.");
+  else if(!flag("shard_whisper")) await say(...E,"Through the north gate to the woods. If the fox wants a toll, foxes can be paid in <b>sweets or berries</b>. Quill will test your wits after.");
+  else if(!flag("shard_tide")) await say(...E,"Glimmer Cove, to the east. Don't enter the tide cave without a <b>lantern</b>, you hear me? The shells in there sing — listen well.");
+  else if(!flag("shard_frost")) await say(...E,"Frostpeak, to the west — with the <b>cloak</b>, mind. On the ice, you can't stop walking halfway. Plan each slide before you step.");
+  else await say(...E,"South, past the observatory gate. The mural keeps the order of things: <b>flame, leaf, wave, snow</b>. The old stones remember.");
+},
+
+async pip(){
+  const P=["🧒","Pip"];
+  if(!S.quests.kite){
+    await say(...P,"My kite! The wind grabbed it and ran off into the <b>Whispering Woods</b> like a big invisible thief!");
+    await say(...P,"It's red with a rainbow tail. If a tree's wearing it, that tree is a CRIMINAL.");
+    startQuest("kite");
+    return;
+  }
+  if(S.quests.kite==="on"&&hasItem("kite")){
+    take("kite");
+    await say(...P,"MY KITE! You're the greatest hero in the entire Hollow and possibly several other hollows!");
+    await say(...P,"Here — my whole life savings. Worth it.");
+    addCoins(15); doneQuest("kite");
+    return;
+  }
+  if(S.quests.kite==="done"){
+    if(flag("ended")) await say(...P,"The Heartlamp is SO bright! Me and the kite watched the whole thing from the roof. Don't tell mum about the roof part.");
+    else await say(...P,"The kite flies even better now. I think it had an adventure too.");
+    return;
+  }
+  await say(...P,"Any sign of it? Look for a tree with terrible fashion sense — red, with a rainbow tail!");
+},
+
+async tilda(){
+  const Td=["👩‍🍳","Baker Tilda"];
+  if(!S.quests.berries){
+    await say(...Td,"Sniff that! Honeycake batch forty-two… and my <b>moonberry</b> jar is empty. Catastrophe.");
+    await say(...Td,"The bushes in the south woods grow the plump ones. Bring me <b>5 moonberries</b> and I'll pay proper coin — plus a honeycake, warm.");
+    startQuest("berries");
+    return;
+  }
+  if(S.quests.berries==="on"&&itemCount("berry")>=5){
+    take("berry",5);
+    await say(...Td,"Plump as Sunday! You, my friend, are now an official Friend of the Bakery. That comes with cake.");
+    addCoins(20); give("honeycake"); doneQuest("berries");
+    await say(...Td,"Word of advice: foxes would trade their own tails for a honeycake. If one ever blocks your way… well. You didn't hear it from me.");
+    return;
+  }
+  if(S.quests.berries==="on"){
+    await say(...Td,"That's "+itemCount("berry")+" of 5 moonberries so far. The bushes regrow while you're away — generous things, bushes.");
+    return;
+  }
+  if(flag("ended")) await say(...Td,"Celebration batch! Free smells for everyone! The actual cakes are still ten coins, I'm not made of sugar.");
+  else await say(...Td,"Need anything sweet, Marlo stocks my honeycakes. Baked this morning!");
+},
+
+async marlo(){
+  const M=["🧔","Marlo"];
+  if(!flag("met_marlo")){ setFlag("met_marlo");
+    await say(...M,"Welcome to the Trading Post! Lanterns, cloaks, maps — everything a hero needs, and a few things heroes buy anyway.");
+  }
+  const c=await choice(...M,"What'll it be?",["Show me your wares","Any advice?","Just passing by"]);
+  if(c===0){ openShop("marlo"); return; }
+  if(c===1){
+    if(!flag("shard_whisper")) await say(...M,"Foxes love honeycake. Owls love riddles. Shopkeepers love customers. The woods will make sense when you get there.");
+    else if(!flag("shard_tide")) await say(...M,"The tide cave eats lantern-less visitors. Not literally. Probably. The <b>lantern</b> is 25 coins and worth every one.");
+    else if(!flag("shard_frost")) await say(...M,"Frostpeak wind goes straight through cheap coats. Mine isn't cheap. That's the sales pitch, take it or shiver.");
+    else await say(...M,"The <b>Star Charm</b> is pure showing-off, I admit it. But you've earned a little sparkle, eh?");
+    return;
+  }
+  await say(...M,"Door's always open! Mostly because the hinge is broken, but also for you.");
+},
+
+async joss(){
+  const J=["🎣","Joss the Fisher"];
+  if(!flag("shard_whisper")) await say(...J,"Boardwalk east is in splinters — storm took it the night the star fell. I'm on it. Fish are supervising.");
+  else if(!flag("met_joss")){ setFlag("met_joss");
+    await say(...J,"Boardwalk's fixed! Glimmer Cove is open. Say hello to Cousin Pinch for me — the crab. Long story. Good crab.");
+  }
+  else if(flag("ended")) await say(...J,"Heartlamp's so bright the night fish are confused. They've started a day shift. Nature, eh?");
+  else await say(...J,"Tide's friendly today. Watch the pier planks — third one's a thinker, takes its time holding you up.");
+},
+
+async fox(){
+  const F=["🦊","Bramble the Fox"];
+  if(flag("fox_friend")){
+    if(flag("ended")) await say(...F,"The lamp-light reaches all the way into the woods now. Excellent for dramatic silhouettes. I look <i>fantastic</i>.");
+    else await say(...F,"The pass is yours, friend. Tell the owl Bramble says the third riddle is the tricky one. It's always rivers with her.");
+    return;
+  }
+  await say(...F,"Halt! This is the deep pass, and I am its extremely official toll-fox.");
+  await say(...F,"The toll is one <b>honeycake</b> — or, for customers of taste, <b>six moonberries</b>. Foxes invented fair prices, you know.");
+  const opts=[];
+  const can_cake=hasItem("honeycake"), can_berry=itemCount("berry")>=6;
+  opts.push(can_cake?"Pay one honeycake 🍯":"(You have no honeycake)");
+  opts.push(can_berry?"Pay six moonberries 🫐":"(You have "+itemCount("berry")+"/6 moonberries)");
+  opts.push("Maybe later");
+  const c=await choice(...F,"Pay the toll?",opts);
+  if(c===0&&can_cake){
+    take("honeycake"); setFlag("fox_friend"); sfx("success");
+    await say(...F,"<i>Honeycake!</i> Tilda's batch, still warm — you absolute legend. The pass is open. Mind the gossiping trees; they exaggerate.");
+    respawnEnts();
+  } else if(c===1&&can_berry){
+    take("berry",6); setFlag("fox_friend"); sfx("success");
+    await say(...F,"Mmf— plump ones too. <i>Mmf.</i> Official toll-fox business concludes: pass, friend, and tell the owl I sent you.");
+    respawnEnts();
+  } else if((c===0&&!can_cake)||(c===1&&!can_berry)){
+    await say(...F,"An empty pocket is not legal tender, friend. Tilda's bakery smells promising, and the berry bushes are just south of here. Off you trot.");
+  } else {
+    await say(...F,"I'll be here. Tolls don't collect themselves. Sadly. I have asked them to.");
+  }
+},
+
+async quill(){
+  const Q=["🦉","Quill the Owl Sage"];
+  if(flag("owl_done")){
+    if(!flag("shard_whisper")) await say(...Q,"Your prize rests on the pedestal, sharp-wits. Hoo! Do take it before the squirrels file a claim.");
+    else if(flag("ended")) await say(...Q,"The Heartlamp burns, the woods whisper of nothing else. You have a standing invitation to riddle night. Bring snacks.");
+    else await say(...Q,"Remember, keeper: the woods' sign is the <b>Leaf</b>. Old stones have long memories. Hoo.");
+    return;
+  }
+  if(!flag("owl_met")){ setFlag("owl_met");
+    await say(...Q,"Hoo! A visitor with mud on their boots and purpose in their eyes. I am Quill. The shard you seek sleeps beside me.");
+    await say(...Q,"It is not <i>locked</i>, little keeper. It is <i>earned</i>. Three riddles. Wrong answers cost nothing but pride. Shall we?");
+  } else {
+    await say(...Q,"Back for the riddles? Hoo! Wisdom loves a second attempt.");
+  }
+  // riddle 1
+  while(true){
+    const a=await choice(...Q,"Riddle the first: <i>I fall in autumn but am never hurt. I dance with the wind and dress in dirt.</i>",
+      ["A raindrop","A leaf","A conker"]);
+    if(a===1){ sfx("success"); await say(...Q,"A <b>leaf</b>! Crisp thinking. Hoo!"); break; }
+    sfx("error"); await say(...Q,"Hoo, close — but think of what the trees let go of when the cold comes…");
+  }
+  while(true){
+    const a=await choice(...Q,"Riddle the second: <i>The more of me you take, the more you leave behind.</i>",
+      ["Footsteps","Cake","Time"]);
+    if(a===0){ sfx("success"); await say(...Q,"<b>Footsteps</b>! You leave a trail of them right to my tree. Hoo hoo!"); break; }
+    sfx("error"); await say(...Q,"Tempting! But look down at the path behind you and try once more…");
+  }
+  while(true){
+    const a=await choice(...Q,"Riddle the last: <i>I have a bed but never sleep. I run but never walk.</i>",
+      ["A dream","A clock","A river"]);
+    if(a===2){ sfx("success"); await say(...Q,"A <b>river</b>! Bramble warned you about that one, didn't he? Cheeky fox."); break; }
+    sfx("error"); await say(...Q,"Hoo! No — it babbles, it winds, and fish call it home…");
+  }
+  setFlag("owl_done"); respawnEnts(); sfx("fanfare");
+  await say(...Q,"Three of three! The shard is yours — take it from the pedestal with my blessing.");
+  await say(...Q,"And carry this in your memory: when the old stones ask, the woods answer with the <b>Leaf</b>. You'll know the moment, keeper. Hoo.");
+},
+
+async pinch(){
+  const P=["🦀","Cousin Pinch"];
+  if(!flag("met_pinch")){ setFlag("met_pinch");
+    await say(...P,"Well well! A land-cousin! Joss sent you, I can smell the boardwalk varnish. Welcome to my office. The office is the beach.");
+  }
+  const opts=["Buy the Pearl Charm (🪙 30)","Buy a rumour (🪙 5)","Just saying hi"];
+  if(hasItem("pearl")) opts[0]="(Pearl Charm — sold!)";
+  const c=await choice(...P,"Pinch's Imports has TWO products. Quality over quantity, cousin.",opts);
+  if(c===0&&!hasItem("pearl")){
+    if(S.coins>=30){ S.coins-=30; give("pearl"); sfx("buy");
+      await say(...P,"She's yours! That pearl <b>hums when hidden treasure is near</b>. Genuine cove magic. Mostly genuine. Sixty percent genuine.");
+    } else await say(...P,"Thirty coins, cousin. The pearl knows its worth, and frankly so do I.");
+    return;
+  }
+  if(c===1){
+    if(S.coins>=5){ S.coins-=5; refreshHUD(); sfx("coin");
+      const rumours=[
+        "They say a snail knight is questing across <b>all five regions</b>. Greet him everywhere and he pays a fortune in gratitude. Slowly.",
+        "Glittery little <b>sparkles</b> hide in every corner of the Hollow — worth five coins a piece. Check behind things. Crabs always check behind things.",
+        "The ice hollow? <i>Plan</i> your slides, cousin. You stop when you hit something. Be somewhere worth stopping.",
+        "The old crater stones wake in a special order. Some mural up there spells it out — flame first, snow last, something like that.",
+        "Tilda's bushes regrow their berries whenever you leave the woods and come back. Renewable snacks!",
+      ];
+      const r=rumours[(S.flags.rumour_i=((S.flags.rumour_i||0)+1))%rumours.length];
+      await say(...P,r);
+    } else await say(...P,"Five coins per rumour. Gossip is a delicacy, cousin.");
+    return;
+  }
+  await say(...P,"Hi yourself! Watch the sixth wave — it's always the showoff.");
+},
+
+async marra(){
+  const M=["⚓","Captain Marra"];
+  if(!flag("shard_tide")) await say(...M,"That cave's been groaning a strange song since the star fell. Five notes, over and over. If you go in, <i>listen before you touch</i>, sailor.");
+  else if(flag("ended")) await say(...M,"From the water you can see the Heartlamp's glow on the clouds. Best lighthouse this coast ever had. I'd salute, but I'd drop my tea.");
+  else await say(...M,"You sang the shells right, didn't you? Knew it. Sea picks its favourites and it picked you.");
+},
+
+async yura(){
+  const Y=["🦣","Yura the Yeti"];
+  if(!S.quests.mitten&&!flag("got_mitten")){
+    await say(...Y,"Oh! Small warm person. Hello. Yura was not crying. Yura had <i>snow</i> in eye.");
+    await say(...Y,"Yura lost mitten in ice hollow. Left paw one. Paw is now sad and cold and the size of dinner table. Help maybe?");
+    startQuest("mitten");
+    return;
+  }
+  if(S.quests.mitten==="on"&&hasItem("mitten")){
+    take("mitten");
+    await say(...Y,"MITTEN! Paw is saved! You are best small warm person Yura ever met!");
+    await say(...Y,"Take shiny coins. Yura finds many in snow. Yura has no pockets, only you have pockets. Is fair.");
+    addCoins(30); doneQuest("mitten");
+    await say(...Y,"Secret for friend: on ice, Yura just slides until bump into something. Trick is: <b>choose good bumps</b>.");
+    return;
+  }
+  if(S.quests.mitten==="on"){
+    await say(...Y,"Mitten is in ice hollow somewhere east side. Yura slid everywhere looking. Mostly into walls.");
+    return;
+  }
+  if(flag("ended")) await say(...Y,"Yura can see warm light from mountain. Like tiny campfire for whole valley. Yura approves.");
+  else await say(...Y,"Both paws warm now. Yura is unstoppable. Yura will nap to celebrate.");
+},
+
+async plod(){
+  const P=["🐌","Sir Plod"];
+  if(!S.quests.plod) startQuest("plod");
+  const here=S.map;
+  if(!S.plod[here]){
+    S.plod[here]=true;
+    const n=Object.keys(S.plod).length;
+    const lines={
+      village:"A knight! Questing! Yes, I am Sir Plod, and I am crossing the ENTIRE Hollow. Started in spring. Of some year.",
+      forest:"You again! See? PROGRESS. The trees here gossip terribly. About my pace, mostly. Rude.",
+      cove:"Sand, my old nemesis. Beautiful, but it gets in the shell. Still — onward! Eventually!",
+      peak:"C-c-cold! But a knight does not stop. A knight merely proceeds extremely gradually.",
+      crater:"The final region! I have crossed the WHOLE Hollow! They said it could not be done by a snail. They were nearly right!",
+    };
+    await say(...P,lines[here]||"Onward!");
+    if(n>=5){
+      await say(...P,"And YOU have witnessed the entire quest! Every region! A knight rewards his squire-witness. My treasure — I shan't be needing it. Too heavy anyway.");
+      addCoins(50); give("medal"); doneQuest("plod"); sfx("fanfare");
+    } else {
+      await say(...P,"You've now seen me in <b>"+n+" of 5</b> regions. Witness my whole journey and you shall share in my treasure. Knight's honour!");
+    }
+    return;
+  }
+  await say(...P,"Still here. Building momentum. It takes several days to build momentum when you're a snail. It's mostly paperwork.");
+},
+
+async lumen(){
+  const L=["⭐","Lumen"];
+  await say(...L,"…oh. Oh! A person. A small ground-person. Hello. Please excuse the crater, I did knock, in a way.");
+  await say(...L,"I am <b>Lumen</b>. I was a sky-star. Then I sneezed — long story, cosmic dust — and I <i>fell</i>. Pieces of me went everywhere.");
+  await say(...L,"You… you gathered them? You climbed the cold mountain and sang to shells and out-riddled an owl… for my pieces?");
+  const c=await choice(...L,"Why would you do all that?",
+    ["Our village needs the Heartlamp","Because you were lost, and lost things should go home","Honestly? It was a great adventure"]);
+  if(c===0) await say(...L,"A lamp that keeps a whole village warm… that is a very good reason to fall, then. I feel better about the crater.");
+  if(c===1) await say(...L,"<i>Lost things should go home.</i> I will keep those words. Stars collect very few things, but I will keep those.");
+  if(c===2) await say(...L,"HA! Honest! I like you, ground-person. The sky is honest too — that's why it can't hide its stars.");
+  await say(...L,"Take my last piece — the <b>Shard of Light</b>. Set me in your Heartlamp, and I'll be a sky for your whole village. It's a promotion, really.");
+  gainShard(4); doneQuest("main5"); sfx("shard");
+  toast("⭐ Got the <b>Shard of Light</b> — all 5 shards!",3000);
+  await say(...L,"Go on — I'll race you there. (I will travel as a glow in your satchel. The racing is emotional.)");
+  respawnEnts();
+},
+};
+
+/* =====================================================================
+   PUZZLES
+   ===================================================================== */
+/* --- Mill levers --- */
+const MILL_ORDER=["W","N","E","S"];
+let millSeq=[];
+async function pullLever(e){
+  if(flag("mill_solved")){ await runDlg(async()=>{ await say("⚙️","Old Lever","It sits snugly in place. The gears hum, content."); }); return; }
+  sfx("lever");
+  millSeq.push(e.id);
+  const ok=MILL_ORDER.slice(0,millSeq.length).every((v,i)=>v===millSeq[i]);
+  if(!ok){
+    millSeq=[]; sfx("error");
+    toast("⚙️ <b>CLUNK!</b> The gears grind and every lever springs back…");
+    shake=8;
+    return;
+  }
+  if(millSeq.length===MILL_ORDER.length){
+    setFlag("mill_solved"); millSeq=[];
+    sfx("fanfare"); flashT=20;
+    toast("✨ The millstones turn! Something glows on the pedestal…",3200);
+    respawnEnts(); save();
+  } else {
+    toast("⚙️ <i>clk…</i> that one settled into place. ("+millSeq.length+" of 4)");
+  }
+}
+
+/* --- Tide cave singing shells --- */
+const SHELL_NOTES=[0,3,5,7,10]; // pentatonic offsets
+let shellGame={phase:"idle",round:0,seq:[],idx:0,glow:[0,0,0,0,0],timers:[]};
+function shellReset(){
+  shellGame.timers.forEach(clearTimeout);
+  shellGame={phase:"idle",round:0,seq:[],idx:0,glow:[0,0,0,0,0],timers:[]};
+}
+function shellGlow(i,len){ shellGame.glow[i]=performance.now()+len; }
+function shellPlaySeq(){
+  shellGame.phase="show";
+  shellGame.seq.forEach((s,k)=>{
+    shellGame.timers.push(setTimeout(()=>{
+      if(S.map!=="tidecave") return;
+      shellGlow(s,420); sfx("shell"+s);
+      if(k===shellGame.seq.length-1)
+        shellGame.timers.push(setTimeout(()=>{ shellGame.phase="input"; shellGame.idx=0;
+          toast("🐚 Your turn — repeat the song! (round "+(shellGame.round)+" of 3)"); },520));
+    }, 600*(k+1)));
+  });
+}
+function shellStartRound(r){
+  shellGame.round=r;
+  const len=2+r; // 3,4,5
+  shellGame.seq=Array.from({length:len},()=>Math.floor(Math.random()*5));
+  toast("🐚 Listen to the shells…");
+  shellPlaySeq();
+}
+async function touchShell(e){
+  if(flag("shells_done")){ shellGlow(e.i,300); sfx("shell"+e.i); return; }
+  if(shellGame.phase==="show") return;
+  if(shellGame.phase==="idle"){ shellStartRound(1); return; }
+  // input phase
+  shellGlow(e.i,300); sfx("shell"+e.i);
+  if(e.i===shellGame.seq[shellGame.idx]){
+    shellGame.idx++;
+    if(shellGame.idx>=shellGame.seq.length){
+      if(shellGame.round>=3){
+        setFlag("shells_done"); shellGame.phase="idle";
+        sfx("fanfare"); flashT=20;
+        toast("✨ The cave rings like a bell — the pedestal blazes to life!",3200);
+        respawnEnts(); save();
+      } else {
+        shellGame.phase="wait"; sfx("success");
+        shellGame.timers.push(setTimeout(()=>{ if(S.map==="tidecave") shellStartRound(shellGame.round+1); },900));
+      }
+    }
+  } else {
+    shellGame.phase="wait"; sfx("error"); shake=6;
+    toast("🐚 The shells hush… listen again.");
+    shellGame.timers.push(setTimeout(()=>{ if(S.map==="tidecave"){ toast("🐚 Once more…"); shellPlaySeq(); } },900));
+  }
+}
+
+/* --- Crater pillars --- */
+const PILLAR_ORDER=["flame","leaf","wave","snow"];
+const PILLAR_EMO={flame:"🔥",leaf:"🍃",wave:"🌊",snow:"❄️"};
+let pillarSeq=[];
+async function touchPillar(e){
+  if(flag("pillars_done")){ sfx("shell"+(PILLAR_ORDER.indexOf(e.sym))); return; }
+  if(pillarSeq.includes(e.sym)){ toast(PILLAR_EMO[e.sym]+" That stone already hums."); return; }
+  pillarSeq.push(e.sym);
+  const ok=PILLAR_ORDER.slice(0,pillarSeq.length).every((v,i)=>v===pillarSeq[i]);
+  if(!ok){
+    pillarSeq=[]; sfx("error"); shake=10;
+    toast("🪨 The stones rumble and go dark. The mural knows the true order…");
+    return;
+  }
+  sfx("shell"+(pillarSeq.length-1));
+  if(pillarSeq.length===PILLAR_ORDER.length){
+    setFlag("pillars_done"); pillarSeq=[];
+    sfx("fanfare"); flashT=26;
+    toast("🌟 The crater floods with light — something is waking at its heart!",3600);
+    respawnEnts(); save();
+  } else {
+    toast(PILLAR_EMO[e.sym]+" The stone hums awake… ("+pillarSeq.length+" of 4)");
+  }
+}
+
+/* =====================================================================
+   INTERACTIONS
+   ===================================================================== */
+function pedestalQuest(shard){ return ["main1","main2","main3","main4"][shard]; }
+async function interactEntity(e){
+  switch(e.kind){
+    case "npc": runDlg(DLGS[e.dlg]); break;
+    case "sign": runDlg(async()=>{ await say("🪧","", e.text); }); break;
+    case "doormsg": runDlg(async()=>{ await say("🚪","", e.text); }); break;
+    case "shopdoor": sfx("blip2"); runDlg(DLGS.marlo); break;
+    case "heartlamp": runDlg(heartlampDlg); break;
+    case "chest":{
+      if(S.got[e.id]){ runDlg(async()=>{ await say("🧰","Old Chest","Empty. Even the dust has been adventured away."); }); break; }
+      S.got[e.id]=true; sfx("chest");
+      if(e.coins){ addCoins(e.coins); toast("🧰 The chest creaks open — <b>"+e.coins+" coins!</b>"); }
+      if(e.item) give(e.item);
+      save();
+      break;
+    }
+    case "lever": pullLever(e); break;
+    case "shell": touchShell(e); break;
+    case "pillar": touchPillar(e); break;
+    case "bush":{
+      if(pickedBushes.has(e.id)){ toast("🫐 This bush is picked clean… it'll regrow while you're away."); break; }
+      pickedBushes.add(e.id); give("berry"); sfx("item");
+      break;
+    }
+    case "kitetree":{
+      if(S.quests.kite==="on"&&!hasItem("kite")&&!flag("kite_done")){
+        give("kite"); sfx("success");
+        runDlg(async()=>{ await say("🪁","", "You shake the branch and the <b>red kite</b> flops down onto your head, rainbow tail and all. CRIMINAL tree."); });
+      } else {
+        runDlg(async()=>{ await say("🌳","", "A grand old tree. It looks faintly guilty about something."); });
+      }
+      break;
+    }
+    case "mitten":{
+      setFlag("got_mitten"); give("mitten"); sfx("item"); respawnEnts();
+      toast("🧤 Found <b>Yura's mitten</b>! It's the size of a sleeping bag.");
+      break;
+    }
+    case "pedestal":{
+      const sh=SHARDS[e.shard];
+      if(e.need&&!flag(e.need)){
+        const hints={mill_solved:"The pedestal is dark. Four levers watch from the corners of the mill… the rhyme on the wall knows their order.",
+          owl_done:"The pedestal is dark. Quill the Owl Sage clears her throat meaningfully.",
+          shells_done:"The pedestal is dark. Somewhere behind you, five shells hum the start of a song."};
+        runDlg(async()=>{ await say("🗿","Pedestal", hints[e.need]||"It waits."); });
+        break;
+      }
+      if(flag("shard_"+sh.id)){ runDlg(async()=>{ await say("🗿","Pedestal","Starlight lingers here, warm as a remembered hug."); }); break; }
+      gainShard(e.shard); doneQuest(pedestalQuest(e.shard));
+      sfx("shard"); flashT=26;
+      const lines={
+        hearth:"🔥 The <b>Shard of Hearth</b>! It hums like a warm kitchen. (Remember: the hearth's sign is the <b>Flame</b>.)",
+        whisper:"🍃 The <b>Shard of Whispers</b>! It rustles softly, full of leaf-song.",
+        tide:"🌊 The <b>Shard of Tides</b>! It sloshes gently, like a bottled wave.",
+        frost:"❄️ The <b>Shard of Frost</b>! Cold to hold, but it makes your heart feel braver.",
+      };
+      runDlg(async()=>{ await say("✦","", lines[sh.id]||"A shard!"); });
+      respawnEnts(); save();
+      break;
+    }
+    case "sparkle": break; // collected on walkover
+    default: break;
+  }
+}
+async function heartlampDlg(){
+  const H=["🏮","The Heartlamp"];
+  if(flag("ended")){ await say(...H,"It burns gold and steady, painting long happy shadows across the square. Somewhere inside, Lumen is humming."); return; }
+  if(S.shards<5){
+    await say(...H,"The great lamp is cold and dark. Five empty settings wait inside the glass… you have <b>"+S.shards+" of 5</b> shards.");
+    return;
+  }
+  // ENDING
+  await say(...H,"The five shards lift out of your satchel on their own, drifting up like sleepy fireflies…");
+  await say("🌠","","One by one they settle into the glass — <b>flame… leaf… wave… snow…</b> and at the very heart, <b>Lumen</b>.");
+  sfx("fanfare"); flashT=40; setFlag("ended"); doneQuest("relight");
+  startFireworks();
+  await say("⭐","Lumen","Oh! Oh, it's <i>warm</i> in here. Hello, Willowdale! Your star is home!");
+  await say("👵","Grandmother Elm","…and the soup, little keeper, will be HOT. You've relit more than a lamp today. Look at them all smiling.");
+  await say("🌠","","Light rolls down every street of the Hollow — over the woods, the cove, the peak, the crater. The dark packs its bags without a fuss.");
+  save();
+  showCredits();
+}
+
+/* =====================================================================
+   ENGINE — map loading, movement, camera, interaction
+   ===================================================================== */
+let MAP=null;            // current map object
+let ents=[];             // live entities
+let baseCv=null, baseCtx=null;  // pre-rendered tile layer
+let cam={x:0,y:0};
+let shake=0, flashT=0;
+let pickedBushes=new Set();
+let particles=[], ambParts=[];
+let sliding=null;        // ice slide direction
+let pearlCool=0;
+const player={ w:16, h:12, speed:2.1, anim:0, moving:false };
+const SOLID_ENTS=new Set(["npc","chest","sign","doormsg","shopdoor","lever","shell","pedestal",
+  "pillar","heartlamp","kitetree","mitten","boulder","fire","boat","ruin","bush"]);
+
+function respawnEnts(){
+  ents=MAP.ents?MAP.ents():[];
+  ents=ents.filter(e=>!(e.kind==="sparkle"&&S.got[e.id]));
+}
+function loadMap(id,tx,ty,dir,silent){
+  MAP=MAPS[id]; S.map=id;
+  S.x=tx*T+T/2; S.y=ty*T+T/2; S.dir=dir||S.dir;
+  sliding=null;
+  millSeq=[]; pillarSeq=[]; shellReset();
+  if(id==="forest") pickedBushes=new Set();
+  respawnEnts();
+  renderBase();
+  initAmbience();
+  if(!silent){
+    showLocName(MAP.name);
+    playSong(MAP.song);
+    sfx("warp");
+  }
+  save();
+}
+function entAt(tx,ty){
+  return ents.find(e=>e.x===tx&&e.y===ty&&SOLID_ENTS.has(e.kind));
+}
+function blockedAt(px,py){
+  // px,py are world pixel coords of a point
+  const tx=Math.floor(px/T), ty=Math.floor(py/T);
+  if(SOLID.has(tileAt(MAP,tx,ty))) return true;
+  if(entAt(tx,ty)) return true;
+  return false;
+}
+function boxBlocked(x,y){
+  const hw=player.w/2, hh=player.h/2;
+  return blockedAt(x-hw,y-hh)||blockedAt(x+hw,y-hh)||blockedAt(x-hw,y+hh)||blockedAt(x+hw,y+hh);
+}
+function playerTile(){ return [Math.floor(S.x/T), Math.floor(S.y/T)]; }
+
+const DIRV={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+function tryInteract(){
+  const [tx,ty]=playerTile();
+  const [dx,dy]=DIRV[S.dir];
+  let e=ents.find(o=>o.x===tx+dx&&o.y===ty+dy&&o.kind!=="sparkle");
+  if(!e) e=ents.find(o=>o.x===tx&&o.y===ty&&o.kind!=="sparkle");
+  if(e){ interactEntity(e); return; }
+}
+function checkWarps(){
+  const [tx,ty]=playerTile();
+  for(const w of (MAP.warps||[])){
+    if(tx>=w.x&&tx<w.x+(w.w||1)&&ty>=w.y&&ty<w.y+(w.h||1)){
+      if(w.req){
+        const r=w.req();
+        if(r!==true){
+          // push back & explain
+          const [dx,dy]=DIRV[S.dir];
+          S.x-=dx*T*0.9; S.y-=dy*T*0.9;
+          sliding=null;
+          if(typeof r==="string"&&!dlgBusy) runDlg(async()=>{ await say("🌿","", r); });
+          return;
+        }
+      }
+      loadMap(w.to[0],w.to[1],w.to[2],w.to[3]);
+      return;
+    }
+  }
+}
+function checkPickups(){
+  const [tx,ty]=playerTile();
+  const sp=ents.find(e=>e.kind==="sparkle"&&e.x===tx&&e.y===ty);
+  if(sp){
+    S.got[sp.id]=true;
+    ents=ents.filter(e=>e!==sp);
+    addCoins(5);
+    sfx("sparkle");
+    burst(tx*T+T/2,ty*T+T/2,"#ffd166",14);
+    toast("✨ A hidden sparkle! <b>+5 coins</b>");
+  }
+}
+
+/* input */
+const keys={};
+addEventListener("keydown",ev=>{
+  const k=ev.key;
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(k)) ev.preventDefault();
+  if(mode==="dialog"){
+    if(k==="ArrowUp"||k==="w") dlgMoveSel(-1);
+    else if(k==="ArrowDown"||k==="s") dlgMoveSel(1);
+    else if(k==="e"||k==="E"||k===" "||k==="Enter") dlgAdvance();
+    return;
+  }
+  if(mode==="panel"){
+    if(k==="Escape"||k==="j"||k==="J") closePanels();
+    return;
+  }
+  if(mode==="title") return;
+  keys[k.toLowerCase()]=true;
+  if(k==="e"||k==="E"||k===" "||k==="Enter") tryInteract();
+  if(k==="j"||k==="J") openJournal();
+  if(k==="Escape") openPause();
+});
+addEventListener("keyup",ev=>{ keys[ev.key.toLowerCase()]=false; });
+cv.addEventListener("pointerdown",()=>{ if(mode==="dialog") dlgAdvance(); });
+
+/* touch controls */
+if(("ontouchstart" in window)||navigator.maxTouchPoints>0) document.body.classList.add("touch");
+const tdirs={du:"up",dd:"down",dl:"left",dr:"right"};
+for(const id in tdirs){
+  const el=document.getElementById(id);
+  const set=on=>{ keys["touch_"+tdirs[id]]=on; el.classList.toggle("on",on); };
+  el.addEventListener("pointerdown",e=>{ e.preventDefault(); set(true); });
+  el.addEventListener("pointerup",e=>{ e.preventDefault(); set(false); });
+  el.addEventListener("pointerleave",()=>set(false));
+  el.addEventListener("pointercancel",()=>set(false));
+}
+{
+  const ab=$("#abtn");
+  ab.addEventListener("pointerdown",e=>{
+    e.preventDefault(); ab.classList.add("on");
+    if(mode==="dialog") dlgAdvance();
+    else if(mode==="play") tryInteract();
+  });
+  ab.addEventListener("pointerup",()=>ab.classList.remove("on"));
+}
+function inputDir(){
+  if(keys["arrowup"]||keys["w"]||keys["touch_up"]) return "up";
+  if(keys["arrowdown"]||keys["s"]||keys["touch_down"]) return "down";
+  if(keys["arrowleft"]||keys["a"]||keys["touch_left"]) return "left";
+  if(keys["arrowright"]||keys["d"]||keys["touch_right"]) return "right";
+  return null;
+}
+
+/* update */
+function update(dt){
+  if(mode!=="play") { player.moving=false; updateParticles(dt); return; }
+  const spd=player.speed*OPTS.spd*(dt/16.6);
+  let moved=false;
+
+  if(sliding){
+    const [dx,dy]=DIRV[sliding];
+    const nx=S.x+dx*spd*1.8, ny=S.y+dy*spd*1.8;
+    if(boxBlocked(nx,ny)){ sliding=null; }
+    else{
+      S.x=nx; S.y=ny; moved=true;
+      const [tx,ty]=playerTile();
+      if(!SLIDE.has(tileAt(MAP,tx,ty))){
+        // slid onto solid ground — settle on tile center
+        sliding=null;
+        S.x=tx*T+T/2; S.y=ty*T+T/2;
+      }
+    }
+  } else {
+    const d=inputDir();
+    if(d){
+      S.dir=d;
+      const [dx,dy]=DIRV[d];
+      let nx=S.x+dx*spd, ny=S.y+dy*spd;
+      if(!boxBlocked(nx,S.y)) { S.x=nx; moved=dx!==0; }
+      if(!boxBlocked(S.x,ny)) { S.y=ny; moved=moved||dy!==0; }
+      const [tx,ty]=playerTile();
+      if(moved&&SLIDE.has(tileAt(MAP,tx,ty))){
+        sliding=d; sfx("slide");
+        S.x=tx*T+T/2; S.y=ty*T+T/2;
+      }
+    }
+  }
+  player.moving=moved;
+  if(moved){ player.anim+=dt; S.steps+=spd;
+    if(hasItem("charm")&&Math.random()<.25) trail(S.x,S.y+6);
+  }
+  checkWarps();
+  checkPickups();
+
+  // pearl charm hums near hidden sparkles
+  pearlCool-=dt;
+  if(hasItem("pearl")&&pearlCool<=0){
+    const [tx,ty]=playerTile();
+    const near=ents.some(e=>e.kind==="sparkle"&&Math.abs(e.x-tx)<=4&&Math.abs(e.y-ty)<=4);
+    if(near){ sfx("ping"); pearlCool=4000; toast("🫧 The pearl charm hums softly…"); }
+    else pearlCool=800;
+  }
+  updateParticles(dt);
+}
+
+/* =====================================================================
+   PARTICLES & AMBIENCE
+   ===================================================================== */
+function burst(x,y,color,n){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, v=.4+Math.random()*1.4;
+    particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.6,life:600+Math.random()*500,t:0,color,r:1+Math.random()*2});
+  }
+}
+function trail(x,y){
+  particles.push({x:x+(Math.random()*10-5),y:y+(Math.random()*6-3),vx:0,vy:-.12,life:700,t:0,color:"#ffd166",r:1.2});
+}
+let fireworksOn=false;
+function startFireworks(){ fireworksOn=true; setTimeout(()=>fireworksOn=false,9000); }
+function initAmbience(){
+  ambParts=[];
+  const n={pollen:26,fireflies:22,seaspark:24,snow:60,drip:10,dust:14,starbits:30}[MAP.amb]||16;
+  for(let i=0;i<n;i++) ambParts.push({
+    x:Math.random()*MAP.w*T, y:Math.random()*MAP.h*T,
+    p:Math.random()*Math.PI*2, s:.3+Math.random()*.8,
+  });
+}
+function updateParticles(dt){
+  for(const p of particles){ p.t+=dt; p.x+=p.vx*dt/16; p.y+=p.vy*dt/16; p.vy+=.012; }
+  particles=particles.filter(p=>p.t<p.life);
+  for(const a of ambParts){
+    a.p+=dt*.001;
+    if(MAP.amb==="snow"){ a.y+=a.s*dt/16; a.x+=Math.sin(a.p)*.4; if(a.y>MAP.h*T) a.y=-8; }
+    else if(MAP.amb==="drip"){ a.y+=a.s*1.8*dt/16; if(a.y>MAP.h*T) a.y=Math.random()*-40; }
+    else { a.x+=Math.sin(a.p)*.25; a.y+=Math.cos(a.p*.8)*.2; }
+  }
+  if(fireworksOn&&Math.random()<.06){
+    burst(cam.x+Math.random()*VW, cam.y+40+Math.random()*120,
+      ["#ffd166","#ff9bb0","#7ad77a","#6fc7e8","#b18cff"][Math.floor(Math.random()*5)], 22);
+    sfx("pop");
+  }
+}
+
+/* =====================================================================
+   RENDERING
+   ===================================================================== */
+function rr(g,x,y,w,h,c){ g.fillStyle=c; g.fillRect(x,y,w,h); }
+function disc(g,x,y,r,c){ g.fillStyle=c; g.beginPath(); g.arc(x,y,r,0,7); g.fill(); }
+
+const PAL={
+  grass1:"#3e7d3f", grass2:"#46894a", speck:"#5aa55e", flower:["#ffd166","#ff9bb0","#e8e6ff"],
+  path1:"#b59a6b", path2:"#a98e60",
+  water1:"#1d4e89", water2:"#266bb4", foam:"#9fd0ef",
+  sand1:"#e0c98f", sand2:"#d6bd80",
+  snow1:"#e9f1fa", snow2:"#dde9f7",
+  ice1:"#b9e2f5", ice2:"#cdedfb",
+  rock1:"#5d5468", rock2:"#6c6278", rockTop:"#7c7290",
+  cave1:"#3a3344", cave2:"#423a4e",
+  wall:"#9a6b46", wallD:"#7d5436", roof:"#b5443c", roofD:"#933931",
+  wood:"#8a6a48", woodD:"#7a5c3e",
+  plaza1:"#8d8a96", plaza2:"#817e8c",
+  treeT:"#5d4326", treeL:"#2f6233", treeL2:"#3b7a40",
+  pineL:"#3c6f5d", pineS:"#e9f1fa",
+};
+function drawTileBase(g,ch,tx,ty){
+  const x=tx*T,y=ty*T,r=hash2(tx,ty);
+  switch(ch){
+    case ".": case ",": case ";":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.grass1:PAL.grass2);
+      if(r>.55) rr(g,x+4+r*18,y+5+((r*97)%1)*18,2,2,PAL.speck);
+      if(ch===","){ const c=choiceArr(PAL.flower,r);
+        disc(g,x+8+r*14,y+9+((r*53)%1)*14,2.4,c); disc(g,x+20-r*9,y+22-r*8,2,choiceArr(PAL.flower,(r*7)%1)); }
+      if(ch===";"){ g.strokeStyle="#2f6233"; g.lineWidth=1.6;
+        for(let i=0;i<4;i++){ const bx=x+5+i*7+r*3; g.beginPath(); g.moveTo(bx,y+26); g.quadraticCurveTo(bx+2,y+16,bx+(i%2?4:-2),y+9); g.stroke(); } }
+      break;
+    }
+    case "=":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.path1:PAL.path2);
+      if(r>.5) rr(g,x+6+r*16,y+8+((r*31)%1)*16,3,2,"#c4ad84");
+      break;
+    }
+    case "m":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.plaza1:PAL.plaza2);
+      g.strokeStyle="rgba(0,0,0,.16)"; g.lineWidth=1;
+      g.strokeRect(x+.5,y+.5,T-1,T-1);
+      if(r>.72) rr(g,x+8,y+8,4,4,"#9a97a6");
+      break;
+    }
+    case "#": case "T":{
+      // ground under tree
+      rr(g,x,y,T,T,ch==="T"?PAL.snow1:((tx+ty)%2?PAL.grass1:PAL.grass2));
+      rr(g,x+13,y+18,6,10,PAL.treeT);
+      if(ch==="#"){
+        disc(g,x+16,y+12,12,PAL.treeL); disc(g,x+10,y+16,8,PAL.treeL);
+        disc(g,x+22,y+16,8,PAL.treeL); disc(g,x+14,y+8,7,PAL.treeL2);
+      } else {
+        g.fillStyle=PAL.pineL;
+        g.beginPath(); g.moveTo(x+16,y+2); g.lineTo(x+27,y+20); g.lineTo(x+5,y+20); g.closePath(); g.fill();
+        g.fillStyle=PAL.pineS;
+        g.beginPath(); g.moveTo(x+16,y+2); g.lineTo(x+22,y+11); g.lineTo(x+10,y+11); g.closePath(); g.fill();
+      }
+      break;
+    }
+    case "t":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.sand1:PAL.sand2);
+      g.strokeStyle="#9a7b4f"; g.lineWidth=3;
+      g.beginPath(); g.moveTo(x+16,y+28); g.quadraticCurveTo(x+18,y+16,x+15,y+8); g.stroke();
+      g.strokeStyle="#3b8a4f"; g.lineWidth=2.4;
+      for(const a of [-2.4,-1.4,-.4,.6,1.6]){
+        g.beginPath(); g.moveTo(x+15,y+8);
+        g.quadraticCurveTo(x+15+Math.cos(a)*12,y+6+Math.sin(a)*7,x+15+Math.cos(a)*17,y+9+Math.sin(a)*11); g.stroke();
+      }
+      break;
+    }
+    case "~": rr(g,x,y,T,T,PAL.water1); break;
+    case "b":{
+      rr(g,x,y,T,T,PAL.water1);
+      rr(g,x+1,y,T-2,T,PAL.wood);
+      for(let i=0;i<4;i++) rr(g,x+1,y+i*8,T-2,1.5,PAL.woodD);
+      break;
+    }
+    case "s":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.sand1:PAL.sand2);
+      if(r>.6) rr(g,x+5+r*18,y+6+((r*71)%1)*18,2,2,"#c8ab72");
+      break;
+    }
+    case "*":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.snow1:PAL.snow2);
+      if(r>.62) rr(g,x+5+r*18,y+5+((r*83)%1)*18,2,2,"#fff");
+      break;
+    }
+    case "i":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.ice1:PAL.ice2);
+      g.strokeStyle="rgba(255,255,255,.5)"; g.lineWidth=1.4;
+      g.beginPath(); g.moveTo(x+6+r*6,y+22); g.lineTo(x+18+r*8,y+8); g.stroke();
+      break;
+    }
+    case "r":{
+      rr(g,x,y,T,T,PAL.rock1);
+      rr(g,x,y,T,5,PAL.rockTop);
+      rr(g,x+3+r*8,y+10,9,7,PAL.rock2);
+      rr(g,x+16,y+19,8,6,PAL.rock2);
+      break;
+    }
+    case "c":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.cave1:PAL.cave2);
+      if(r>.66) rr(g,x+6+r*16,y+8+((r*47)%1)*14,3,2,"#4e4560");
+      break;
+    }
+    case "g":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.cave1:PAL.cave2);
+      g.strokeStyle="#cdb8e8"; g.lineWidth=2.6;
+      g.beginPath(); g.moveTo(x+11,y+26); g.lineTo(x+11,y+16); g.stroke();
+      g.beginPath(); g.moveTo(x+21,y+27); g.lineTo(x+21,y+19); g.stroke();
+      disc(g,x+11,y+14,5,"#b18cff"); disc(g,x+21,y+17,4,"#9bd9ff");
+      break;
+    }
+    case "w":{
+      rr(g,x,y,T,T,PAL.wall);
+      rr(g,x,y+T-5,T,5,PAL.wallD);
+      g.strokeStyle=PAL.wallD; g.lineWidth=1.4;
+      g.strokeRect(x+3,y+6,T-6,T-14);
+      break;
+    }
+    case "^":{
+      rr(g,x,y,T,T,PAL.roof);
+      for(let i=0;i<3;i++) rr(g,x,y+5+i*9,T,2,PAL.roofD);
+      break;
+    }
+    case "d":{
+      rr(g,x,y,T,T,PAL.wallD);
+      rr(g,x+5,y+3,T-10,T-3,"#5e4128");
+      rr(g,x+7,y+5,T-14,T-5,"#6e4e31");
+      disc(g,x+T-11,y+18,1.8,"#ffd166");
+      break;
+    }
+    case "f":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.grass1:PAL.grass2);
+      rr(g,x+4,y+8,4,18,PAL.wood); rr(g,x+24,y+8,4,18,PAL.wood);
+      rr(g,x,y+12,T,4,PAL.woodD);
+      break;
+    }
+    case "_":{
+      rr(g,x,y,T,T,(ty%2)?PAL.wood:"#937352");
+      rr(g,x,y+T-2,T,2,PAL.woodD);
+      if(tx%2) rr(g,x,y+8,1.5,T-8,PAL.woodD);
+      break;
+    }
+    case "o":{
+      rr(g,x,y,T,T,PAL.water1);
+      disc(g,x+16,y+18,10,PAL.rock2); disc(g,x+12,y+14,6,PAL.rockTop);
+      break;
+    }
+    default: rr(g,x,y,T,T,"#0a0d16");
+  }
+}
+function renderBase(){
+  baseCv=document.createElement("canvas");
+  baseCv.width=MAP.w*T; baseCv.height=MAP.h*T;
+  baseCtx=baseCv.getContext("2d");
+  for(let y=0;y<MAP.h;y++) for(let x=0;x<MAP.w;x++)
+    drawTileBase(baseCtx, tileAt(MAP,x,y), x, y);
+}
+
+/* ---- characters & props ---- */
+function drawShadow(g,x,y,w){ g.fillStyle="rgba(0,0,0,.25)"; g.beginPath(); g.ellipse(x,y,w,3.4,0,0,7); g.fill(); }
+function drawPlayer(g,t){
+  const x=S.x, y=S.y;
+  const bob=player.moving?Math.sin(player.anim*.02)*1.6:Math.sin(t*.003)*.7;
+  drawShadow(g,x,y+9,8);
+  const by=y+bob;
+  // lantern glow handled in lighting; draw lantern item if owned & dark
+  // cloak/body
+  g.fillStyle=hasItem("cloak")?"#7188c9":"#3a924c";
+  g.beginPath(); g.moveTo(x-7,by+8); g.quadraticCurveTo(x,by+11,x+7,by+8);
+  g.lineTo(x+5,by-4); g.quadraticCurveTo(x,by-7,x-5,by-4); g.closePath(); g.fill();
+  // satchel
+  rr(g,x+3,by+1,5,5,"#8a6a48"); rr(g,x+3,by+1,5,1.6,"#ffd166");
+  // head
+  disc(g,x,by-9,6.4,"#f2c9a0");
+  // hair
+  g.fillStyle="#6b4226";
+  g.beginPath(); g.arc(x,by-11,6,Math.PI,0); g.fill();
+  rr(g,x-6,by-12,12,3.4,"#6b4226");
+  // face by dir
+  g.fillStyle="#27313f";
+  if(S.dir==="down"){ rr(g,x-3,by-9,1.8,2.4); rr(g,x+1.4,by-9,1.8,2.4); }
+  else if(S.dir==="left"){ rr(g,x-4.4,by-9,1.8,2.4); }
+  else if(S.dir==="right"){ rr(g,x+2.6,by-9,1.8,2.4); }
+  // feet
+  if(player.moving){
+    const f=Math.sin(player.anim*.02);
+    rr(g,x-5,y+8+f*1.6,4,3,"#5e4128"); rr(g,x+1,y+8-f*1.6,4,3,"#5e4128");
+  } else { rr(g,x-5,y+8,4,3,"#5e4128"); rr(g,x+1,y+8,4,3,"#5e4128"); }
+  if(hasItem("lantern")&&(MAP.dark||MAP.twilight)){
+    rr(g,x-9,by-2,3,4,"#caa84e"); disc(g,x-7.5,by+1,2.6,"#ffd166");
+  }
+}
+function drawNPC(g,e,t){
+  const x=e.x*T+T/2, y=e.y*T+T/2;
+  const bob=Math.sin(t*.003+e.x*1.7)*1.2;
+  drawShadow(g,x,y+10,9);
+  const by=y+bob;
+  const c1=e.cols[0], c2=e.cols[1];
+  switch(e.id){
+    case "fox":{
+      g.fillStyle=c1;
+      g.beginPath(); g.ellipse(x,by+3,9,6.5,0,0,7); g.fill();
+      // tail
+      g.beginPath(); g.ellipse(x+10,by+2,6,3.4,-.5,0,7); g.fill();
+      disc(g,x+13,by-1,2.6,"#fff");
+      // head + ears
+      disc(g,x-6,by-5,5.6,c1);
+      g.beginPath(); g.moveTo(x-10,by-8); g.lineTo(x-9,by-15); g.lineTo(x-5,by-9); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(x-5,by-9); g.lineTo(x-2,by-14); g.lineTo(x-1,by-8); g.closePath(); g.fill();
+      disc(g,x-9,by-3,2.6,"#fff");
+      rr(g,x-8.4,by-6.6,1.6,2,"#27313f");
+      break;
+    }
+    case "quill":{
+      g.fillStyle=c1;
+      g.beginPath(); g.ellipse(x,by,8.4,10.4,0,0,7); g.fill();
+      g.fillStyle=c2;
+      g.beginPath(); g.ellipse(x,by+3,5.4,6,0,0,7); g.fill();
+      // wings
+      g.fillStyle=c2;
+      g.beginPath(); g.ellipse(x-8,by+1,3,7,.3,0,7); g.fill();
+      g.beginPath(); g.ellipse(x+8,by+1,3,7,-.3,0,7); g.fill();
+      // eyes - big owl
+      disc(g,x-3.4,by-5,3.6,"#fff"); disc(g,x+3.4,by-5,3.6,"#fff");
+      disc(g,x-3,by-5,1.7,"#27313f"); disc(g,x+3,by-5,1.7,"#27313f");
+      g.fillStyle="#ffd166";
+      g.beginPath(); g.moveTo(x-2,by-2); g.lineTo(x+2,by-2); g.lineTo(x,by+1.4); g.closePath(); g.fill();
+      // tufts
+      g.strokeStyle=c1; g.lineWidth=2.4;
+      g.beginPath(); g.moveTo(x-5,by-9); g.lineTo(x-7,by-13); g.stroke();
+      g.beginPath(); g.moveTo(x+5,by-9); g.lineTo(x+7,by-13); g.stroke();
+      break;
+    }
+    case "pinch":{
+      g.fillStyle=c1;
+      g.beginPath(); g.ellipse(x,by+2,8.4,6,0,0,7); g.fill();
+      disc(g,x-9,by-2,3.4,c1); disc(g,x+9,by-2,3.4,c1); // claws
+      g.fillStyle=c1; rr(g,x-11,by-4,4,2.6); rr(g,x+7,by-4,4,2.6);
+      // eyes on stalks
+      g.strokeStyle=c1; g.lineWidth=2;
+      g.beginPath(); g.moveTo(x-3,by-3); g.lineTo(x-3,by-8); g.stroke();
+      g.beginPath(); g.moveTo(x+3,by-3); g.lineTo(x+3,by-8); g.stroke();
+      disc(g,x-3,by-9,2.2,"#fff"); disc(g,x+3,by-9,2.2,"#fff");
+      disc(g,x-3,by-9,1,"#27313f"); disc(g,x+3,by-9,1,"#27313f");
+      // legs
+      for(const s of [-1,1]) for(let i=0;i<3;i++){
+        g.beginPath(); g.moveTo(x+s*7,by+3+i*1.4); g.lineTo(x+s*11,by+5+i*1.8); g.stroke();
+      }
+      break;
+    }
+    case "yura":{
+      g.fillStyle=c1;
+      g.beginPath(); g.ellipse(x,by-2,11,13,0,0,7); g.fill();
+      g.fillStyle=c2;
+      g.beginPath(); g.ellipse(x,by+3,6.4,6.4,0,0,7); g.fill();
+      // arms
+      g.fillStyle=c1;
+      g.beginPath(); g.ellipse(x-11,by+1,3.4,6,.3,0,7); g.fill();
+      g.beginPath(); g.ellipse(x+11,by+1,3.4,6,-.3,0,7); g.fill();
+      // face
+      rr(g,x-4,by-9,2.4,3,"#27313f"); rr(g,x+1.6,by-9,2.4,3,"#27313f");
+      g.strokeStyle="#27313f"; g.lineWidth=1.6;
+      g.beginPath(); g.arc(x,by-4,2.6,.2,Math.PI-.2); g.stroke();
+      // horns
+      g.strokeStyle=c2; g.lineWidth=2.8;
+      g.beginPath(); g.moveTo(x-7,by-12); g.quadraticCurveTo(x-10,by-16,x-7,by-18); g.stroke();
+      g.beginPath(); g.moveTo(x+7,by-12); g.quadraticCurveTo(x+10,by-16,x+7,by-18); g.stroke();
+      if(flag("got_mitten")&&S.quests.mitten==="done"){ disc(g,x-12,by+5,3,"#4a7fc9"); }
+      break;
+    }
+    case "plod":{
+      // snail knight
+      g.fillStyle="#d9c9a3";
+      g.beginPath(); g.ellipse(x-2,by+6,8,3.4,0,0,7); g.fill();
+      disc(g,x+3,by,7,c1); disc(g,x+3,by,4.6,"#b08c4f"); disc(g,x+3,by,2.4,c1);
+      // head + helmet
+      disc(g,x-8,by+2,3.6,"#d9c9a3");
+      g.fillStyle="#9aa6b8"; g.beginPath(); g.arc(x-8,by+1,3.8,Math.PI,0); g.fill();
+      rr(g,x-12,by-1,8,1.6,"#9aa6b8");
+      g.strokeStyle="#d9c9a3"; g.lineWidth=1.4;
+      g.beginPath(); g.moveTo(x-9,by-1); g.lineTo(x-10,by-5); g.stroke();
+      g.beginPath(); g.moveTo(x-7,by-1); g.lineTo(x-6,by-5); g.stroke();
+      disc(g,x-10,by-5,1.2,"#27313f"); disc(g,x-6,by-5,1.2,"#27313f");
+      // tiny banner
+      g.strokeStyle="#8a6a48"; g.lineWidth=1.4;
+      g.beginPath(); g.moveTo(x+3,by-4); g.lineTo(x+3,by-14); g.stroke();
+      g.fillStyle="#ff6b6b"; g.beginPath(); g.moveTo(x+3,by-14); g.lineTo(x+10,by-12); g.lineTo(x+3,by-10); g.closePath(); g.fill();
+      break;
+    }
+    case "lumen":{
+      const pul=1+Math.sin(t*.006)*.12;
+      const grd=g.createRadialGradient(x,by-2,2,x,by-2,16*pul);
+      grd.addColorStop(0,"rgba(255,246,201,.9)"); grd.addColorStop(1,"rgba(255,209,102,0)");
+      g.fillStyle=grd; g.beginPath(); g.arc(x,by-2,16*pul,0,7); g.fill();
+      // star shape
+      g.fillStyle="#fff6c9";
+      g.save(); g.translate(x,by-2); g.rotate(Math.sin(t*.002)*.2);
+      g.beginPath();
+      for(let i=0;i<10;i++){ const R=i%2?4:9.6, a=i*Math.PI/5-Math.PI/2;
+        g[i?"lineTo":"moveTo"](Math.cos(a)*R,Math.sin(a)*R); }
+      g.closePath(); g.fill();
+      g.restore();
+      rr(g,x-3,by-4,1.6,2.6,"#b8923b"); rr(g,x+1.6,by-4,1.6,2.6,"#b8923b");
+      g.strokeStyle="#b8923b"; g.lineWidth=1.2;
+      g.beginPath(); g.arc(x,by,1.8,.3,Math.PI-.3); g.stroke();
+      break;
+    }
+    default:{
+      // generic villager: body + head + accent
+      g.fillStyle=c1;
+      g.beginPath(); g.moveTo(x-7,by+9); g.quadraticCurveTo(x,by+12,x+7,by+9);
+      g.lineTo(x+5,by-3); g.quadraticCurveTo(x,by-6,x-5,by-3); g.closePath(); g.fill();
+      disc(g,x,by-8,6,"#f2c9a0");
+      g.fillStyle=c2;
+      if(e.id==="elm"){ g.beginPath(); g.arc(x,by-10,5.6,Math.PI,0); g.fill(); disc(g,x,by-14,3,c2);
+        g.strokeStyle="#8a6a48"; g.lineWidth=2; g.beginPath(); g.moveTo(x+9,by+10); g.lineTo(x+9,by-8); g.stroke(); }
+      else if(e.id==="pip"){ g.beginPath(); g.arc(x,by-10,5.4,Math.PI,0); g.fill(); rr(g,x-2,by-16,4,4,c2); }
+      else if(e.id==="tilda"){ g.beginPath(); g.arc(x,by-10,5.6,Math.PI,0); g.fill();
+        rr(g,x-6,by-13,12,2.4,"#fff"); rr(g,x-4,by+0,8,8,"#fff"); }
+      else if(e.id==="marlo"){ g.beginPath(); g.arc(x,by-10,5.6,Math.PI,0); g.fill();
+        rr(g,x-4,by-5,8,4,c2); /* beard */ }
+      else if(e.id==="joss"){ g.fillStyle="#e7b75f"; g.beginPath(); g.arc(x,by-11,6.4,Math.PI*.9,Math.PI*2.1); g.fill();
+        rr(g,x-8,by-11,16,2,"#e7b75f"); }
+      else { g.beginPath(); g.arc(x,by-10,5.4,Math.PI,0); g.fill(); }
+      g.fillStyle="#27313f";
+      rr(g,x-3,by-8,1.8,2.2); rr(g,x+1.4,by-8,1.8,2.2);
+      break;
+    }
+  }
+}
+function drawEnt(g,e,t){
+  const x=e.x*T, y=e.y*T, cx=x+T/2, cy=y+T/2;
+  switch(e.kind){
+    case "npc": drawNPC(g,e,t); break;
+    case "heartlamp":{
+      drawShadow(g,cx,y+T-3,11);
+      rr(g,cx-3,y-14,6,38,"#4e4560");
+      rr(g,cx-8,y+T-7,16,5,"#5d5468");
+      const lit=flag("ended");
+      if(lit){
+        const pul=1+Math.sin(t*.004)*.1;
+        const grd=g.createRadialGradient(cx,y-16,3,cx,y-16,34*pul);
+        grd.addColorStop(0,"rgba(255,230,150,.95)"); grd.addColorStop(1,"rgba(255,209,102,0)");
+        g.fillStyle=grd; g.beginPath(); g.arc(cx,y-16,34*pul,0,7); g.fill();
+      }
+      g.fillStyle=lit?"#ffe9a8":"#2a2435";
+      g.beginPath(); g.arc(cx,y-16,8,0,7); g.fill();
+      g.strokeStyle="#c9a86a"; g.lineWidth=2; g.stroke();
+      g.strokeStyle="#c9a86a"; g.beginPath(); g.moveTo(cx-8,y-22); g.lineTo(cx+8,y-22); g.stroke();
+      if(!lit){ // tiny sad flicker
+        if(Math.sin(t*.01)>0.97) disc(g,cx,y-16,2,"#6f6350");
+      }
+      break;
+    }
+    case "chest":{
+      const open=S.got[e.id];
+      drawShadow(g,cx,y+T-5,9);
+      rr(g,x+7,y+12,18,13,"#8a5a34");
+      rr(g,x+7,open?y+4:y+8,18,6,open?"#6e4626":"#9a6b3e");
+      rr(g,x+7,y+16,18,2,"#5e3c22");
+      rr(g,cx-2,y+14,4,5,"#ffd166");
+      if(!open&&hash2(e.x,e.y)>.3){ const tw=Math.sin(t*.005+e.x)>.6;
+        if(tw) disc(g,x+10,y+10,1.4,"#fff"); }
+      break;
+    }
+    case "sign":{
+      drawShadow(g,cx,y+T-4,8);
+      rr(g,cx-2,y+10,4,18,PAL.wood);
+      rr(g,x+4,y+4,24,12,"#a4824f");
+      rr(g,x+4,y+4,24,2,"#8a6a48");
+      g.fillStyle="#5e4128";
+      rr(g,x+8,y+8,16,1.6); rr(g,x+8,y+11,12,1.6);
+      break;
+    }
+    case "doormsg": case "shopdoor": break; // drawn by door tile
+    case "lever":{
+      const pulled=flag("mill_solved")||millSeq.includes(e.id);
+      drawShadow(g,cx,y+T-6,7);
+      rr(g,x+10,y+18,12,8,"#5d5468");
+      g.strokeStyle="#9aa6b8"; g.lineWidth=3.4;
+      g.beginPath(); g.moveTo(cx,y+20);
+      if(pulled) g.lineTo(cx+7,y+10); else g.lineTo(cx-7,y+8);
+      g.stroke();
+      disc(g,pulled?cx+7:cx-7,pulled?y+10:y+8,3,"#ff6b6b");
+      g.fillStyle="#eef0fa"; g.font="bold 9px sans-serif"; g.textAlign="center";
+      g.fillText(e.id,cx,y+33);
+      break;
+    }
+    case "shell":{
+      const glow=shellGame.glow[e.i]>performance.now();
+      if(glow){
+        const grd=g.createRadialGradient(cx,cy,2,cx,cy,18);
+        grd.addColorStop(0,"rgba(155,217,255,.9)"); grd.addColorStop(1,"rgba(155,217,255,0)");
+        g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,18,0,7); g.fill();
+      }
+      drawShadow(g,cx,cy+8,7);
+      g.fillStyle=glow?"#cdedfb":["#ffd1dc","#ffe3b3","#d6f5d6","#cfe0ff","#eed6ff"][e.i];
+      g.beginPath(); g.moveTo(cx-8,cy+6); g.quadraticCurveTo(cx,cy-10,cx+8,cy+6); g.closePath(); g.fill();
+      g.strokeStyle="rgba(0,0,0,.25)"; g.lineWidth=1;
+      for(let i=-1;i<=1;i++){ g.beginPath(); g.moveTo(cx+i*4,cy+5); g.lineTo(cx+i*1.4,cy-4); g.stroke(); }
+      break;
+    }
+    case "pedestal":{
+      const sh=SHARDS[e.shard];
+      const ready=!e.need||flag(e.need);
+      const taken=flag("shard_"+sh.id);
+      drawShadow(g,cx,y+T-3,10);
+      rr(g,x+9,y+8,14,20,"#7c7290"); rr(g,x+6,y+24,20,5,"#5d5468"); rr(g,x+6,y+6,20,4,"#8d8a96");
+      if(ready&&!taken){
+        const fl=Math.sin(t*.005)*3;
+        const grd=g.createRadialGradient(cx,y+fl-2,2,cx,y+fl-2,20);
+        grd.addColorStop(0,"rgba(255,236,170,.95)"); grd.addColorStop(1,"rgba(255,209,102,0)");
+        g.fillStyle=grd; g.beginPath(); g.arc(cx,y+fl-2,20,0,7); g.fill();
+        g.fillStyle="#fff6c9";
+        g.save(); g.translate(cx,y+fl-2); g.rotate(t*.001);
+        g.beginPath();
+        for(let i=0;i<8;i++){ const R=i%2?3:7,a=i*Math.PI/4;
+          g[i?"lineTo":"moveTo"](Math.cos(a)*R,Math.sin(a)*R); }
+        g.closePath(); g.fill(); g.restore();
+      }
+      break;
+    }
+    case "pillar":{
+      const on=flag("pillars_done")||pillarSeq.includes(e.sym);
+      drawShadow(g,cx,y+T-2,10);
+      rr(g,x+8,y-8,16,36,"#6c6278"); rr(g,x+5,y+24,22,5,"#5d5468"); rr(g,x+5,y-12,22,5,"#7c7290");
+      // rune
+      g.save(); g.translate(cx,y+6);
+      g.strokeStyle=on?"#ffd166":"#3c3550"; g.fillStyle=on?"#ffd166":"#3c3550"; g.lineWidth=2;
+      if(on){ g.shadowColor="#ffd166"; g.shadowBlur=8; }
+      if(e.sym==="flame"){ g.beginPath(); g.moveTo(0,-6); g.quadraticCurveTo(5,0,0,7); g.quadraticCurveTo(-5,0,0,-6); g.fill(); }
+      if(e.sym==="leaf"){ g.beginPath(); g.ellipse(0,0,4,7,.6,0,7); g.fill(); }
+      if(e.sym==="wave"){ g.beginPath(); g.moveTo(-6,2); g.quadraticCurveTo(-3,-4,0,2); g.quadraticCurveTo(3,8,6,2); g.stroke(); }
+      if(e.sym==="snow"){ for(let i=0;i<3;i++){ const a=i*Math.PI/3;
+        g.beginPath(); g.moveTo(-Math.cos(a)*6,-Math.sin(a)*6); g.lineTo(Math.cos(a)*6,Math.sin(a)*6); g.stroke(); } }
+      g.restore();
+      break;
+    }
+    case "bush":{
+      const picked=pickedBushes.has(e.id);
+      disc(g,cx,cy+4,10,"#2f6233"); disc(g,cx-7,cy+6,7,"#3b7a40"); disc(g,cx+7,cy+6,7,"#3b7a40");
+      if(!picked){ disc(g,cx-4,cy+2,2.2,"#7d6bd4"); disc(g,cx+3,cy+5,2.2,"#7d6bd4"); disc(g,cx,cy+8,2.2,"#9286e0"); }
+      break;
+    }
+    case "kitetree":{
+      rr(g,cx-4,cy+2,8,14,PAL.treeT);
+      disc(g,cx,cy-6,14,PAL.treeL); disc(g,cx-9,cy-1,9,PAL.treeL); disc(g,cx+9,cy-1,9,PAL.treeL2);
+      if(S.quests.kite!=="done"&&!hasItem("kite")){
+        g.save(); g.translate(cx+5,cy-10); g.rotate(.5);
+        g.fillStyle="#ff6b6b"; g.beginPath(); g.moveTo(0,-7); g.lineTo(5,0); g.lineTo(0,7); g.lineTo(-5,0); g.closePath(); g.fill();
+        g.strokeStyle="#ffd166"; g.lineWidth=1.4; g.beginPath(); g.moveTo(0,7); g.quadraticCurveTo(4,12,1,16); g.stroke();
+        g.restore();
+      }
+      break;
+    }
+    case "mitten":{
+      drawShadow(g,cx,cy+7,7);
+      g.fillStyle="#4a7fc9";
+      g.beginPath(); g.ellipse(cx,cy,6,8,.3,0,7); g.fill();
+      g.beginPath(); g.ellipse(cx-6,cy+3,3.4,4,1,0,7); g.fill();
+      rr(g,cx-5,cy+6,11,4,"#e8f4ff");
+      break;
+    }
+    case "boulder":{
+      drawShadow(g,cx,cy+9,11);
+      disc(g,cx,cy+2,11,PAL.rock2); disc(g,cx-3,cy-2,7,PAL.rockTop);
+      break;
+    }
+    case "fire":{
+      drawShadow(g,cx,cy+8,8);
+      rr(g,cx-8,cy+6,16,3,"#5e4128"); rr(g,cx-6,cy+3,12,3,"#6e4e31");
+      const f=Math.sin(t*.02)*2;
+      g.fillStyle="#ff9d3c";
+      g.beginPath(); g.moveTo(cx-5,cy+5); g.quadraticCurveTo(cx-4+f,cy-6,cx,cy-9); g.quadraticCurveTo(cx+4-f,cy-5,cx+5,cy+5); g.closePath(); g.fill();
+      g.fillStyle="#ffd166";
+      g.beginPath(); g.moveTo(cx-2.6,cy+5); g.quadraticCurveTo(cx+f*.5,cy-2,cx,cy-4); g.quadraticCurveTo(cx+2-f*.5,cy-1,cx+2.6,cy+5); g.closePath(); g.fill();
+      break;
+    }
+    case "boat":{
+      g.fillStyle="#7a5c3e";
+      g.beginPath(); g.moveTo(x-2,cy); g.quadraticCurveTo(cx,cy+14,x+T+2,cy); g.lineTo(x+T-4,cy-4); g.lineTo(x+2,cy-4); g.closePath(); g.fill();
+      rr(g,x+4,cy-6,T-8,3,"#8a6a48");
+      break;
+    }
+    case "ruin":{
+      drawShadow(g,cx,cy+9,10);
+      rr(g,x+8,cy-6,16,16,"#6c6278");
+      g.fillStyle="#5d5468";
+      g.beginPath(); g.moveTo(x+8,cy-6); g.lineTo(x+12,cy-14); g.lineTo(x+18,cy-8); g.lineTo(x+24,cy-6); g.closePath(); g.fill();
+      break;
+    }
+    case "sparkle":{
+      const tw=Math.sin(t*.006+e.x*2.1)*.5+.5;
+      g.save(); g.globalAlpha=.45+tw*.55;
+      g.fillStyle="#ffd166";
+      g.translate(cx,cy-2+Math.sin(t*.003+e.y)*2);
+      g.rotate(t*.002);
+      g.beginPath();
+      for(let i=0;i<8;i++){ const R=i%2?2:5.4,a=i*Math.PI/4;
+        g[i?"lineTo":"moveTo"](Math.cos(a)*R,Math.sin(a)*R); }
+      g.closePath(); g.fill();
+      g.restore();
+      break;
+    }
+  }
+}
+
+/* water / ice animation overlay on visible tiles */
+function drawTileFx(g,t){
+  const x0=Math.floor(cam.x/T), y0=Math.floor(cam.y/T);
+  const x1=Math.ceil((cam.x+VW)/T), y1=Math.ceil((cam.y+VH)/T);
+  for(let ty=y0;ty<=y1;ty++) for(let tx=x0;tx<=x1;tx++){
+    const ch=tileAt(MAP,tx,ty);
+    if(ch==="~"){
+      const r=hash2(tx,ty);
+      const ph=Math.sin(t*.002+tx*1.3+ty*2.1+r*6);
+      if(ph>.3){ g.fillStyle="rgba(159,208,239,"+(.12+ph*.18)+")";
+        g.fillRect(tx*T+4+r*14, ty*T+8+((r*37)%1)*14, 8, 2); }
+    }
+  }
+}
+
+let lastLoc="";
+function render(t){
+  ctx.clearRect(0,0,VW,VH);
+  if(!S||!MAP) return;
+  // camera
+  cam.x=clamp(S.x-VW/2, 0, Math.max(0,MAP.w*T-VW));
+  cam.y=clamp(S.y-VH/2, 0, Math.max(0,MAP.h*T-VH));
+  if(MAP.w*T<VW) cam.x=-(VW-MAP.w*T)/2;
+  if(MAP.h*T<VH) cam.y=-(VH-MAP.h*T)/2;
+  let sx=0, sy=0;
+  if(shake>0){ sx=(Math.random()-.5)*shake; sy=(Math.random()-.5)*shake; shake*=.88; if(shake<.4) shake=0; }
+  ctx.save();
+  ctx.translate(-Math.round(cam.x+sx), -Math.round(cam.y+sy));
+  // base tiles
+  ctx.drawImage(baseCv,0,0);
+  drawTileFx(ctx,t);
+  // entities + player, y-sorted
+  const drawList=[...ents.map(e=>({y:e.y*T+T/2,f:()=>drawEnt(ctx,e,t)})),
+    {y:S.y,f:()=>drawPlayer(ctx,t)}];
+  drawList.sort((a,b)=>a.y-b.y);
+  for(const d of drawList) d.f();
+  // particles
+  for(const p of particles){
+    ctx.globalAlpha=1-p.t/p.life;
+    disc(ctx,p.x,p.y,p.r,p.color);
+    ctx.globalAlpha=1;
+  }
+  // ambience
+  ctx.save();
+  for(const a of ambParts){
+    if(a.x<cam.x-12||a.x>cam.x+VW+12||a.y<cam.y-12||a.y>cam.y+VH+12) continue;
+    const tw=Math.sin(t*.003+a.p*7)*.5+.5;
+    if(MAP.amb==="fireflies"){ ctx.globalAlpha=.25+tw*.6; disc(ctx,a.x,a.y,1.6,"#d7ff8a"); }
+    else if(MAP.amb==="snow"){ ctx.globalAlpha=.8; disc(ctx,a.x,a.y,1.4+a.s,"#fff"); }
+    else if(MAP.amb==="pollen"){ ctx.globalAlpha=.2+tw*.4; disc(ctx,a.x,a.y,1.3,"#ffe9a8"); }
+    else if(MAP.amb==="seaspark"){ ctx.globalAlpha=.2+tw*.5; disc(ctx,a.x,a.y,1.2,"#9fd0ef"); }
+    else if(MAP.amb==="starbits"){ ctx.globalAlpha=.25+tw*.65; disc(ctx,a.x,a.y,1.5,"#e8d9ff"); }
+    else if(MAP.amb==="drip"){ ctx.globalAlpha=.35; disc(ctx,a.x,a.y,1,"#9bd9ff"); }
+    else { ctx.globalAlpha=.18+tw*.3; disc(ctx,a.x,a.y,1.2,"#cbbf9e"); }
+  }
+  ctx.restore();
+  ctx.restore();
+  // lighting overlays (screen space)
+  if(MAP.dark){
+    const r=hasItem("lantern")?120:46;
+    const px=S.x-cam.x-sx, py=S.y-cam.y-sy;
+    const grd=ctx.createRadialGradient(px,py,r*.35,px,py,r);
+    grd.addColorStop(0,"rgba(6,6,14,0)");
+    grd.addColorStop(.75,"rgba(6,6,14,.78)");
+    grd.addColorStop(1,"rgba(6,6,14,.94)");
+    ctx.fillStyle=grd; ctx.fillRect(0,0,VW,VH);
+  } else if(MAP.twilight){
+    ctx.fillStyle="rgba(28,42,84,.3)"; ctx.fillRect(0,0,VW,VH);
+  } else if(MAP.id==="crater"&&!flag("ended")){
+    ctx.fillStyle="rgba(30,18,52,.22)"; ctx.fillRect(0,0,VW,VH);
+  }
+  // success flash
+  if(flashT>0){ ctx.fillStyle="rgba(255,236,170,"+(flashT/40)+")"; ctx.fillRect(0,0,VW,VH); flashT--; }
+}
+
+/* =====================================================================
+   AUDIO — all music & sfx synthesized with Web Audio
+   ===================================================================== */
+let AC=null,gMaster=null,gMus=null,gSfx=null;
+function audioInit(){
+  if(AC) return;
+  try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  gMaster=AC.createGain(); gMaster.connect(AC.destination);
+  gMus=AC.createGain(); gMus.connect(gMaster);
+  gSfx=AC.createGain(); gSfx.connect(gMaster);
+  applyVolumes();
+}
+function applyVolumes(){
+  if(!AC) return;
+  gMaster.gain.value=OPTS.mute?0:1;
+  gMus.gain.value=OPTS.mus*.5;
+  gSfx.gain.value=OPTS.sfx;
+}
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+function tone(freq,dur,type,vol,when,dest,slideTo){
+  if(!AC) return;
+  const t0=when||AC.currentTime;
+  const o=AC.createOscillator(), g=AC.createGain();
+  o.type=type||"sine"; o.frequency.setValueAtTime(freq,t0);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(20,slideTo),t0+dur);
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(vol,t0+.012);
+  g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+  o.connect(g); g.connect(dest||gSfx);
+  o.start(t0); o.stop(t0+dur+.05);
+}
+function pluck(freq,dur,vol,when,dest,type){
+  if(!AC) return;
+  const t0=when||AC.currentTime;
+  const o=AC.createOscillator(), g=AC.createGain(), f=AC.createBiquadFilter();
+  o.type=type||"triangle"; o.frequency.value=freq;
+  f.type="lowpass"; f.frequency.setValueAtTime(freq*6,t0);
+  f.frequency.exponentialRampToValueAtTime(freq*1.4,t0+dur);
+  g.gain.setValueAtTime(vol,t0);
+  g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+  o.connect(f); f.connect(g); g.connect(dest||gMus);
+  o.start(t0); o.stop(t0+dur+.05);
+}
+function noiseBurst(dur,vol,when,hp){
+  if(!AC) return;
+  const t0=when||AC.currentTime;
+  const len=Math.ceil(AC.sampleRate*dur);
+  const buf=AC.createBuffer(1,len,AC.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+  const src=AC.createBufferSource(); src.buffer=buf;
+  const f=AC.createBiquadFilter(); f.type=hp?"highpass":"lowpass"; f.frequency.value=hp||900;
+  const g=AC.createGain(); g.gain.value=vol;
+  src.connect(f); f.connect(g); g.connect(gSfx);
+  src.start(t0);
+}
+function sfx(name){
+  if(!AC) return;
+  const n=name;
+  if(n==="blip") tone(620,.04,"square",.05);
+  else if(n==="blip2") tone(520,.07,"square",.12);
+  else if(n==="coin"){ tone(988,.07,"square",.16); tone(1319,.12,"square",.14,AC.currentTime+.06); }
+  else if(n==="item"){ tone(660,.09,"triangle",.2); tone(880,.14,"triangle",.18,AC.currentTime+.08); }
+  else if(n==="quest"){ tone(523,.1,"triangle",.2); tone(659,.1,"triangle",.2,AC.currentTime+.1); tone(784,.2,"triangle",.2,AC.currentTime+.2); }
+  else if(n==="done"){ tone(784,.1,"triangle",.2); tone(1047,.25,"triangle",.2,AC.currentTime+.1); }
+  else if(n==="chest"){ noiseBurst(.12,.18); tone(330,.18,"triangle",.2,AC.currentTime+.05,gSfx,392); }
+  else if(n==="buy"){ tone(880,.06,"square",.14); tone(1109,.1,"square",.12,AC.currentTime+.05); }
+  else if(n==="lever"){ tone(180,.1,"square",.18,null,gSfx,120); noiseBurst(.06,.1,null,1800); }
+  else if(n==="error"){ tone(196,.18,"sawtooth",.14); tone(185,.22,"sawtooth",.12,AC.currentTime+.09); }
+  else if(n==="success"){ tone(659,.09,"triangle",.2); tone(831,.09,"triangle",.2,AC.currentTime+.08); tone(988,.18,"triangle",.2,AC.currentTime+.16); }
+  else if(n==="fanfare"){ [523,659,784,1047].forEach((f,i)=>tone(f,.32,"triangle",.2,AC.currentTime+i*.12)); }
+  else if(n==="shard"){ [880,1109,1319,1760].forEach((f,i)=>tone(f,.4,"sine",.18,AC.currentTime+i*.1)); }
+  else if(n==="warp"){ tone(300,.25,"sine",.16,null,gSfx,600); }
+  else if(n==="slide"){ tone(500,.2,"sine",.1,null,gSfx,260); }
+  else if(n==="sparkle"){ tone(1568,.08,"sine",.16); tone(2093,.15,"sine",.13,AC.currentTime+.07); }
+  else if(n==="ping"){ tone(1175,.3,"sine",.12); }
+  else if(n==="pop"){ noiseBurst(.2,.16); }
+  else if(n.startsWith("shell")){ const i=+n.slice(5)||0;
+    tone(mtof(72+SHELL_NOTES[i]),.34,"sine",.22); tone(mtof(84+SHELL_NOTES[i]),.3,"sine",.07); }
+}
+
+/* ---- generative region music ---- */
+const SCALES={ major:[0,2,4,5,7,9,11], minor:[0,2,3,5,7,8,10],
+  dorian:[0,2,3,5,7,9,10], lydian:[0,2,4,6,7,9,11] };
+const SONGS={
+  village:{ bpm:96, root:60, scale:"major", prog:[0,5,3,4], lead:.55, arp:"updown", bass:true, pad:false, leadType:"triangle", seed:11 },
+  mill:   { bpm:88, root:55, scale:"major", prog:[0,3,4,3], lead:.3,  arp:"up",     bass:true, pad:false, leadType:"sine", seed:23 },
+  forest: { bpm:82, root:52, scale:"dorian",prog:[0,2,3,2], lead:.4,  arp:"sparse", bass:true, pad:true,  leadType:"sine", seed:37 },
+  cove:   { bpm:104,root:53, scale:"lydian",prog:[0,4,5,3], lead:.5,  arp:"updown", bass:true, pad:false, leadType:"triangle", seed:41 },
+  peak:   { bpm:70, root:57, scale:"minor", prog:[0,5,2,6], lead:.3,  arp:"sparse", bass:false,pad:true,  leadType:"sine", seed:53 },
+  cave:   { bpm:58, root:50, scale:"minor", prog:[0,0,5,5], lead:.16, arp:"sparse", bass:false,pad:true,  leadType:"sine", seed:67 },
+  crater: { bpm:74, root:48, scale:"lydian",prog:[0,3,1,4], lead:.4,  arp:"up",     bass:false,pad:true,  leadType:"sine", seed:71 },
+};
+function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
+  let z=Math.imul(a^a>>>15,1|a); z=z+Math.imul(z^z>>>7,61|z)^z; return ((z^z>>>14)>>>0)/4294967296; }; }
+let song=null, songName="", songTimer=null, songStep=0, songNext=0;
+function chordTones(sc,deg){
+  const n=sc.length;
+  const pick=k=>sc[(deg+k)%n]+12*Math.floor((deg+k)/n);
+  return [pick(0),pick(2),pick(4)];
+}
+function scheduleSongStep(){
+  if(!AC||!song) return;
+  const spb=60/song.bpm;           // seconds per beat
+  const stepDur=spb/2;             // 8th notes
+  while(songNext<AC.currentTime+.18){
+    const step=songStep;
+    const bar=Math.floor(step/8)%song.prog.length;
+    const sub=step%8;
+    const sc=SCALES[song.scale];
+    const deg=song.prog[bar];
+    const tones=chordTones(sc,deg);
+    const t=songNext;
+    // bass
+    if(song.bass&&(sub===0||sub===4))
+      pluck(mtof(song.root-12+tones[0]),stepDur*1.8,.16,t,gMus,"sine");
+    // pad on bar start
+    if(song.pad&&sub===0){
+      for(const tn of tones){
+        const o=AC.createOscillator(),g=AC.createGain(),f=AC.createBiquadFilter();
+        o.type="triangle"; o.frequency.value=mtof(song.root+tn);
+        o.detune.value=(Math.random()*8-4);
+        f.type="lowpass"; f.frequency.value=900;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(.045,t+spb*1.2);
+        g.gain.linearRampToValueAtTime(0,t+spb*4);
+        o.connect(f); f.connect(g); g.connect(gMus);
+        o.start(t); o.stop(t+spb*4.1);
+      }
+    }
+    // arp
+    const arpHit=song.arp==="sparse"?(sub===0||sub===3||sub===6):true;
+    if(arpHit){
+      const idx=song.arp==="updown"?[0,1,2,1,0,1,2,1][sub]:[0,1,2,0,1,2,0,1][sub];
+      pluck(mtof(song.root+12+tones[idx]),stepDur*1.1,.07,t,gMus);
+    }
+    // lead — deterministic per (bar-loop, step)
+    const rng=mulberry(song.seed*7919+Math.floor(step/8)*131+sub);
+    if(rng()<song.lead&&sub%2===0){
+      const opts=[...tones,sc[(deg+1)%sc.length],sc[(deg+5)%sc.length]];
+      const note=song.root+24+opts[Math.floor(rng()*opts.length)];
+      pluck(mtof(note),stepDur*(rng()<.3?2.6:1.4),.085,t,gMus,song.leadType);
+    }
+    songNext+=stepDur;
+    songStep++;
+    if(songStep>=8*song.prog.length*4) songStep=0;
+  }
+}
+function playSong(name){
+  if(songName===name) return;
+  songName=name;
+  song=SONGS[name]||SONGS.village;
+  songStep=0;
+  if(AC) songNext=AC.currentTime+.1;
+  if(!songTimer) songTimer=setInterval(scheduleSongStep,60);
+}
+
+/* =====================================================================
+   UI — journal, pause, title, credits
+   ===================================================================== */
+function panelOpen(id){ closePanels(true); $("#"+id).classList.add("on"); mode="panel"; }
+function closePanels(keepMode){
+  $$(".panel").forEach(p=>p.classList.remove("on"));
+  if(!keepMode&&mode==="panel") mode="play";
+}
+$$("[data-close]").forEach(b=>b.addEventListener("click",()=>closePanels()));
+
+let jtab="quests";
+function openJournal(){ if(mode!=="play")return; jtab="quests"; renderJournal(); panelOpen("journal"); }
+$$("#journal .tabs button").forEach(b=>b.addEventListener("click",()=>{
+  jtab=b.dataset.tab;
+  $$("#journal .tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  renderJournal(false);
+}));
+function renderJournal(resetTabs=true){
+  if(resetTabs) $$("#journal .tabs button").forEach(x=>x.classList.toggle("on",x.dataset.tab===jtab));
+  const body=$("#jbody"); body.innerHTML="";
+  if(jtab==="quests"){
+    const ids=Object.keys(S.quests);
+    if(!ids.length){ body.innerHTML='<div class="empty">No quests yet. Someone in the village square looks like she has a job for you…</div>'; return; }
+    const on=ids.filter(i=>S.quests[i]==="on"), done=ids.filter(i=>S.quests[i]==="done");
+    for(const id of [...on,...done]){
+      const q=QUESTS[id], isDone=S.quests[id]==="done";
+      const div=document.createElement("div");
+      div.className="qitem"+(isDone?" done":"");
+      div.innerHTML='<span class="tag">'+(isDone?"DONE":"ACTIVE")+"</span><b>"+q.name+"</b><p>"+q.d+"</p>";
+      body.appendChild(div);
+    }
+  }
+  else if(jtab==="items"){
+    const grid=document.createElement("div"); grid.className="igrid";
+    let any=false;
+    SHARDS.forEach(sh=>{
+      if(flag("shard_"+sh.id)){ any=true;
+        grid.innerHTML+='<div class="islot"><span class="em">'+sh.em+'</span><div><b>'+sh.name+"</b><span>A piece of the fallen star.</span></div></div>";
+      }
+    });
+    for(const id in S.items){
+      const it=ITEMS[id]; if(!it) continue; any=true;
+      const n=S.items[id];
+      grid.innerHTML+='<div class="islot"><span class="em">'+it.em+'</span><div><b>'+it.name+(n>1?" ×"+n:"")+"</b><span>"+it.d+"</span></div></div>";
+    }
+    body.appendChild(grid);
+    if(!any) body.innerHTML='<div class="empty">Your satchel is empty — except for one (1) brave biscuit crumb.</div>';
+  }
+  else {
+    const regions=[
+      ["village","🏘️","Willowdale Village","Home. The Heartlamp, Marlo's shop, Tilda's bakery — and four roads out.",true],
+      ["mill","⚙️","The Old Mill","Levers, gears, and a riddle in rhyme.",flag("intro_done")],
+      ["forest","🌲","Whispering Woods","Berry bushes, a toll-fox, and the Owl Sage's riddles.",flag("shard_hearth")],
+      ["cove","🏖️","Glimmer Cove","Sand, surf, Cousin Pinch — and a singing tide cave.",flag("shard_whisper")],
+      ["peak","🏔️","Frostpeak","A yeti's camp and an ice hollow where every step slides.",flag("shard_tide")],
+      ["crater","🌠","Starfall Crater","Where the star fell. Old stones wait in a ring.",hasItem("starkey")],
+    ];
+    let html="";
+    for(const [id,em,name,desc,known] of regions){
+      let note;
+      if(!known) note="The Hollow is bigger than you know.";
+      else if(hasItem("map")||S.map===id) note=desc;
+      else note="Buy Marlo's Explorer's Map for travel notes.";
+      html+='<div class="qitem"><span class="tag">'+(known?(S.map===id?"HERE":"KNOWN"):"???")+"</span><b>"+em+" "+
+        (known?name:"Somewhere out there…")+"</b><p>"+note+"</p></div>";
+    }
+    const sparkTotal=13, sparkGot=Object.keys(S.got).filter(k=>k.includes("_s")).length;
+    const qDone=Object.values(S.quests).filter(v=>v==="done").length;
+    html+='<div class="qitem"><b>📊 Adventure record</b><p>Shards: '+S.shards+"/5 · Quests done: "+qDone+
+      " · Sparkles: "+sparkGot+"/"+sparkTotal+" · Sir Plod met in "+Object.keys(S.plod).length+"/5 regions</p></div>";
+    body.innerHTML=html;
+  }
+}
+$("#bjournal").addEventListener("click",()=>{ if(mode==="play") openJournal(); });
+
+function openPause(){ if(mode!=="play")return;
+  $("#vmus").value=OPTS.mus*100; $("#vsfx").value=OPTS.sfx*100; $("#spd").value=String(OPTS.spd);
+  panelOpen("pause");
+}
+$("#bmenu").addEventListener("click",()=>{ if(mode==="play") openPause(); });
+$("#vmus").addEventListener("input",e=>{ OPTS.mus=e.target.value/100; applyVolumes(); saveOpts(); });
+$("#vsfx").addEventListener("input",e=>{ OPTS.sfx=e.target.value/100; applyVolumes(); saveOpts(); sfx("blip2"); });
+$("#spd").addEventListener("change",e=>{ OPTS.spd=parseFloat(e.target.value); saveOpts(); });
+$("#bsound").addEventListener("click",()=>{
+  OPTS.mute=!OPTS.mute; applyVolumes(); saveOpts();
+  $("#bsound").textContent=OPTS.mute?"🔇":"🔊";
+});
+$("#btitle").addEventListener("click",()=>{ save(); closePanels(true); showTitle(); });
+$("#breset").addEventListener("click",()=>{
+  if(confirm("Erase your saved adventure? This can't be undone.")){
+    localStorage.removeItem(SAVE_KEY);
+    closePanels(true); S=null; showTitle();
+  }
+});
+
+function showCredits(){
+  const sparkGot=Object.keys(S.got).filter(k=>k.includes("_s")).length;
+  const qDone=Object.values(S.quests).filter(v=>v==="done").length;
+  const total=Object.keys(QUESTS).length;
+  $("#credbody").innerHTML=
+    "<p>Lumen shines from the Heartlamp, and warm gold light rolls out over every roof in Willowdale. "+
+    "Somewhere, soup is bubbling. Somewhere, a fox is admiring his silhouette.</p>"+
+    "<p><b>Thank you for playing, little keeper.</b></p>"+
+    '<p class="stat">Shards: <b>5/5</b> · Quests: <b>'+qDone+"/"+total+"</b> · Sparkles: <b>"+sparkGot+"/13</b> · Sir Plod: <b>"+
+    Object.keys(S.plod).length+"/5</b></p>"+
+    '<p class="stat">Still out there: hidden sparkles, Sir Plod’s grand quest, and every friend you haven’t talked to since the light came back.</p>'+
+    '<p class="stat" style="margin-top:.6rem">A Wild Olive Studios adventure 🫒</p>';
+  panelOpen("credits");
+  mode="panel";
+}
+$("#bfree").addEventListener("click",()=>{ closePanels(); mode="play"; });
+
+/* ---- title screen ---- */
+function showTitle(){
+  mode="title";
+  $("#title").classList.remove("off");
+  $("#tcont").disabled=!loadSave();
+  playSong("village");
+}
+function hideTitle(){ $("#title").classList.add("off"); }
+{
+  const wrap=$("#tstars");
+  for(let i=0;i<46;i++){
+    const s=document.createElement("i");
+    s.style.left=(Math.random()*100)+"%";
+    s.style.top=(Math.random()*100)+"%";
+    s.style.animationDelay=(Math.random()*2.6)+"s";
+    s.style.opacity=.2+Math.random()*.6;
+    wrap.appendChild(s);
+  }
+}
+function newGame(){
+  audioInit();
+  if(loadSave()&&!confirm("Start a fresh adventure? Your old save will be replaced when the new one begins.")) return;
+  S=freshState();
+  loadMap("village",16,12,"down",true);
+  hideTitle(); refreshHUD();
+  playSong("village");
+  showLocName("Willowdale Village");
+  mode="play";
+  runDlg(async()=>{
+    await say("🌠","","Every night for a hundred years, the <b>Heartlamp</b> of Willowdale burned gold and warm — lit, they say, by a gift from the stars.");
+    await say("🌠","","Three nights ago, a falling star tore across the sky… and the Heartlamp went <b>dark</b>.");
+    await say("🌠","","You are the keeper's apprentice. Which means this — all of this — is now <i>your</i> problem.");
+    await say("🌠","","Find <b>Grandmother Elm</b> in the square. (Move with WASD or the arrow keys; talk with <b>E</b>. Your journal is <b>J</b>.)");
+  });
+  save();
+}
+function continueGame(){
+  audioInit();
+  const s=loadSave(); if(!s) return;
+  S=s;
+  const px=S.x, py=S.y, pd=S.dir;
+  loadMap(S.map,1,1,pd,true);
+  S.x=px; S.y=py; S.dir=pd;
+  hideTitle(); refreshHUD();
+  playSong(MAPS[S.map].song);
+  showLocName(MAP.name);
+  mode="play";
+  toast("Welcome back, little keeper. ✦");
+  save();
+}
+$("#tnew").addEventListener("click",newGame);
+$("#tcont").addEventListener("click",continueGame);
+
+/* unlock audio on any first gesture */
+addEventListener("pointerdown",()=>{ audioInit(); if(AC&&AC.state==="suspended")AC.resume(); },{passive:true});
+addEventListener("keydown",()=>{ audioInit(); if(AC&&AC.state==="suspended")AC.resume(); });
+
+/* =====================================================================
+   MAIN LOOP
+   ===================================================================== */
+let lastT=0;
+function frame(t){
+  const dt=Math.min(50,t-lastT||16); lastT=t;
+  if(S&&MAP&&mode!=="title") update(dt);
+  if(S&&MAP) render(t);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+setInterval(()=>{ if(mode==="play") save(); },10000);
+
+showTitle();
+</script>
+</body>
+</html>
