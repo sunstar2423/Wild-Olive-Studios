@@ -79,8 +79,13 @@
     font-size:1.05rem; font-weight:700; backdrop-filter:blur(5px); display:grid; place-items:center; }
   #zoomctl #zoomReset{ font-size:.62rem; }
   #zoomctl button:hover{ color:#fff; }
-  .maphint{ position:absolute; left:12px; top:12px; z-index:9; font-size:.66rem; color:#8fb6b1;
-    background:rgba(10,32,30,.7); border:1px solid var(--line); padding:.3rem .6rem; border-radius:8px; pointer-events:none; max-width:60%; }
+  #mapnotes{ position:absolute; left:12px; top:12px; z-index:9; display:flex; flex-direction:column; gap:.35rem;
+    pointer-events:none; max-width:62%; align-items:flex-start; }
+  .maphint{ font-size:.66rem; color:#8fb6b1;
+    background:rgba(10,32,30,.7); border:1px solid var(--line); padding:.3rem .6rem; border-radius:8px; }
+  #objective{ font-size:.78rem; color:#dff0ec; background:rgba(10,32,30,.88); border:1px solid var(--line);
+    border-left:3px solid var(--gold); padding:.4rem .7rem; border-radius:9px; }
+  #objective .obj-rw{ color:var(--gold); font-weight:700; }
   @media (max-width:880px){ .maphint{ display:none; } }
 
   /* station "look inside" scene */
@@ -231,7 +236,10 @@
         <button id="zoomOut" title="Zoom out">－</button>
         <button id="zoomReset" title="Reset view"><span id="zoomLevel">100%</span></button>
       </div>
-      <div class="maphint">Zoom out for the whole region · tap a town to enter it · tap a station to look inside</div>
+      <div id="mapnotes">
+        <div class="maphint">Zoom out for the whole region · tap a town to enter it · tap a station to look inside</div>
+        <div id="objective" style="display:none"></div>
+      </div>
 
       <div id="drawhint">
         <span id="drawhintText">Pick stops…</span>
@@ -296,6 +304,7 @@
             <div class="kv"><span>Stops connected</span><span id="rConn">0</span></div>
             <div class="kv"><span>Interchange hubs</span><span id="rHubs">0</span></div>
             <div class="kv"><span>Vehicles owned</span><span id="rVeh">0</span></div>
+            <div class="btnrow"><button class="b small" id="autoDayBtn">Nightly report: pauses</button></div>
           </div>
         </div>
 
@@ -326,7 +335,10 @@
             <b style="color:#fff">3. Grow & maintain.</b> Add vehicles to busy lines, open new routes, and <b>Service</b> vehicles before wear gets high — neglected vehicles break down, costing money and happiness. Short on cash? The <b>🏦 Bank</b> (Lines tab) lets you <b>borrow</b> to expand and <b>repay</b> as fares roll in — interest accrues daily, so clear debt when you can.
           </p></div>
           <div class="card"><p class="muted">
-            <b style="color:#fff">4. Watch the numbers.</b> Toggle <b>🔥 Demand</b> to see where people want to travel but can't yet. Each night you get a profit/loss report. Keep funds above zero and riders happy.
+            <b style="color:#fff">4. Watch the numbers.</b> Each line card shows its riders and fares <b>today</b> — spot the earners and the duds. Toggle <b>🔥 Demand</b> to see journeys people want but can't make. Set your <b>🎟️ Fare level</b> (Lines tab): low fares grow ridership and goodwill, premium fares earn more per trip. The nightly report can be set to <b>auto-continue</b> if you'd rather keep rolling.
+          </p></div>
+          <div class="card"><p class="muted">
+            <b style="color:#fff">🎯 Chase the goals.</b> The banner on the map shows your next milestone — each one pays a <b>city grant</b> (up to £30k) that funds your next expansion. Clear them all and grow your net worth to win.
           </p></div>
           <div class="card"><p class="muted">
             <b style="color:#fff">5. Weather & event days.</b> The top bar shows today's conditions. <b>Event days</b> — Match Day at the Stadium, Opera Night, the Arts Festival, Market Day and more — surge demand at specific venues, so pre-position vehicles to cash in. <b>Weather</b> sways outdoor demand (sunny Beach Days are golden), and rough seas <b>slow ferries and wear them faster</b> — keep them serviced through storms.
@@ -385,6 +397,7 @@
     </div>
     <p id="dNote" class="muted"></p>
     <button class="bigbtn" id="dayBtn">Open next day ▸</button>
+    <p style="margin-top:.9rem"><label class="tiny" style="cursor:pointer"><input type="checkbox" id="autoDayChk"> Don't pause for nightly reports (show a quick summary instead — re-enable in the Report tab)</label></p>
   </div>
 </div>
 
@@ -450,6 +463,24 @@ const SERVICE_BASE = 200;   // £ to service a vehicle (preventive) + wear facto
 const REPAIR_COST  = 480;   // £ when a vehicle breaks down
 const BREAKDOWN_FLOOR = 50; // wear below this never breaks down
 const ADD_VEHICLE_DISCOUNT = 1.0;
+
+/* Fare policy: a network-wide pricing lever. Low fares grow ridership and cheer
+   the city; premium fares earn more per trip but cool demand and goodwill. */
+const FARE_POLICIES = {
+  low: { label:"Low",      fare:0.85, demand:1.12, happy:+4 },
+  std: { label:"Standard", fare:1.00, demand:1.00, happy: 0 },
+  high:{ label:"Premium",  fare:1.25, demand:0.85, happy:-6 },
+};
+
+/* Each new line gets its own name (Bus 2, Ferry 1, IC 1…) and a shade of its
+   mode colour so parallel lines stay tellable-apart on the map. */
+const LINE_PALETTES = {
+  bus:      ["#e7b75f","#f0d080","#d29a3a","#f7e3a8","#c8821f"],
+  rail:     ["#5b8def","#86abf5","#3f6fd0","#aac4f8","#2c55a8"],
+  ferry:    ["#36c2c9","#6cd7dc","#1fa3aa","#9be6ea","#0f8289"],
+  intercity:["#b07fe0","#c9a3ec","#9356cc","#e0c8f5","#7a3cb0"],
+};
+const LINE_PREFIX = { bus:"Bus", rail:"Rail", ferry:"Ferry", intercity:"IC" };
 
 /* --------------------------- WORLD DATA ---------------------------------- */
 /* The world is a REGION of several towns. Town 0 is the handcrafted starter,
@@ -601,6 +632,9 @@ const S = {
   seed: 1,
   money: CFG.START_MONEY,
   debt: 0, interestToday: 0,
+  farePolicy: "std", autoDay: false,
+  pops: [],                       // floating "+£" fare popups
+  lineCounters: { bus:0, rail:0, ferry:0, intercity:0 },
   day: 1, time: CFG.DAY_START, speed: 1, running: false, paused:false,
   happy: CFG.HAPPY_START,
   lines: [],            // {id, mode, stops:[locId], color, vehicles:[], path:[{x,y}], len, segLen[]}
@@ -640,10 +674,11 @@ const inWater = (x,y)=>WATER.some(p=>pointInPoly(x,y,p));
 const loc = id => LOCATIONS[id];
 
 /* straight-line journey fare (charged on completion) */
-function fareFor(oId,dId,usedFerry,usedRail){
+function fareFor(oId,dId,premium){
   const d = dist(loc(oId),loc(dId));
   let f = CFG.FARE_BASE + d*CFG.FARE_PER_UNIT;
-  if(usedFerry) f *= CFG.FERRY_PREMIUM; else if(usedRail) f *= CFG.RAIL_PREMIUM;
+  f *= (premium||1);
+  f *= FARE_POLICIES[S.farePolicy].fare;
   return f;
 }
 
@@ -813,7 +848,7 @@ function spawnPassengers(dtMin){
   const wxGlobal = S.weather ? S.weather.global : 1;
   let rate=0;
   for(const l of LOCATIONS) rate += l.demand*timeFactor(l.peak)*locDemandMult(l.id);
-  rate *= 0.15 * happyMult * wxGlobal;   // global tuning → passengers per sim-min
+  rate *= 0.15 * happyMult * wxGlobal * FARE_POLICIES[S.farePolicy].demand;
   S.spawnAcc += rate*dtMin;
   let guard=0;
   while(S.spawnAcc>=1 && S.passengers.length<CFG.MAX_PASSENGERS && guard++<40){
@@ -987,11 +1022,18 @@ function arriveStop(v,line,stopLocId){
 }
 
 function completeJourney(p,line){
-  const usedFerry = p.plan.some(l=>{const ln=S.lines.find(x=>x.id===l.lineId); return ln&&ln.mode==="ferry";});
-  const usedRail  = p.plan.some(l=>{const ln=S.lines.find(x=>x.id===l.lineId); return ln&&ln.mode==="rail";});
-  const fare = fareFor(p.o,p.d,usedFerry,usedRail);
+  // best premium among the modes actually ridden (ferry/rail/intercity)
+  const linesUsed=new Set(p.plan.map(l=>l.lineId));
+  let prem=1;
+  for(const lid of linesUsed){ const ln=S.lines.find(x=>x.id===lid); if(ln) prem=Math.max(prem,MODES[ln.mode].premium||1); }
+  const fare = fareFor(p.o,p.d,prem);
   S.money+=fare; S.fareToday+=fare;
   S.ridersToday++; S.ridersTotal++;
+  // attribute the journey to every line that carried it (for per-line stats)
+  const share=fare/linesUsed.size;
+  for(const lid of linesUsed){ const ln=S.lines.find(x=>x.id===lid); if(ln){ ln.fareToday=(ln.fareToday||0)+share; ln.ridersToday=(ln.ridersToday||0)+1; } }
+  // floating "+£" at the destination
+  if(S.pops.length<60){ const D=loc(p.d); S.pops.push({x:D.x+(Math.random()*14-7), y:D.y-14, txt:"+£"+fare.toFixed(2), age:0}); }
   const key=loc(p.o).name+" → "+loc(p.d).name;
   S.odToday[key]=(S.odToday[key]||0)+1;
   removePassenger(p);
@@ -1014,16 +1056,20 @@ function lineInfraCost(mode,stops){
 }
 function lineBuildCost(mode,stops){ return lineInfraCost(mode,stops)+MODES[mode].buy; }
 
-function createLine(mode,stops){
+function createLine(mode,stops,savedName,savedColor){
   const cost=lineBuildCost(mode,stops);
   if(S.money<cost){ toast("Not enough funds for that line.","bad"); return false; }
   S.money-=cost;
   const path=buildPath(stops);
-  const line={ id:S.nextLineId++, mode, stops:stops.slice(), color:MODES[mode].color, vehicles:[], path };
+  S.lineCounters[mode]=(S.lineCounters[mode]||0)+1;
+  const n=S.lineCounters[mode];
+  const name = savedName || (LINE_PREFIX[mode]+" "+n);
+  const color = savedColor || LINE_PALETTES[mode][(n-1)%LINE_PALETTES[mode].length];
+  const line={ id:S.nextLineId++, mode, stops:stops.slice(), name, color, vehicles:[], path, fareToday:0, ridersToday:0 };
   const v=makeVehicle(line); line.vehicles.push(v); S.vehicles.push(v);
   S.lines.push(line);
   rebuildGraph();
-  toast(`${MODES[mode].name} line opened — ${stops.length} stops.`,"good");
+  toast(`${name} opened — ${stops.length} stops.`,"good");
   renderPanels(); return true;
 }
 function addVehicle(line){
@@ -1131,35 +1177,42 @@ function endOfDay(){
   let target = 40 + servedRatio*60;                 // reliability of service (40–100)
   target -= Math.min(25, S.breakdownsToday*2.5);    // breakdowns sting
   target -= deniedRatio*25;                          // overcrowding
+  target += FARE_POLICIES[S.farePolicy].happy;       // pricing goodwill
   if(S.lines.length===0) target = 28;
   target = clamp(target,0,100);
   S.happy = clamp(S.happy + (target - S.happy)*0.4, 0, 100);
 
-  // fill report screen
-  setText("dayTitle","Day "+S.day+" complete");
-  setText("daySub", profit>=0 ? "A profitable day on the bay" : "A tough day for the network");
-  setText("dFare", fmtMoney(S.fareToday));
-  setText("dCost", "−"+fmtMoney(op+S.maintToday+interest));
-  const pe=$("dProfit"); pe.textContent=fmtMoney(profit); pe.className="v "+(profit>=0?"pos":"neg");
-  setText("dRiders", S.ridersToday.toLocaleString());
-  let note="";
-  if(S.lines.length===0) note="Trace your first line to start carrying passengers and earning fares.";
-  else if(S.debt>0 && interest>profit+interest && profit<0) note="Loan interest is eating your margins — repay debt once fares pick up.";
-  else if(profit<0 && S.fareToday<op) note="Running costs outweigh fares — focus vehicles on the busiest journeys, or trim idle routes.";
-  else if(S.lostToday>S.ridersToday*0.25) note="Lots of riders gave up waiting. Add vehicles or open new connections where the 🔥 demand glows.";
-  else if(S.breakdownsToday>2) note="Breakdowns cost you today. Service vehicles before their wear climbs past ~60%.";
-  else if(S.debt>0 && profit>0) note="Turning a profit — consider repaying some debt to cut your daily interest.";
-  else if(profit>0) note="Healthy profit — consider reinvesting in a new route or upgrading to light rail / ferries.";
-  setText("dNote", note);
-
-  showScreen("dayScreen");
-  S.paused=true;
+  if(S.autoDay && S.lines.length){
+    // hands-off mode: a compact toast instead of the pause screen
+    toast(`Day ${S.day} — ${profit>=0?"profit ":"loss "} ${fmtMoney(profit)} · ${S.ridersToday.toLocaleString()} riders`, profit>=0?"good":"warn");
+  } else {
+    // fill report screen
+    setText("dayTitle","Day "+S.day+" complete");
+    setText("daySub", profit>=0 ? "A profitable day on the bay" : "A tough day for the network");
+    setText("dFare", fmtMoney(S.fareToday));
+    setText("dCost", "−"+fmtMoney(op+S.maintToday+interest));
+    const pe=$("dProfit"); pe.textContent=fmtMoney(profit); pe.className="v "+(profit>=0?"pos":"neg");
+    setText("dRiders", S.ridersToday.toLocaleString());
+    let note="";
+    if(S.lines.length===0) note="Trace your first line to start carrying passengers and earning fares.";
+    else if(S.debt>0 && interest>profit+interest && profit<0) note="Loan interest is eating your margins — repay debt once fares pick up.";
+    else if(profit<0 && S.fareToday<op) note="Running costs outweigh fares — focus vehicles on the busiest journeys, or trim idle routes.";
+    else if(S.lostToday>S.ridersToday*0.25) note="Lots of riders gave up waiting. Add vehicles or open new connections where the 🔥 demand glows.";
+    else if(S.breakdownsToday>2) note="Breakdowns cost you today. Service vehicles before their wear climbs past ~60%.";
+    else if(S.debt>0 && profit>0) note="Turning a profit — consider repaying some debt to cut your daily interest.";
+    else if(profit>0) note="Healthy profit — consider reinvesting in a new route, more towns, or faster modes.";
+    setText("dNote", note);
+    const chk=$("autoDayChk"); if(chk) chk.checked=false;
+    showScreen("dayScreen");
+    S.paused=true;
+  }
 
   // roll into next day
   S.day++;
   S.fareToday=0; S.maintToday=0; S.ridersToday=0; S.lostToday=0;
   S.breakdownsToday=0; S.deniedToday=0; S.interestToday=0;
   S.odToday={};
+  for(const ln of S.lines){ ln.fareToday=0; ln.ridersToday=0; }
   rollDailyConditions();
   announceConditions();
   checkGoals();
@@ -1168,24 +1221,32 @@ function endOfDay(){
 }
 
 /* --------------------------- GOALS --------------------------------------- */
+/* Each milestone pays a city grant — funding the next stage of expansion. */
 const GOALS = [
-  { id:"firstline", txt:"Open your first line", test:()=>S.lines.length>=1 },
-  { id:"connect8",  txt:"Connect 8 stops in your home town", test:()=>connectedCount()>=8 },
-  { id:"riders300", txt:"Carry 300 riders in a day", test:()=>S._peakRiders>=300 },
-  { id:"hub",       txt:"Create an interchange hub (2+ lines meet)", test:()=>LOCATIONS.some(l=>isHub(l.id)) },
-  { id:"threemodes",txt:"Run all three local modes: bus, rail & ferry", test:()=>["bus","rail","ferry"].every(m=>S.lines.some(l=>l.mode===m)) },
-  { id:"intercity", txt:"Open an intercity line between two towns", test:()=>S.lines.some(l=>lineSpansTowns(l)) },
-  { id:"twotowns",  txt:"Run services in 2 different towns", test:()=>townsServed()>=2 },
-  { id:"happy90",   txt:"Reach 90% network happiness", test:()=>S.happy>=90 },
-  { id:"alltowns",  txt:"Run services in every town", test:()=>townsServed()>=TOWNS.length },
-  { id:"worth",     txt:"Reach £"+(CFG.WIN_WORTH/1000)+"k net worth", test:()=>netWorth()>=CFG.WIN_WORTH },
+  { id:"firstline", txt:"Open your first line", reward:3000, test:()=>S.lines.length>=1 },
+  { id:"connect8",  txt:"Connect 8 stops in your home town", reward:6000, test:()=>connectedCount()>=8 },
+  { id:"riders300", txt:"Carry 300 riders in a day", reward:8000, test:()=>S._peakRiders>=300 },
+  { id:"hub",       txt:"Create an interchange hub (2+ lines meet)", reward:5000, test:()=>LOCATIONS.some(l=>isHub(l.id)) },
+  { id:"threemodes",txt:"Run all three local modes: bus, rail & ferry", reward:12000, test:()=>["bus","rail","ferry"].every(m=>S.lines.some(l=>l.mode===m)) },
+  { id:"intercity", txt:"Open an intercity line between two towns", reward:15000, test:()=>S.lines.some(l=>lineSpansTowns(l)) },
+  { id:"twotowns",  txt:"Run services in 2 different towns", reward:10000, test:()=>townsServed()>=2 },
+  { id:"happy90",   txt:"Reach 90% network happiness", reward:12000, test:()=>S.happy>=90 },
+  { id:"alltowns",  txt:"Run services in every town", reward:30000, test:()=>townsServed()>=TOWNS.length },
+  { id:"worth",     txt:"Reach £"+(CFG.WIN_WORTH/1000)+"k net worth", reward:0, test:()=>netWorth()>=CFG.WIN_WORTH },
 ];
 function connectedCount(){ const s=new Set(); for(const ln of S.lines) for(const id of ln.stops) s.add(id); return s.size; }
 function townsServed(){ return TOWNS.filter(t=>townHasService(t.id)).length; }
 function checkGoals(){
   let newly=false;
   for(const g of GOALS){
-    if(!S.goalsDone[g.id] && g.test()){ S.goalsDone[g.id]=true; newly=true; if(g.id!=="worth"){ toast("Goal complete: "+g.txt+" ✓","good"); SFX.chime(); } }
+    if(!S.goalsDone[g.id] && g.test()){
+      S.goalsDone[g.id]=true; newly=true;
+      if(g.id!=="worth"){
+        if(g.reward>0) S.money+=g.reward;
+        toast(`Goal complete: ${g.txt} ✓${g.reward>0?" — city grant "+fmtMoney(g.reward)+"!":""}`,"good");
+        SFX.chime();
+      }
+    }
   }
   renderGoals();
   return newly;
@@ -1408,7 +1469,23 @@ function render(){
   }
 
   ctx.restore();
+  drawPops();      // floating "+£" fare rewards (screen space)
   drawWeather();   // full-screen overlay (rain, storm, sun glow)
+}
+
+function drawPops(){
+  if(!S.pops.length || !lodDetail()) return;
+  ctx.save();
+  ctx.font=`700 ${Math.round(13*view.dpr)}px `+CFG.FONT_F; ctx.textAlign="center";
+  for(const p of S.pops){
+    const sp=w2s(p.x,p.y);
+    if(sp.x<-30||sp.x>cv.width+30||sp.y<-30||sp.y>cv.height+30) continue;
+    const a=Math.max(0,1-p.age/1.3);
+    ctx.fillStyle=`rgba(159,224,138,${a})`;
+    ctx.fillText(p.txt, sp.x, sp.y - p.age*26*view.dpr);
+  }
+  ctx.restore();
+  ctx.textAlign="left";
 }
 
 /* ---- region overview: towns as labelled footprints + intercity links ---- */
@@ -1581,7 +1658,7 @@ function drawVehicles(){
       // body
       let w=18,h=10;
       if(v.mode==="rail"){ w=26; h=9; } else if(v.mode==="ferry"){ w=20; h=13; }
-      ctx.fillStyle=v.broken?"#777": m.color;
+      ctx.fillStyle=v.broken?"#777": line.color;
       roundRect(-w/2,-h/2,w,h,3); ctx.fill();
       // load fill (window glow)
       ctx.fillStyle="rgba(255,255,255,0.5)";
@@ -1931,11 +2008,27 @@ function renderFinance(){
         <button class="b primary small" data-b="rall" ${S.debt<=0||S.money<=0?'disabled':''}>Repay all</button>
       </div>
       <p class="tiny" style="margin-top:.4rem">Borrow to expand faster — but interest runs at ${(CFG.LOAN_DAILY_RATE*100).toFixed(1)}%/day until you repay.</p>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="title">🎟️ Fares</div>
+        <span class="pill">${FARE_POLICIES[S.farePolicy].label}</span>
+      </div>
+      <div class="btnrow">
+        ${Object.entries(FARE_POLICIES).map(([k,p])=>
+          `<button class="b small ${S.farePolicy===k?'primary':''}" data-fp="${k}">${p.label}</button>`).join("")}
+      </div>
+      <p class="tiny" style="margin-top:.4rem">Low fares win riders and goodwill; premium fares earn more per trip but cool demand and happiness.</p>
     </div>`;
   host.querySelector('[data-b="b10"]').onclick=()=>borrow(10000);
   host.querySelector('[data-b="b25"]').onclick=()=>borrow(25000);
   host.querySelector('[data-b="r10"]').onclick=()=>repay(10000);
   host.querySelector('[data-b="rall"]').onclick=()=>repay(Infinity);
+  host.querySelectorAll('[data-fp]').forEach(b=> b.onclick=()=>{
+    S.farePolicy=b.dataset.fp;
+    toast(`Fares set to ${FARE_POLICIES[S.farePolicy].label}.`,"good");
+    renderFinance();
+  });
 }
 function renderLines(){
   const host=$("linesHost"); host.innerHTML="";
@@ -1947,14 +2040,18 @@ function renderLines(){
     const avgWear=Math.round(line.vehicles.reduce((s,v)=>s+v.wear,0)/Math.max(1,line.vehicles.length));
     const stopsTxt=line.stops.map(id=>loc(id).emoji).join(" ");
     const div=document.createElement("div"); div.className="card";
+    const dayFare=line.fareToday||0, dayRiders=line.ridersToday||0;
+    const dayCost=line.vehicles.length*m.dailyOp;
+    const margin=dayFare-dayCost;
     div.innerHTML=`
       <div class="row" style="justify-content:space-between">
-        <div class="title"><span class="dot" style="background:${m.color}"></span>${m.name}</div>
+        <div class="title"><span class="dot" style="background:${line.color}"></span>${line.name||m.name} <span class="tiny">${m.name}</span></div>
         <span class="pill">${line.vehicles.length}×</span>
       </div>
       <div class="muted" style="margin:.25rem 0">${stopsTxt} <span class="tiny">(${line.stops.length} stops)</span></div>
+      <div class="kv"><span>Today</span><span>${dayRiders} riders · <b style="color:${margin>=0?'#7fcf6b':'#e7b75f'}">${fmtMoney(dayFare)}</b></span></div>
       <div class="kv"><span>On board / capacity</span><span>${load} / ${cap}</span></div>
-      <div class="kv"><span>Daily running cost</span><span>${fmtMoney(line.vehicles.length*m.dailyOp)}</span></div>
+      <div class="kv"><span>Daily running cost</span><span>${fmtMoney(dayCost)}</span></div>
       <div class="kv"><span>Avg. wear</span><span style="color:${avgWear>70?'#e76f6f':avgWear>45?'#e7b75f':'#7fcf6b'}">${avgWear}%</span></div>
       <div class="bar"><i style="width:${avgWear}%; background:${avgWear>70?'#e76f6f':avgWear>45?'#e7b75f':'#7fcf6b'}"></i></div>
       <div class="btnrow">
@@ -1988,9 +2085,19 @@ function renderGoals(){
   for(const g of GOALS){
     const done=!!S.goalsDone[g.id];
     const d=document.createElement("div"); d.className="goal"+(done?" done":"");
-    d.innerHTML=`<span class="tick">${done?"✓":""}</span><span class="txt">${g.txt}</span>`;
+    const rw = g.reward>0? `<span class="pill" style="margin-left:auto">${done?"paid":"+£"+(g.reward/1000)+"k"}</span>` : "";
+    d.innerHTML=`<span class="tick">${done?"✓":""}</span><span class="txt">${g.txt}</span>${rw}`;
     host.appendChild(d);
   }
+  updateObjective();
+}
+/* the "next goal" banner on the map — always tells the player what to chase */
+function updateObjective(){
+  const el=$("objective"); if(!el) return;
+  const next=GOALS.find(g=>!S.goalsDone[g.id]);
+  if(!next || !S.running){ el.style.display="none"; return; }
+  el.style.display="";
+  el.innerHTML=`🎯 <b>Next:</b> ${next.txt}${next.reward>0?` <span class="obj-rw">+£${(next.reward/1000)}k</span>`:""}`;
 }
 
 function toast(msg,kind){
@@ -2108,6 +2215,7 @@ function checkEnd(){
 }
 function endGame(win,body){
   S.ended=true; S.running=false; S.paused=true;
+  updateObjective();
   clearSave();   // the run is over — don't offer to resume a finished game
   setText("endKick", win?"Victory":"Game over");
   setText("endTitle", win?"The city is yours":"End of the line");
@@ -2132,9 +2240,10 @@ function serialize(){
     breakdownsToday:S.breakdownsToday, deniedToday:S.deniedToday,
     fareToday:S.fareToday, maintToday:S.maintToday, odToday:S.odToday,
     autoService:S.autoService, peakRiders:S._peakRiders||0,
+    farePolicy:S.farePolicy, autoDay:S.autoDay, lineCounters:S.lineCounters,
     goalsDone:S.goalsDone, nextLineId:S.nextLineId, nextVehId:S.nextVehId,
     weatherKey:S.weather&&S.weather.key, eventKey:S.event&&S.event.key,
-    lines:S.lines.map(l=>({ id:l.id, mode:l.mode, stops:l.stops.slice(),
+    lines:S.lines.map(l=>({ id:l.id, mode:l.mode, stops:l.stops.slice(), name:l.name, color:l.color,
       vehicles:l.vehicles.map(v=>({ id:v.id, wear:v.wear })) })),
   };
 }
@@ -2150,13 +2259,19 @@ function deserialize(d){
     breakdownsToday:d.breakdownsToday||0, deniedToday:d.deniedToday||0,
     fareToday:d.fareToday||0, maintToday:d.maintToday||0, odToday:d.odToday||{},
     autoService:d.autoService!==false, _peakRiders:d.peakRiders||0,
+    farePolicy:FARE_POLICIES[d.farePolicy]?d.farePolicy:"std", autoDay:!!d.autoDay,
+    pops:[], lineCounters:d.lineCounters||{bus:0,rail:0,ferry:0,intercity:0},
     goalsDone:d.goalsDone||{}, spawnAcc:0, heatmap:false, unmet:{},
     ended:false, running:true, paused:false, speed:1,
   });
   for(const ld of d.lines){
     if(!MODES[ld.mode] || !ld.stops || ld.stops.length<2 || ld.stops.some(s=>!loc(s))) continue;
+    if(!ld.name){ S.lineCounters[ld.mode]=(S.lineCounters[ld.mode]||0)+1; }   // older save: name it now
+    const n=S.lineCounters[ld.mode]||1;
     const line={ id:ld.id, mode:ld.mode, stops:ld.stops.slice(),
-                 color:MODES[ld.mode].color, vehicles:[], path:buildPath(ld.stops) };
+                 name:ld.name||(LINE_PREFIX[ld.mode]+" "+n),
+                 color:ld.color||LINE_PALETTES[ld.mode][(n-1)%LINE_PALETTES[ld.mode].length],
+                 vehicles:[], path:buildPath(ld.stops), fareToday:0, ridersToday:0 };
     for(const vd of (ld.vehicles||[])){
       const v=makeVehicle(line);
       v.id=vd.id; v.wear=clamp(vd.wear||0,0,100);
@@ -2194,8 +2309,11 @@ function loadGame(){
   try{ ok=deserialize(JSON.parse(raw)); }catch(e){ ok=false; }
   if(!ok){ toast("That save couldn't be read — start a new city.","bad"); clearSave(); return false; }
   closeStation(); resetView();
-  hideScreens(); resize(); renderPanels(); updateTopbar(); setSpeed(1);
-  toast("Welcome back — city restored.","good");
+  hideScreens(); resize();
+  setAutoDay(S.autoDay);
+  renderPanels(); updateTopbar(); setSpeed(1);
+  focusTown(TOWNS[0]);
+  toast("Welcome back — network restored.","good");
   return true;
 }
 function flashSave(){
@@ -2220,6 +2338,8 @@ function frame(now){
     advanceTime(dtMin);
     S._lastDayRiders=S.ridersToday;
     S._peakRiders=Math.max(S._peakRiders||0,S.ridersToday);
+    // age the fare popups
+    for(let i=S.pops.length-1;i>=0;i--){ S.pops[i].age+=dtReal; if(S.pops[i].age>1.3) S.pops.splice(i,1); }
     // periodic UI refresh (not every frame to save work)
     uiAcc+=dtReal; if(uiAcc>0.25){ uiAcc=0; updateTopbar(); renderReport(); renderLines(); checkGoals(); }
   }
@@ -2241,6 +2361,7 @@ function startGame(){
     ridersToday:0, ridersTotal:0, lostToday:0, breakdownsToday:0, deniedToday:0,
     fareToday:0, maintToday:0, odToday:{},
     nextLineId:1, nextVehId:1, autoService:true, heatmap:false, unmet:{}, goalsDone:{}, ended:false,
+    farePolicy:"std", autoDay:false, pops:[], lineCounters:{bus:0,rail:0,ferry:0,intercity:0},
     _peakRiders:0,_lastDayRiders:0,
   });
   LOCATIONS.forEach(l=>S.stops[l.id]={wait:[]});
@@ -2250,8 +2371,11 @@ function startGame(){
   closeStation(); resetView();
   hideScreens();
   resize();
+  setAutoDay(false);
   renderPanels(); updateTopbar();
   setSpeed(1);
+  focusTown(TOWNS[0]);   // open on your home town, ready to build
+  toast("Welcome to "+TOWNS[0].name+"! Trace your first 🚌 bus line between busy places.","good");
 }
 function setSpeed(s){
   S.speed=s; if(s>0){ S.paused=false; }
@@ -2268,6 +2392,13 @@ try{ if(localStorage.getItem(SOUND_KEY)==="0") $("soundBtn").textContent="🔇";
 $("drawGo").onclick=confirmBuild;
 $("drawCancel").onclick=cancelBuild;
 $("svBack").onclick=closeStation;
+function setAutoDay(v){
+  S.autoDay=v;
+  const b=$("autoDayBtn"); if(b) b.textContent="Nightly report: "+(v?"auto (toast)":"pauses");
+  const c=$("autoDayChk"); if(c) c.checked=v;
+}
+$("autoDayChk").onchange=e=>setAutoDay(e.target.checked);
+$("autoDayBtn").onclick=()=>setAutoDay(!S.autoDay);
 function zoomCenter(f){ const r=cv.getBoundingClientRect(); zoomAt(f, r.width/2, r.height/2); }
 $("zoomIn").onclick=()=>zoomCenter(1.25);
 $("zoomOut").onclick=()=>zoomCenter(1/1.25);

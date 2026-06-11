@@ -47,8 +47,15 @@ happy and your fleet maintained.
   accrues daily on the outstanding balance, and debt counts against your net worth —
   so borrow to grow, but clear it when you can.
 - **Read the daily report.** Each night you get fares, running costs (including loan
-  interest), net profit, riders carried and the busiest journeys. A **🔥 Demand**
-  overlay shows trips people want to make but can't yet — your cue to expand.
+  interest), net profit, riders carried and the busiest journeys — or flip on
+  **auto-continue** to keep rolling with a quick summary toast. Every line card
+  shows **its own riders & fares today**, so you can spot earners and duds. A
+  **🔥 Demand** overlay shows trips people want to make but can't yet.
+- **Set your fares.** A network-wide **fare level** (Low / Standard / Premium):
+  low fares grow ridership and goodwill, premium fares earn more per trip but cool
+  demand and happiness.
+- **Chase the goals.** A banner always shows your next milestone, and each one pays
+  a **city grant** (£3k–£30k) that funds the next stage of expansion.
 - **Hit the goals.** Connect the city, run all three modes, build an interchange,
   reach 90% happiness, and grow your net worth to become the official Transit
   Authority.
