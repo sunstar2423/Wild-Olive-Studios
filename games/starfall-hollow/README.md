@@ -20,6 +20,24 @@ poking everything, and slowly unlocking the map region by region:
 | 🏔️ **Frostpeak** | A mitten-less yeti and an **ice-sliding puzzle** where you can't stop halfway (warm cloak required) |
 | 🌠 **Starfall Crater** | Four rune pillars to wake in the right order — and the fallen star itself |
 
+### Act II — Above the Clouds
+
+Relighting the Heartlamp isn't the end. Lumen reveals he was *shaken loose* —
+something is unpicking the **Night Loom** that holds the dark sky together.
+A star bridge opens in the crater and carries you to a second world:
+
+| Region | What waits there |
+|---|---|
+| ☁️ **Skyharbor** | A village above the weather — Nimbus's Cloud Goods, a balloon captain's post round, and a star kid missing three glowbugs |
+| 🌬️ **Gale Gardens** | Wind-gust lanes that shove you about, a knot-gate only a Wind Bell can comb open, and a **weathervane riddle** |
+| 💎 **Mirror Vale** | Selene's observatory and the Prism Chamber — a **rotatable-mirror moonbeam puzzle** (Moon Lens required) |
+| 🌙 **Moon Temple** | A guardian who demands three numbers, the pitch-dark **Shadowdeep maze** that remembers them, and Umbra — the shadow who started it all |
+
+Act II has its own items (Skyboots, Moon Lens, Wind Bell, Comet Kite), its own
+collectibles (10 moonstones), three more Sir Plod encounters, four new music
+themes, a new push-wind movement mechanic, and a second, true ending at the
+Night Loom — roughly doubling the length of the story.
+
 ### Systems
 
 - **Story chapters** — five main quests gate the world open one region at a

@@ -468,7 +468,8 @@ function gainShard(i){ // i = index 0..4
    w wall  ^ roof  d door  f fence  m plaza/mosaic  _ wood floor  o boulder
    ===================================================================== */
 /*WORLD-START*/
-const SOLID = new Set(["#","T","t","~","r","w","^","f","o"]);
+const SOLID = new Set(["#","T","t","~","r","w","^","f","o","x","M","C","e"]);
+const GUST = {"v":"down",">":"right","<":"left"};
 const SLIDE = new Set(["i"]);
 
 const MAPS = {
@@ -529,6 +530,7 @@ village:{
     {x:31,y:2,kind:"chest",id:"v_c2",coins:8},
     {x:4,y:2,kind:"sparkle",id:"v_s1"},
     {x:30,y:21,kind:"sparkle",id:"v_s2"},
+    ...(flag("ended")?[{x:15,y:12,kind:"npc",id:"lumen2",name:"Lumen",em:"⭐",cols:["#fff6c9","#ffd166"],dlg:"lumen2"}]:[]),
   ],
 },
 
@@ -836,8 +838,288 @@ crater:{
     ];
     if(flag("pillars_done") && !flag("shard_light"))
       e.push({x:13,y:13,kind:"npc",id:"lumen",name:"Lumen",em:"⭐",cols:["#fff6c9","#ffd166"],dlg:"lumen"});
+    if(flag("act2")) e.push({x:13,y:13,kind:"starbridge"});
     return e;
   },
+},
+
+skyharbor:{ name:"Skyharbor", song:"skyharbor", amb:"seaspark", outdoor:true,
+  rows:[
+  "xxxxxxxxxxxxxxxkkxxxxxxxxxxxxxxx",
+  "xxxxxxxxxxxxxxxkkxxxxxxxxxxxxxxx",
+  "xxkkkkkkkkkkKkkkkkkkkkkkkkkkkkxx",
+  "xxkkkkkkkkkkkkkkkkkkkkKkkkkkkKxx",
+  "xxkk^^^^^kkkkkk^^^^^kkkkkkkkkkxx",
+  "xxkkwwwwwkkkkkkwwwwwkkkkkkkkkkxx",
+  "xxkkwwdwwkkkkkkwwdwwkkkkkkkkkkxx",
+  "xxkkkkkkkkkkkkkkkkKkkkkkkkkkkkxx",
+  "xxkkkkkkkkmmmmmmmmmmkkkkkkkkkkxx",
+  "xxkkkkkkkkmmmmmmmmmmkkkkkkkkkkxx",
+  "kkkkkkkkkkmmmmmmmmmmkkkkkkkkkkkk",
+  "kkkkkkkkkkmmmmmmmmmmKkkkkkkkkkkk",
+  "xxkkkkkkkkmmmmmmmmmmkkkkkkkkkkxx",
+  "xxkkkkkkkkmmmmmmmmmmkkkkkkkkkkxx",
+  "xxkkKkkkkkkkkkkkkkkkkkkkkkkkkkxx",
+  "xxkkkkkkkkkkkkkkkkkkkkkkkkkkkkxx",
+  "xxkKkkkkkkkkkkkkkkkkkkkkkkkKkkxx",
+  "xxkkkkkkkkkkbbbbkkkkkkkkkkkkkkxx",
+  "xxkkkkkKkkkkbbbbkkkkkkkkkkKkkkxx",
+  "xxkkKkkkkkkkkkkkkKkkkkkkkkkkkkxx",
+  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  ],
+  warps:[
+    {x:15,y:0,w:2,h:1, to:["moontemple",16,26,"up"],
+      req:()=>threads()>=2||"The bridge of moonlight flickers and fades… it only holds firm under a keeper carrying at least <b>two Moonthreads</b>."},
+    {x:0,y:10,w:1,h:2, to:["galegardens",41,15,"left"]},
+    {x:31,y:10,w:1,h:2, to:["mirrorvale",2,13,"right"],
+      req:()=>hasItem("skyboots")||"The east cloudpath is soft as soup — you'd sink straight through. Nimbus sells <b>Skyboots</b> for exactly this problem."},
+  ],
+  ents:()=>[
+    {x:13,y:9,kind:"npc",id:"glint",name:"Glint",em:"✨",cols:["#fff6c9","#ffd166"],dlg:"glint"},
+    {x:18,y:7,kind:"npc",id:"cumulus",name:"Mayor Cumulus",em:"🎩",cols:["#e8ecfa","#6c5ce7"],dlg:"cumulus"},
+    {x:11,y:17,kind:"npc",id:"zephyr",name:"Captain Zephyr",em:"🎈",cols:["#6fc7e8","#c0392b"],dlg:"zephyr"},
+    {x:24,y:15,kind:"npc",id:"twinkle",name:"Twinkle",em:"🌟",cols:["#fff6c9","#ff9bb0"],dlg:"twinkle"},
+    {x:14,y:17,kind:"balloon"},
+    {x:6,y:6,kind:"shopdoor2"},
+    {x:17,y:6,kind:"doormsg",text:"The Cloud Hall. The mayor is usually out front, polishing his hat."},
+    {x:15,y:14,kind:"skydoor"},
+    {x:12,y:8,kind:"sign",text:"Skyharbor — population: light. North: the Moon Temple. East: Mirror Vale. West: Gale Gardens."},
+    {x:29,y:3,kind:"chest",id:"sk_c1",coins:15},
+    {x:3,y:3,kind:"sparkle",id:"ms_h1"},
+    {x:27,y:18,kind:"sparkle",id:"ms_h2"},
+  ],
+},
+
+galegardens:{ name:"Gale Gardens", song:"gale", amb:"pollen", outdoor:true,
+  rows:[
+  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "xxxxkkkKkkkkkkkkkkkkkkkkkkkxxxxxxxxxxxxxxxxx",
+  "xxxxkkkkkkkkkkkkkkkkkkkkkkkxxxxxxxxxxxxxxxxx",
+  "xxxxkkkkkkkKkkkkkkkkKkkkkkkxxxxxxxxxxxxxxxxx",
+  "xxxxkkkkkkkkkkkkkkkkkkkkkkkxxxxxxxxxxxxxxxxx",
+  "xxxxkkkkkkkkkkkkkkkkkkkkkkkxxxxxxxxxxxxxxxxx",
+  "xxxxkkkkkkkKkkkkkkkkkkkkkkkxxxxxxxxxxxxxxxxx",
+  "xxxxkkkkkkkkkkkkkkkkkkkkkkkxxxxxxxxxxxxxxxxx",
+  "xxxxxxxxxxxxxxkxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "xxxxxxxxxxxxxxkxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "xxxxxxxxxxxxxxkxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "xxxxxxxxxxxxxxkxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "xxkkkkkkkkkkkkkkkkkkvvkkKkkkkkkkkkkkkkkkkkxx",
+  "xxkkkkkkkkKkkkkkkkkkvvkkkkkkvvkkkkkkkkkkkkxx",
+  "xxkkkkkkkkkkkkkkkkkkvvkkkkkkvvkkkkkkkkkkkkkk",
+  "xxkkkkkkkkkkkkkkkkkkvvkkkKkkvvkkkkkkkkkkkkkk",
+  "xxkkkk>>>>>>>kkkkkkkvvkkkkkkvvkkkkkkKkkkkkxx",
+  "xxkkkkkkkkkkkkkkkKkkvvkkkkkkvvKkkkkkkkkkkkxx",
+  "xxkkkkkkkkkkkkkkkkkkvvkkkkKkvvkkkkkkkkkkkkxx",
+  "xxkkkkkkKkkkkkkkkkkkkkkkkkkkvvkkkkkkkkkkkkxx",
+  "xxkkkkkkkkkkkkkkkkkkkkkkkkkKvvkkkkkkkkkkkkxx",
+  "xxxxkkkkkkkkkkkkkkkkkkkkkkkkkkKkkkkKkkkxxxxx",
+  "xxxxkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkxxxxx",
+  "xxxxkkkkkkkkkkkkxxxkkkkkkkkkkkkkkkkkKkkxxxxx",
+  "xxxxkkKkkkkkkKkkxxxkkkkkkkkkkkkkkxxxkkkxxxxx",
+  "xxxxkkkkkkkkkkkkxxxkkkkkkkkkkkkkkxxxkkkxxxxx",
+  "xxxxkkkkkkkkkkkkkkkkkkkkkkkkkkkkkxxxkkkxxxxx",
+  "xxxxkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkxxxxx",
+  "xxxxkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkxxxxx",
+  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  ],
+  warps:[ {x:43,y:15,w:1,h:2, to:["skyharbor",2,10,"right"]} ],
+  ents:()=>{
+    const e=[
+      {x:40,y:17,kind:"sign",text:"Gale Gardens — hold onto your hat. And your boots. And your eyebrows."},
+      {x:24,y:5,kind:"sign",text:"The Gardener's Rhyme — 'RAIN looks NORTH for clouds to call, DAWN bows EAST to greet the sun, NOON dozes SOUTH in warmest light, DUSK gazes WEST when day is done.'"},
+      {x:8,y:4,kind:"vane",id:"rain",label:"Rain Vane"},
+      {x:12,y:4,kind:"vane",id:"dawn",label:"Dawn Vane"},
+      {x:16,y:4,kind:"vane",id:"noon",label:"Noon Vane"},
+      {x:20,y:4,kind:"vane",id:"dusk",label:"Dusk Vane"},
+      {x:14,y:6,kind:"threadped",thread:"breeze",need:"vanes_done"},
+      {x:10,y:7,kind:"npc",id:"galek",name:"Keeper Gale",em:"🌬️",cols:["#bde3d2","#3a7d5c"],dlg:"galek"},
+      {x:30,y:26,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+      {x:37,y:23,kind:"chest",id:"gg_c1",coins:16},
+      {x:5,y:14,kind:"chest",id:"gg_c2",coins:12},
+      {x:5,y:28,kind:"sparkle",id:"ms_g1"},
+      {x:40,y:21,kind:"sparkle",id:"ms_g2"},
+      {x:25,y:3,kind:"sparkle",id:"ms_g3"},
+    ];
+    if(!flag("bellgate_open")) e.push({x:14,y:10,kind:"gatestone"});
+    for(const [i,bx,by] of [[1,6,25],[2,36,24],[3,24,19]])
+      if(!S.got["bug"+i]) e.push({x:bx,y:by,kind:"glowbug",id:"bug"+i});
+    return e;
+  },
+},
+
+mirrorvale:{ name:"Mirror Vale", song:"mirror", amb:"starbits", outdoor:true, twilight:true,
+  rows:[
+  "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrccccccccccccccccccccccccccccccccccccrr",
+  "rrcccccccccccccccccccccccccc^^^^^cccccrr",
+  "rrccccccccccccccccccCcccccccwwwwwcccccrr",
+  "rrcccccccccccccccccccCccccccwwdwwcccccrr",
+  "rrccccccCCccccccccccccccccccccccccccccrr",
+  "rrccccccCcccccccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccccccCCccccccrr",
+  "rrccccccccccccccccccccccccccccccccccccrr",
+  "rrccccCccccccccceeecccccccccccccccccccrr",
+  "rrcccccccccccccceeecccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccccccccccccccrr",
+  "ccccccccccccccccccccccccccccccccccccccrr",
+  "ccccccccccccccccccccccccccccccccccCcccrr",
+  "rrccccccccccccccccccccccccccccccccccccrr",
+  "rrcccccccccccccccccccccceeccccccccccccrr",
+  "rrcccccccccccccccccccccceeccccccccccccrr",
+  "rrccccccccccCcccccccccccccccccccccccccrr",
+  "rrcccccccccccCccccccccccccccccccccccccrr",
+  "rrccrrrrrccccccccccccccccccCCcccccccccrr",
+  "rrccrrrrrcccccccccccccccccccccccccccccrr",
+  "rrccrrrrrccccccCccccccccccccccccccccccrr",
+  "rrccccdcccccccccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccccccccccccccrr",
+  "rrccccccccccccccccccccccccccccccccccccrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+  ],
+  warps:[
+    {x:0,y:13,w:1,h:2, to:["skyharbor",29,10,"left"]},
+    {x:6,y:23,w:1,h:1, to:["prism",10,12,"up"],
+      req:()=>hasItem("moonlens")||"Inside, a moonbeam dances — invisible to bare eyes. Selene says Nimbus sells a <b>Moon Lens</b> for exactly this."},
+  ],
+  ents:()=>[
+    {x:32,y:6,kind:"npc",id:"selene",name:"Selene",em:"🔭",cols:["#b18cff","#2c2540"],dlg:"selene"},
+    {x:33,y:4,kind:"telescope"},
+    {x:30,y:6,kind:"doormsg",text:"Selene's observatory. Star charts cover every wall, and one wall covers a star chart."},
+    {x:3,y:13,kind:"sign",text:"Mirror Vale — the valley dreams in starlight. Please dream quietly."},
+    {x:7,y:24,kind:"sign",text:"Prism Chamber. The moonbeam inside is shy."},
+    {x:33,y:22,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+    {x:36,y:24,kind:"chest",id:"mv_c1",coins:20},
+    {x:17,y:3,kind:"chest",id:"mv_c2",coins:14},
+    {x:35,y:3,kind:"sparkle",id:"ms_m1"},
+    {x:3,y:19,kind:"sparkle",id:"ms_m2"},
+    {x:22,y:22,kind:"sparkle",id:"ms_m3"},
+  ],
+},
+
+prism:{ name:"Prism Chamber", song:"mirror", amb:"starbits",
+  rows:[
+  "MMMMMMMMMMMMMMMMMMMM",
+  "MMMMMMMMMMMMMMMMMMMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMnnnnnnnnnnnnnnnnMM",
+  "MMMMMMMMMMnMMMMMMMMM",
+  "MMMMMMMMMMdMMMMMMMMM",
+  ],
+  warps:[ {x:10,y:13,w:1,h:1, to:["mirrorvale",6,24,"down"]} ],
+  ents:()=>[
+    {x:2,y:7,kind:"beamsrc"},
+    {x:6,y:7,kind:"mirror",id:"m1"},
+    {x:6,y:3,kind:"mirror",id:"m2"},
+    {x:13,y:3,kind:"mirror",id:"m3"},
+    {x:13,y:10,kind:"mirror",id:"m4"},
+    {x:10,y:5,kind:"mirror",id:"m5"},
+    {x:16,y:6,kind:"mirror",id:"m6"},
+    {x:17,y:10,kind:"mooncrystal"},
+    {x:9,y:2,kind:"threadped",thread:"gleam",need:"beam_done"},
+    {x:4,y:11,kind:"sign",text:"Selene's notes — 'Bend the shy beam thrice: first skyward, then sunward, then down at last to the waiting crystal.'"},
+  ],
+},
+
+moontemple:{ name:"Moon Temple", song:"temple", amb:"starbits", twilight:true,
+  rows:[
+  "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+  "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+  "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+  "MMMMMMMMMMMMnnnnnnnnnnMMMMMMMMMMMM",
+  "MMMMMMMMMMMMnnnnnnnnnnMMMMMMMMMMMM",
+  "MMMMMMMMMMMMnnnnnnnnnnMMMMMMMMMMMM",
+  "MMMMMMMMMMMMnnnnnnnnnnMMMMMMMMMMMM",
+  "MMMMMMMMMMMMnnnnnnnnnnMMMMMMMMMMMM",
+  "MMMMMMMMMMMMnnnnnnnnnnMMMMMMMMMMMM",
+  "MMMMMMMMMMMMMMMMnMMMMMMMMMMMMMMMMM",
+  "MMMMMMMMMMMMMMMMnMMMMMMMMMMMMMMMMM",
+  "MMMMMMMMMMMMMMMMnMMMMMMMMMMMMMMMMM",
+  "MMMMMMMMMMnnnnnnnnnnnnnnMMMMMMMMMM",
+  "MMMMMMMMMMnnnnnnnnnnnnnnMMMMMMMMMM",
+  "MMMnnnnnnnnnnnnnnnnnnnnnnnnnnnnMMM",
+  "MMMnnnnnnnnnnnnnnnnnnnnnnnnnnnnMMM",
+  "MMMnnnnnnnnnnnnnnnnnnnnnnnnnnnnMMM",
+  "MMMnnnnnnnnnnnnnnnnnnnnnnnnnnnnMMM",
+  "MMMnnnnnnnnnnnnnnnnnnnnnnnnnnnnMMM",
+  "MMMnnnnnnnnnnnnnnnnnnnnnnnnnnnnMMM",
+  "MMMnnnnnnnnnnnnnnnnnnnnnnnnnnnnMMM",
+  "MMMMMMMMMMnnnnnnnnnnnnnnMMMMMMMMMM",
+  "MMMMMMMMMMnnnnnnnnnnnnnnMMMMMMMMMM",
+  "MMMMMMMMMMnnnnnnnnnnnnnnMMMMMMMMMM",
+  "MMMMMMMMMMnnnnnnnnnnnnnnMMMMMMMMMM",
+  "MMMMMMMMMMMMMMMMnnMMMMMMMMMMMMMMMM",
+  "MMMMMMMMMMMMMMMMnnMMMMMMMMMMMMMMMM",
+  "MMMMMMMMMMMMMMMMnnMMMMMMMMMMMMMMMM",
+  ],
+  warps:[
+    {x:16,y:27,w:2,h:1, to:["skyharbor",15,2,"down"]},
+    {x:3,y:17,w:1,h:1, to:["shadowdeep",23,9,"left"]},
+  ],
+  ents:()=>{
+    const e=[
+      {x:18,y:23,kind:"sign",text:"The Night Loom waits above. Three threads to mend the dark: Breeze, Gleam, and Shade."},
+      {x:4,y:15,kind:"sign",text:"A cold draught seeps from the western arch. Something down there is counting in its sleep."},
+      {x:16,y:4,kind:"loom"},
+      {x:28,y:15,kind:"chest",id:"mt_c1",coins:18},
+      {x:29,y:19,kind:"sparkle",id:"ms_t1"},
+      {x:13,y:4,kind:"sparkle",id:"ms_t2"},
+      {x:27,y:19,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+    ];
+    if(!flag("code_done")) e.push({x:16,y:10,kind:"guardian"});
+    else e.push({x:15,y:12,kind:"guardian"});
+    if(flag("code_done")&&!flag("thread_shade"))
+      e.push({x:16,y:6,kind:"npc",id:"umbra",name:"Umbra",em:"🌑",cols:["#2a2440","#b18cff"],dlg:"umbra"});
+    else if(flag("thread_shade"))
+      e.push({x:14,y:6,kind:"npc",id:"umbra",name:"Umbra",em:"🌑",cols:["#2a2440","#b18cff"],dlg:"umbra"});
+    return e;
+  },
+},
+
+shadowdeep:{ name:"The Shadowdeep", song:"cave", amb:"drip", dark:true,
+  rows:[
+  "rrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrccccccccccccccccccccrrr",
+  "rrrccrrrcrrrrrrrrrrrrrrrrr",
+  "rrrcrrrrcrrrrrrrrrrrrrrrrr",
+  "rrrcrrrrcrrrrrcccccccrrrrr",
+  "rrrcrrrrcrrrrrcrrrrrcrrrrr",
+  "rrrcrrrrcrrrrrcrrrrrcrrrrr",
+  "rrrcrrrrcrrrrrcrrrrrcccccc",
+  "rrrcrrrrcrrrrrcrrrrrcccccc",
+  "rrrcrrrrcrrrrrcrrrrrcrrrrr",
+  "rrrcrrrrcccccccrrrrrcrrrrr",
+  "rrrcrrrrrrrrrrrrcccccrrrrr",
+  "rrrcrrrrrrrrrrrrcrrrrrrrrr",
+  "rrrcrrrrrrrrrrrrcrrrrrrrrr",
+  "rrrccccccccccccccccccrrrrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrr",
+  ],
+  warps:[ {x:25,y:9,w:1,h:2, to:["moontemple",4,17,"right"]} ],
+  ents:()=>[
+    {x:21,y:10,kind:"sign",text:"Scratched on the wall: 'Three numbers open the moon-door. The deep remembers them, even when I forget.'"},
+    {x:4,y:4,kind:"codestone",id:"moth",num:7,label:"Stone of the Moth"},
+    {x:22,y:3,kind:"codestone",id:"lantern",num:2,label:"Stone of the Lantern"},
+    {x:3,y:16,kind:"codestone",id:"key",num:5,label:"Stone of the Key"},
+    {x:20,y:13,kind:"chest",id:"sd_c1",coins:22},
+  ],
 },
 };
 /*WORLD-END*/
@@ -1468,7 +1750,11 @@ async function interactEntity(e){
 }
 async function heartlampDlg(){
   const H=["🏮","The Heartlamp"];
-  if(flag("ended")){ await say(...H,"It burns gold and steady, painting long happy shadows across the square. Somewhere inside, Lumen is humming."); return; }
+  if(flag("ended")){
+    await say(...H,"It burns gold and steady, painting long happy shadows across the square. Somewhere inside, Lumen is humming.");
+    if(!flag("act2")) await say("⭐","Lumen","Psst — keeper! Over here, beside the lamp. We need to talk about the <b>sky</b>…");
+    return;
+  }
   if(S.shards<5){
     await say(...H,"The great lamp is cold and dark. Five empty settings wait inside the glass… you have <b>"+S.shards+" of 5</b> shards.");
     return;
@@ -2518,6 +2804,12 @@ function renderJournal(resetTabs=true){
       ["cove","🏖️","Glimmer Cove","Sand, surf, Cousin Pinch — and a singing tide cave.",flag("shard_whisper")],
       ["peak","🏔️","Frostpeak","A yeti's camp and an ice hollow where every step slides.",flag("shard_tide")],
       ["crater","🌠","Starfall Crater","Where the star fell. Old stones wait in a ring.",hasItem("starkey")],
+      ...(flag("act2")?[
+        ["skyharbor","☁️","Skyharbor","A village above the weather. Nimbus's shop, the balloon dock, and three sky roads.",true],
+        ["galegardens","🌬️","Gale Gardens","Gust lanes, four quarrelsome weathervanes, and the Thread of Breeze.",true],
+        ["mirrorvale","💎","Mirror Vale","Selene's observatory and the Prism Chamber's shy moonbeam.",true],
+        ["moontemple","🌙","Moon Temple","The Night Loom — and the Shadowdeep counting beneath it.",threads()>=2],
+      ]:[]),
     ];
     let html="";
     for(const [id,em,name,desc,known] of regions){
@@ -2528,10 +2820,13 @@ function renderJournal(resetTabs=true){
       html+='<div class="qitem"><span class="tag">'+(known?(S.map===id?"HERE":"KNOWN"):"???")+"</span><b>"+em+" "+
         (known?name:"Somewhere out there…")+"</b><p>"+note+"</p></div>";
     }
-    const sparkTotal=13, sparkGot=Object.keys(S.got).filter(k=>k.includes("_s")).length;
+    const sparkGot=Object.keys(S.got).filter(k=>k.includes("_s")&&!k.startsWith("ms_")).length;
+    const moonGot=Object.keys(S.got).filter(k=>k.startsWith("ms_")).length;
     const qDone=Object.values(S.quests).filter(v=>v==="done").length;
-    html+='<div class="qitem"><b>📊 Adventure record</b><p>Shards: '+S.shards+"/5 · Quests done: "+qDone+
-      " · Sparkles: "+sparkGot+"/"+sparkTotal+" · Sir Plod met in "+Object.keys(S.plod).length+"/5 regions</p></div>";
+    let rec="Shards: "+S.shards+"/5 · Quests done: "+qDone+" · Sparkles: "+sparkGot+"/13 · Sir Plod: "+
+      Object.keys(S.plod).length+"/"+(flag("act2")?8:5)+" regions";
+    if(flag("act2")) rec+=" · Threads: "+threads()+"/3 · Moonstones: "+moonGot+"/10";
+    html+='<div class="qitem"><b>📊 Adventure record</b><p>'+rec+"</p></div>";
     body.innerHTML=html;
   }
 }
@@ -2572,7 +2867,11 @@ function showCredits(){
   panelOpen("credits");
   mode="panel";
 }
-$("#bfree").addEventListener("click",()=>{ closePanels(); mode="play"; });
+$("#bfree").addEventListener("click",()=>{
+  closePanels(); mode="play"; respawnEnts();
+  if(flag("ended")&&!flag("act2")&&S.map==="village")
+    toast("⭐ Lumen has stepped out of the Heartlamp — he looks like he has news…",3600);
+});
 
 /* ---- title screen ---- */
 function showTitle(){
@@ -2643,6 +2942,877 @@ function frame(t){
 }
 requestAnimationFrame(frame);
 setInterval(()=>{ if(mode==="play") save(); },10000);
+
+/* =====================================================================
+   ACT II — ABOVE THE CLOUDS
+   After the Heartlamp is relit, the story continues in the sky.
+   ===================================================================== */
+function threads(){ return ["breeze","gleam","shade"].filter(t=>flag("thread_"+t)).length; }
+
+Object.assign(ITEMS,{
+  skyboots: { em:"👢", name:"Skyboots",    d:"Woven cloud-cork soles. Walk on the softest sky." },
+  moonlens: { em:"🔍", name:"Moon Lens",   d:"Ground from frozen moonlight. Reveals shy beams." },
+  windbell: { em:"🔔", name:"Wind Bell",   d:"Rings the knots right out of stubborn wind." },
+  skykite:  { em:"🎏", name:"Comet Kite",  d:"Trails rainbow stardust behind you as you run." },
+  skymedal: { em:"🎖️", name:"Sky Medal",  d:"For witnessing a snail conquer the sky itself." },
+  letters:  { em:"✉️", name:"Sky-post Letters", d:"Zephyr's mail for Cumulus, Gale and Selene." },
+});
+Object.assign(QUESTS,{
+  sky1:{ name:"The Fraying Sky",      d:"Lumen says the night itself is coming unstitched. Cross the star bridge in the crater and find Skyharbor." },
+  sky2:{ name:"The Thread of Breeze", d:"A Moonthread is kept in the Gale Gardens, west of Skyharbor. The four weathervanes guard it — a rhyme knows their true headings." },
+  sky3:{ name:"The Thread of Gleam",  d:"A Moonthread shines in the Prism Chamber of Mirror Vale, east of Skyharbor. Bend the moonbeam to the crystal." },
+  sky4:{ name:"The Night Loom",       d:"Bring the Moonthreads to the Moon Temple, north of Skyharbor. Something in the Shadowdeep knows the door's three numbers." },
+  letters:{ name:"Zephyr's Post Round", d:"Deliver Captain Zephyr's three letters: to Mayor Cumulus, Keeper Gale, and Selene the astronomer." },
+  glowbugs:{ name:"Twinkle's Lost Lights", d:"Twinkle's three glowbug friends blew away into the Gale Gardens. Walk up to them gently to catch them." },
+  plodsky:{ name:"The Slowest Knight: New Heights", d:"Sir Plod has been blown into the sky — and declared it his next quest. Greet him in all three sky regions." },
+});
+SHOPS.nimbus={ title:"Nimbus's Cloud Goods", items:[
+  {id:"skyboots",price:40,once:true},
+  {id:"moonlens",price:35,once:true},
+  {id:"skykite",price:60,once:true},
+]};
+Object.assign(SONGS,{
+  skyharbor:{ bpm:108, root:62, scale:"major", prog:[0,3,5,4], lead:.5,  arp:"updown", bass:true, pad:true,  leadType:"triangle", seed:83 },
+  gale:     { bpm:118, root:55, scale:"lydian",prog:[0,1,4,3], lead:.55, arp:"updown", bass:true, pad:false, leadType:"triangle", seed:89 },
+  mirror:   { bpm:64,  root:50, scale:"dorian",prog:[0,5,3,5], lead:.25, arp:"sparse", bass:false,pad:true,  leadType:"sine", seed:97 },
+  temple:   { bpm:62,  root:45, scale:"minor", prog:[0,3,4,0], lead:.3,  arp:"sparse", bass:false,pad:true,  leadType:"sine", seed:101 },
+});
+["vane","gatestone","codestone","guardian","loom","mirror","beamsrc","mooncrystal",
+ "threadped","balloon","telescope","skydoor","starbridge"].forEach(k=>SOLID_ENTS.add(k));
+
+/* ---------- puzzle state ---------- */
+const VANE_TARGET={rain:"N",dawn:"E",noon:"S",dusk:"W"};
+const VANE_CYCLE=["N","E","S","W"];
+let vaneStates={rain:"S",dawn:"S",noon:"N",dusk:"E"};
+const MIRROR_SOLUTION={m1:"/",m2:"/",m3:"\\",m4:"\\",m5:"/",m6:"/"};
+const MIRROR_INITIAL ={m1:"\\",m2:"/",m3:"/",m4:"\\",m5:"/",m6:"/"};
+let mirrorStates=Object.assign({},MIRROR_INITIAL);
+let beamPath=[], beamHit=false;
+
+const _loadMap0=loadMap;
+loadMap=function(id,tx,ty,dir,silent){
+  _loadMap0(id,tx,ty,dir,silent);
+  if(id==="galegardens") vaneStates=flag("vanes_done")?Object.assign({},VANE_TARGET):{rain:"S",dawn:"S",noon:"N",dusk:"E"};
+  if(id==="prism") mirrorStates=Object.assign({},flag("beam_done")?MIRROR_SOLUTION:MIRROR_INITIAL);
+};
+
+/* ---------- moonbeam computation ---------- */
+function computeBeam(){
+  beamPath=[]; beamHit=false;
+  if(!MAP||MAP.id!=="prism") return;
+  const mirrors={}; let crystal=null;
+  for(const e of ents){ if(e.kind==="mirror") mirrors[e.x+","+e.y]=e.id;
+    if(e.kind==="mooncrystal") crystal=e; }
+  let x=3,y=7,dx=1,dy=0,steps=0;
+  beamPath.push([2,7]);
+  while(steps++<200){
+    const ch=tileAt(MAP,x,y);
+    if(SOLID.has(ch)){ beamPath.push([x,y]); return; }
+    if(crystal&&x===crystal.x&&y===crystal.y){ beamPath.push([x,y]); beamHit=true; return; }
+    const mid=mirrors[x+","+y];
+    if(mid){
+      beamPath.push([x,y]);
+      const st=mirrorStates[mid]||"/";
+      if(st==="/"){ const t=dx; dx=-dy; dy=-t; }
+      else { const t=dx; dx=dy; dy=t; }
+    }
+    x+=dx; y+=dy;
+  }
+}
+
+/* ---------- engine wrappers: gusts, beam, pickups ---------- */
+const _update0=update;
+update=function(dt){
+  _update0(dt);
+  if(mode!=="play"||!MAP) return;
+  // wind gusts push the player
+  if(!sliding){
+    const [tx,ty]=playerTile();
+    const gd=GUST[tileAt(MAP,tx,ty)];
+    if(gd){
+      const [dx,dy]=DIRV[gd];
+      const spd=1.35*(dt/16.6);
+      const nx=S.x+dx*spd, ny=S.y+dy*spd;
+      if(!boxBlocked(nx,ny)){ S.x=nx; S.y=ny; }
+      checkWarps(); checkPickups();
+    }
+  }
+  // moonbeam puzzle
+  if(MAP.id==="prism"){
+    computeBeam();
+    if(beamHit&&!flag("beam_done")){
+      setFlag("beam_done");
+      sfx("fanfare"); flashT=22;
+      toast("✨ The moonbeam strikes the crystal — the chamber sings!",3200);
+      respawnEnts(); save();
+    }
+  }
+};
+const _checkPickups0=checkPickups;
+checkPickups=function(){
+  const [tx,ty]=playerTile();
+  const sp=ents.find(e=>e.kind==="sparkle"&&e.x===tx&&e.y===ty);
+  if(sp){
+    S.got[sp.id]=true;
+    ents=ents.filter(e=>e!==sp);
+    addCoins(5); sfx("sparkle");
+    burst(tx*T+T/2,ty*T+T/2,sp.id.startsWith("ms_")?"#9fd0ef":"#ffd166",14);
+    toast(sp.id.startsWith("ms_")?"🌙 A moonstone! <b>+5 coins</b>":"✨ A hidden sparkle! <b>+5 coins</b>");
+    return;
+  }
+  const bug=ents.find(e=>e.kind==="glowbug"&&e.x===tx&&e.y===ty);
+  if(bug&&S.quests.glowbugs==="on"){
+    S.got[bug.id]=true;
+    ents=ents.filter(e=>e!==bug);
+    sfx("sparkle");
+    burst(tx*T+T/2,ty*T+T/2,"#d7ff8a",12);
+    const n=[1,2,3].filter(i=>S.got["bug"+i]).length;
+    toast("🪲 Caught a glowbug! ("+n+" of 3)");
+    save();
+  }
+};
+const _refreshHUD0=refreshHUD;
+refreshHUD=function(){
+  _refreshHUD0();
+  if(S&&flag("act2")) $("#hudshards").textContent="🧵 "+threads()+" / 3";
+};
+const _trail0=trail;
+trail=function(x,y){
+  if(hasItem("skykite")){
+    particles.push({x:x+(Math.random()*10-5),y:y+(Math.random()*6-3),vx:0,vy:-.12,life:700,t:0,
+      color:["#ff6b6b","#ffd166","#7ad77a","#6fc7e8","#b18cff"][Math.floor(Math.random()*5)],r:1.3});
+  } else _trail0(x,y);
+};
+
+/* ---------- Act II tiles ---------- */
+Object.assign(PAL,{
+  cloud1:"#e7ebfb", cloud2:"#dde3f8", cloudSh:"#c3cdf0",
+  skyv:"#0b1024", marb1:"#b9bedf", marb2:"#aeb3d6", mwall:"#6a6e9e", mwallD:"#54588a",
+  cry1:"#7de3e0", cry2:"#bff7f4", ether:"#4a3f86",
+});
+const _drawTileBase0=drawTileBase;
+drawTileBase=function(g,ch,tx,ty){
+  const x=tx*T,y=ty*T,r=hash2(tx,ty);
+  switch(ch){
+    case "k": case "K": case "v": case ">": case "<":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.cloud1:PAL.cloud2);
+      if(r>.45){ g.fillStyle=PAL.cloudSh;
+        g.beginPath(); g.arc(x+8+r*14,y+22+((r*53)%1)*6,5,0,Math.PI); g.fill(); }
+      if(ch==="K"){ const c=choiceArr(["#ff9bb0","#ffd166","#b18cff"],r);
+        disc(g,x+9+r*12,y+10+((r*37)%1)*12,2.4,c); disc(g,x+22-r*8,y+21-r*6,2,"#fff"); }
+      if(GUST[ch]){ g.strokeStyle="rgba(111,160,220,.5)"; g.lineWidth=1.6;
+        for(let i=0;i<3;i++){ const o=4+i*9;
+          g.beginPath();
+          if(ch==="v"){ g.moveTo(x+8+i*8,y+o); g.lineTo(x+8+i*8,y+o+7); }
+          else if(ch===">"){ g.moveTo(x+o,y+8+i*8); g.lineTo(x+o+7,y+8+i*8); }
+          else { g.moveTo(x+T-o,y+8+i*8); g.lineTo(x+T-o-7,y+8+i*8); }
+          g.stroke(); } }
+      break;
+    }
+    case "x":{
+      rr(g,x,y,T,T,PAL.skyv);
+      if(r>.78) disc(g,x+4+r*24,y+4+((r*71)%1)*24,1,"rgba(255,255,255,"+(.3+r*.4)+")");
+      if(((tx*7+ty*13)%29)===0) disc(g,x+16,y+16,1.6,"rgba(255,230,170,.7)");
+      break;
+    }
+    case "n":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.marb1:PAL.marb2);
+      g.strokeStyle="rgba(40,40,80,.14)"; g.lineWidth=1;
+      g.strokeRect(x+.5,y+.5,T-1,T-1);
+      if(r>.8) rr(g,x+10,y+10,4,4,"#c6cbe8");
+      break;
+    }
+    case "M":{
+      rr(g,x,y,T,T,PAL.mwall);
+      rr(g,x,y,T,5,"#7e82b4");
+      rr(g,x,y+T-5,T,5,PAL.mwallD);
+      if(r>.62){ g.fillStyle="#8d92c4"; g.beginPath(); g.arc(x+16,y+15,3.6,0,7); g.fill();
+        g.fillStyle=PAL.mwall; g.beginPath(); g.arc(x+18,y+14,3,0,7); g.fill(); }
+      break;
+    }
+    case "C":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.cave1:PAL.cave2);
+      g.fillStyle=PAL.cry1;
+      g.beginPath(); g.moveTo(x+10,y+27); g.lineTo(x+7,y+12); g.lineTo(x+13,y+5); g.lineTo(x+16,y+27); g.closePath(); g.fill();
+      g.fillStyle=PAL.cry2;
+      g.beginPath(); g.moveTo(x+17,y+27); g.lineTo(x+19,y+13); g.lineTo(x+24,y+9); g.lineTo(x+25,y+27); g.closePath(); g.fill();
+      break;
+    }
+    case "e":{
+      rr(g,x,y,T,T,PAL.ether);
+      g.strokeStyle="rgba(177,140,255,.5)"; g.lineWidth=1.6;
+      g.beginPath(); g.arc(x+16,y+16,8+r*4,r*6,r*6+4); g.stroke();
+      break;
+    }
+    default: _drawTileBase0(g,ch,tx,ty);
+  }
+};
+
+/* ---------- Act II entity drawing ---------- */
+const _drawNPC0=drawNPC;
+drawNPC=function(g,e,t){
+  if(e.id==="lumen2"||e.id==="glint"||e.id==="twinkle"){ _drawNPC0(g,Object.assign({},e,{id:"lumen"}),t); return; }
+  if(e.id==="umbra"){
+    const x=e.x*T+T/2, y=e.y*T+T/2, bob=Math.sin(t*.0025)*2;
+    const by=y+bob;
+    const grd=g.createRadialGradient(x,by,3,x,by,18);
+    grd.addColorStop(0,"rgba(42,36,64,.95)"); grd.addColorStop(1,"rgba(42,36,64,0)");
+    g.fillStyle=grd; g.beginPath(); g.arc(x,by,18,0,7); g.fill();
+    g.fillStyle="#221d36";
+    g.beginPath(); g.ellipse(x,by,10,12,0,0,7); g.fill();
+    // wisps
+    g.strokeStyle="rgba(177,140,255,.4)"; g.lineWidth=1.6;
+    g.beginPath(); g.moveTo(x-9,by+8); g.quadraticCurveTo(x-14,by+2,x-11,by-6); g.stroke();
+    g.beginPath(); g.moveTo(x+9,by+7); g.quadraticCurveTo(x+15,by+1,x+12,by-5); g.stroke();
+    // crescent eyes
+    g.fillStyle="#e8ecfa";
+    g.beginPath(); g.arc(x-4,by-3,2.6,Math.PI*.15,Math.PI*.85); g.fill();
+    g.beginPath(); g.arc(x+4,by-3,2.6,Math.PI*.15,Math.PI*.85); g.fill();
+    if(flag("thread_shade")){ g.strokeStyle="#e8ecfa"; g.lineWidth=1.4;
+      g.beginPath(); g.arc(x,by+3,3,.3,Math.PI-.3); g.stroke(); }
+    return;
+  }
+  _drawNPC0(g,e,t);
+};
+const _drawEnt0=drawEnt;
+drawEnt=function(g,e,t){
+  const x=e.x*T, y=e.y*T, cx=x+T/2, cy=y+T/2;
+  switch(e.kind){
+    case "sparkle":
+      if(e.id&&e.id.startsWith("ms_")){
+        const tw=Math.sin(t*.006+e.x*2.1)*.5+.5;
+        g.save(); g.globalAlpha=.45+tw*.55; g.fillStyle="#9fd0ef";
+        g.translate(cx,cy-2+Math.sin(t*.003+e.y)*2); g.rotate(t*.002);
+        g.beginPath();
+        for(let i=0;i<8;i++){ const R=i%2?2:5.4,a=i*Math.PI/4;
+          g[i?"lineTo":"moveTo"](Math.cos(a)*R,Math.sin(a)*R); }
+        g.closePath(); g.fill(); g.restore();
+        return;
+      }
+      break;
+    case "glowbug":{
+      const bx=cx+Math.sin(t*.004+e.x)*3, by2=cy+Math.cos(t*.005+e.y)*2.4;
+      const grd=g.createRadialGradient(bx,by2,1,bx,by2,10);
+      grd.addColorStop(0,"rgba(215,255,138,.9)"); grd.addColorStop(1,"rgba(215,255,138,0)");
+      g.fillStyle=grd; g.beginPath(); g.arc(bx,by2,10,0,7); g.fill();
+      disc(g,bx,by2,2.6,"#d7ff8a");
+      g.fillStyle="rgba(255,255,255,.6)";
+      g.beginPath(); g.ellipse(bx-3,by2-2,2.4,1.2,-.6,0,7); g.fill();
+      g.beginPath(); g.ellipse(bx+3,by2-2,2.4,1.2,.6,0,7); g.fill();
+      return;
+    }
+    case "balloon":{
+      drawShadow(g,cx,cy+12,10);
+      const sway=Math.sin(t*.0015)*2;
+      g.fillStyle="#c0392b";
+      g.beginPath(); g.ellipse(cx+sway,cy-14,13,15,0,0,7); g.fill();
+      g.fillStyle="#ffd166";
+      g.beginPath(); g.ellipse(cx+sway,cy-14,5,15,0,0,7); g.fill();
+      g.strokeStyle="#7a5c3e"; g.lineWidth=1.4;
+      g.beginPath(); g.moveTo(cx+sway-9,cy-4); g.lineTo(cx-6,cy+8); g.stroke();
+      g.beginPath(); g.moveTo(cx+sway+9,cy-4); g.lineTo(cx+6,cy+8); g.stroke();
+      rr(g,cx-7,cy+7,14,8,"#8a6a48"); rr(g,cx-7,cy+7,14,2.4,"#a4824f");
+      return;
+    }
+    case "telescope":{
+      drawShadow(g,cx,cy+9,8);
+      g.strokeStyle="#54588a"; g.lineWidth=2.6;
+      g.beginPath(); g.moveTo(cx-6,cy+9); g.lineTo(cx,cy-1); g.lineTo(cx+6,cy+9); g.stroke();
+      g.save(); g.translate(cx,cy-2); g.rotate(-.55);
+      rr(g,-3,-11,7,15,"#b18cff"); rr(g,-4,-13,9,4,"#cdb8e8");
+      g.restore();
+      return;
+    }
+    case "skydoor": case "starbridge":{
+      const pul=1+Math.sin(t*.004)*.15;
+      const grd=g.createRadialGradient(cx,cy-4,2,cx,cy-4,20*pul);
+      grd.addColorStop(0,"rgba(255,246,201,.9)");
+      grd.addColorStop(.5,"rgba(155,217,255,.5)");
+      grd.addColorStop(1,"rgba(177,140,255,0)");
+      g.fillStyle=grd; g.beginPath(); g.arc(cx,cy-4,20*pul,0,7); g.fill();
+      g.save(); g.translate(cx,cy-4); g.rotate(t*.002);
+      g.strokeStyle="#fff6c9"; g.lineWidth=2;
+      for(let i=0;i<4;i++){ g.rotate(Math.PI/2);
+        g.beginPath(); g.arc(0,0,10,0,Math.PI*.6); g.stroke(); }
+      g.restore();
+      disc(g,cx,cy-4,3,"#fff");
+      return;
+    }
+    case "vane":{
+      drawShadow(g,cx,y+T-4,7);
+      rr(g,cx-2,y+4,4,24,"#54588a");
+      const dir=vaneStates[e.id]||"N";
+      const ang={N:-Math.PI/2,E:0,S:Math.PI/2,W:Math.PI}[dir];
+      g.save(); g.translate(cx,y+8); g.rotate(ang);
+      g.fillStyle=flag("vanes_done")?"#ffd166":"#9fd0ef";
+      g.beginPath(); g.moveTo(12,0); g.lineTo(2,-4); g.lineTo(2,4); g.closePath(); g.fill();
+      g.strokeStyle=g.fillStyle; g.lineWidth=2.4;
+      g.beginPath(); g.moveTo(2,0); g.lineTo(-9,0); g.stroke();
+      g.restore();
+      g.fillStyle="#eef0fa"; g.font="bold 8px sans-serif"; g.textAlign="center";
+      g.fillText(e.id.toUpperCase(),cx,y+T+6);
+      return;
+    }
+    case "gatestone":{
+      drawShadow(g,cx,cy+10,11);
+      g.strokeStyle="#7fa8d4"; g.lineWidth=3;
+      for(let i=0;i<3;i++){
+        g.beginPath(); g.arc(cx,cy+2,9-i*2.4,t*.001*(i%2?1:-1)+i,t*.001*(i%2?1:-1)+i+4.6); g.stroke();
+      }
+      disc(g,cx,cy+2,4,"#dde3f8");
+      return;
+    }
+    case "codestone":{
+      drawShadow(g,cx,cy+10,9);
+      const found=flag("stone_"+e.id);
+      rr(g,cx-9,cy-10,18,22,"#54588a"); rr(g,cx-9,cy-10,18,4,"#6a6e9e");
+      g.fillStyle=found?"#ffd166":"#8d92c4";
+      g.font="bold 12px sans-serif"; g.textAlign="center";
+      g.fillText(String(e.num),cx,cy+4);
+      if(found){ const grd=g.createRadialGradient(cx,cy,2,cx,cy,16);
+        grd.addColorStop(0,"rgba(255,209,102,.35)"); grd.addColorStop(1,"rgba(255,209,102,0)");
+        g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,16,0,7); g.fill(); }
+      return;
+    }
+    case "guardian":{
+      drawShadow(g,cx,y+T-2,11);
+      const open=flag("code_done");
+      g.fillStyle=open?"#7e82b4":"#54588a";
+      g.beginPath(); g.ellipse(cx,cy+2,10,14,0,0,7); g.fill();
+      disc(g,cx,cy-12,7,open?"#8d92c4":"#6a6e9e");
+      g.fillStyle=open?"#ffd166":"#2c2540";
+      g.beginPath(); g.arc(cx-2.6,cy-13,1.8,0,7); g.fill();
+      g.beginPath(); g.arc(cx+2.6,cy-13,1.8,0,7); g.fill();
+      rr(g,cx-8,cy-2,16,3,open?"#8d92c4":"#454a78");
+      return;
+    }
+    case "loom":{
+      drawShadow(g,cx,y+T+10,16);
+      rr(g,cx-16,y-12,6,42,"#7e82b4"); rr(g,cx+10,y-12,6,42,"#7e82b4");
+      rr(g,cx-18,y-16,36,6,"#8d92c4");
+      const cols={breeze:"#9fd0ef",gleam:"#ffd166",shade:"#b18cff"};
+      let i=0;
+      for(const th of ["breeze","gleam","shade"]){
+        const lx=cx-8+i*8; i++;
+        if(flag("thread_"+th)||flag("ended2")){
+          g.strokeStyle=cols[th]; g.lineWidth=2;
+          g.beginPath(); g.moveTo(lx,y-10);
+          g.quadraticCurveTo(lx+Math.sin(t*.003+i)*3,y+6,lx,y+26); g.stroke();
+        } else {
+          g.strokeStyle="rgba(141,146,196,.4)"; g.lineWidth=1.2;
+          g.beginPath(); g.moveTo(lx,y-10); g.lineTo(lx,y+2); g.stroke();
+        }
+      }
+      if(flag("ended2")){
+        const grd=g.createRadialGradient(cx,cy,4,cx,cy,30);
+        grd.addColorStop(0,"rgba(255,246,201,.5)"); grd.addColorStop(1,"rgba(177,140,255,0)");
+        g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,30,0,7); g.fill();
+      }
+      return;
+    }
+    case "mirror":{
+      drawShadow(g,cx,cy+9,8);
+      rr(g,cx-3,cy+2,6,8,"#54588a");
+      const st=mirrorStates[e.id]||"/";
+      g.save(); g.translate(cx,cy-2);
+      g.rotate(st==="/"?-Math.PI/4:Math.PI/4);
+      g.fillStyle="#bff7f4"; rr(g,-10,-2,20,4,"#bff7f4");
+      g.fillStyle="rgba(255,255,255,.8)"; rr(g,-8,-2,6,1.6,"rgba(255,255,255,.8)");
+      g.restore();
+      return;
+    }
+    case "beamsrc":{
+      rr(g,cx-7,cy-7,14,14,"#54588a");
+      disc(g,cx+4,cy,4,"#bff7f4");
+      disc(g,cx+4,cy,2,"#fff");
+      return;
+    }
+    case "mooncrystal":{
+      const lit=beamHit||flag("beam_done");
+      if(lit){ const grd=g.createRadialGradient(cx,cy-4,3,cx,cy-4,24);
+        grd.addColorStop(0,"rgba(191,247,244,.85)"); grd.addColorStop(1,"rgba(191,247,244,0)");
+        g.fillStyle=grd; g.beginPath(); g.arc(cx,cy-4,24,0,7); g.fill(); }
+      drawShadow(g,cx,cy+10,9);
+      g.fillStyle=lit?"#e3fffd":"#7de3e0";
+      g.beginPath(); g.moveTo(cx,cy-16); g.lineTo(cx+9,cy+2); g.lineTo(cx,cy+10); g.lineTo(cx-9,cy+2); g.closePath(); g.fill();
+      g.fillStyle=lit?"#fff":"#bff7f4";
+      g.beginPath(); g.moveTo(cx,cy-16); g.lineTo(cx+4,cy); g.lineTo(cx,cy+6); g.lineTo(cx-2,cy); g.closePath(); g.fill();
+      return;
+    }
+    case "threadped":{
+      const ready=!e.need||flag(e.need);
+      const taken=flag("thread_"+e.thread);
+      drawShadow(g,cx,y+T-3,10);
+      rr(g,x+9,y+8,14,20,"#7e82b4"); rr(g,x+6,y+24,20,5,"#54588a"); rr(g,x+6,y+6,20,4,"#8d92c4");
+      if(ready&&!taken){
+        const fl=Math.sin(t*.005)*3;
+        const col=e.thread==="breeze"?"#9fd0ef":"#ffd166";
+        const grd=g.createRadialGradient(cx,y+fl-2,2,cx,y+fl-2,18);
+        grd.addColorStop(0,col+"ee"); grd.addColorStop(1,col+"00");
+        g.fillStyle=grd; g.beginPath(); g.arc(cx,y+fl-2,18,0,7); g.fill();
+        g.strokeStyle=col; g.lineWidth=2.4;
+        g.beginPath(); g.arc(cx,y+fl-2,5,0,7); g.stroke();
+        g.beginPath(); g.moveTo(cx+5,y+fl-2); g.quadraticCurveTo(cx+10,y+fl+4,cx+7,y+fl+9); g.stroke();
+      }
+      return;
+    }
+    case "shopdoor2": return;
+  }
+  _drawEnt0(g,e,t);
+};
+/* beam overlay */
+const _render0=render;
+render=function(t){
+  _render0(t);
+  if(MAP&&MAP.id==="prism"&&beamPath.length>1){
+    ctx.save();
+    ctx.translate(-Math.round(cam.x),-Math.round(cam.y));
+    ctx.strokeStyle="rgba(191,247,244,.85)"; ctx.lineWidth=3; ctx.shadowColor="#bff7f4"; ctx.shadowBlur=10;
+    ctx.beginPath();
+    beamPath.forEach(([bx,by],i)=>{
+      const px=bx*T+T/2, py=by*T+T/2;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.restore();
+  }
+};
+
+/* ---------- Act II interactions ---------- */
+const _interactEntity0=interactEntity;
+interactEntity=async function(e){
+  switch(e.kind){
+    case "shopdoor2": sfx("blip2"); runDlg(DLGS.nimbus); return;
+    case "starbridge":{
+      sfx("warp"); flashT=16;
+      loadMap("skyharbor",16,12,"up");
+      if(!flag("sky_seen")){
+        setFlag("sky_seen");
+        runDlg(async()=>{
+          await say("🌠","","The star bridge lifts you like a held breath… and sets you down on solid cloud.");
+          await say("🌠","","Welcome to <b>Skyharbor</b> — a village above the weather, where lamplighters tend the stars themselves.");
+          await say("🌠","","A familiar twinkle of light is waving at you from the plaza.");
+        });
+      }
+      return;
+    }
+    case "skydoor":{
+      sfx("warp"); flashT=16;
+      loadMap("crater",13,14,"down");
+      toast("⭐ The star door carries you gently back to the crater.");
+      return;
+    }
+    case "vane":{
+      sfx("lever");
+      const cur=vaneStates[e.id]||"N";
+      vaneStates[e.id]=VANE_CYCLE[(VANE_CYCLE.indexOf(cur)+1)%4];
+      toast("🌬️ The "+e.label+" swings to face <b>"+({N:"NORTH",E:"EAST",S:"SOUTH",W:"WEST"})[vaneStates[e.id]]+"</b>.");
+      if(!flag("vanes_done")&&Object.keys(VANE_TARGET).every(k=>vaneStates[k]===VANE_TARGET[k])){
+        setFlag("vanes_done");
+        sfx("fanfare"); flashT=22;
+        toast("✨ The four winds settle into harmony — something glows on the pedestal!",3200);
+        respawnEnts(); save();
+      }
+      return;
+    }
+    case "gatestone":{
+      if(hasItem("windbell")){
+        setFlag("bellgate_open");
+        sfx("success"); flashT=14;
+        toast("🔔 The Wind Bell rings once — the knotted gust combs itself apart!");
+        respawnEnts(); save();
+      } else {
+        runDlg(async()=>{ await say("🌬️","", "A knot of wind, tied tight as a sailor's promise, blocks the garden path. It hums… almost like it's waiting for a <b>bell</b>."); });
+      }
+      return;
+    }
+    case "codestone":{
+      setFlag("stone_"+e.id); save();
+      sfx("shell"+([7,2,5].indexOf(e.num)>=0?[7,2,5].indexOf(e.num):0));
+      runDlg(async()=>{
+        await say("🗿",e.label,"The stone wakes under your hand and hums a single number: <b>"+
+          ["","ONE","TWO","THREE","FOUR","FIVE","SIX","SEVEN","EIGHT","NINE"][e.num]+"</b>. It sounds relieved to finally tell someone.");
+      });
+      return;
+    }
+    case "guardian":{
+      runDlg(DLGS.guardian);
+      return;
+    }
+    case "loom":{
+      runDlg(loomDlg);
+      return;
+    }
+    case "threadped":{
+      if(e.need&&!flag(e.need)){
+        const hints={vanes_done:"The pedestal is dark. Above it, four weathervanes creak this way and that, all out of sorts. The Gardener's Rhyme would settle them.",
+          beam_done:"The pedestal is dark. The moonbeam wanders the room like a lost cat — bend it home with the mirrors."};
+        runDlg(async()=>{ await say("🗿","Pedestal",hints[e.need]||"It waits."); });
+        return;
+      }
+      if(flag("thread_"+e.thread)){
+        runDlg(async()=>{ await say("🗿","Pedestal","Moonlight lingers here, soft as the inside of a mitten."); });
+        return;
+      }
+      setFlag("thread_"+e.thread);
+      sfx("shard"); flashT=24;
+      const names={breeze:"🧵 The <b>Moonthread of Breeze</b>! It tugs gently, like a kite that loves you.",
+        gleam:"🧵 The <b>Moonthread of Gleam</b>! It glows softly through your satchel."};
+      toast(names[e.thread],3200);
+      if(e.thread==="breeze"){ if(!S.quests.sky2) startQuest("sky2"); doneQuest("sky2"); }
+      if(e.thread==="gleam"){ if(!S.quests.sky3) startQuest("sky3"); doneQuest("sky3"); }
+      if(threads()>=2&&!S.quests.sky4) startQuest("sky4");
+      respawnEnts(); refreshHUD(); save();
+      return;
+    }
+    case "balloon":{
+      runDlg(async()=>{ await say("🎈","", "Zephyr's balloon, the <i>Wandering Sigh</i>. The basket smells of mint tea and high places."); });
+      return;
+    }
+    case "telescope":{
+      runDlg(async()=>{ await say("🔭","", flag("ended2")?
+        "Through the lens: the night sky, whole and bright, with one extra star that waves back.":
+        "Through the lens: a dark seam across the stars, like a scarf coming unravelled. It's wider than yesterday."); });
+      return;
+    }
+    case "mooncrystal":{
+      runDlg(async()=>{ await say("💎","Moon Crystal", flag("beam_done")?
+        "It chimes softly, full of caught moonlight.":
+        "Cold and dark. It's waiting for the beam to find it."); });
+      return;
+    }
+    case "beamsrc":{
+      runDlg(async()=>{ await say("🔦","Beam Emitter","Moonlight pours from the old lens, thin as thread. Through your Moon Lens you can see exactly where it goes."); });
+      return;
+    }
+    case "mirror":{
+      sfx("blip2");
+      mirrorStates[e.id]=mirrorStates[e.id]==="/"?"\\":"/";
+      return;
+    }
+  }
+  return _interactEntity0(e);
+};
+
+/* ---------- Act II dialogue ---------- */
+Object.assign(DLGS,{
+
+async lumen2(){
+  const L=["⭐","Lumen"];
+  if(!flag("act2")){
+    await say(...L,"Keeper! Down here — well, out here. I can step out of the lamp for a bit. Perk of the job.");
+    await say(...L,"I have to tell you something I should have said sooner. I didn't just <i>fall</i> that night… I was <b>shaken loose</b>.");
+    await say(...L,"Something up there is unpicking the <b>Night Loom</b> — the great weave that holds the dark sky snug around the stars. If it frays through, the night unravels. No stars. No moon. Just… a draught.");
+    const c=await choice(...L,"I can open the star bridge at the crater. Will you go up?",
+      ["Up? UP? …Okay. Up.","The sky needs a keeper too, I suppose."]);
+    if(c===0) await say(...L,"That's the spirit! Mostly. The clouds hold, I promise — Skyharbor has been up there longer than Willowdale's been down here.");
+    else await say(...L,"Exactly. And between us, the sky has been doing your job for years — time to return the favour.");
+    await say(...L,"Find <b>Glint</b> in Skyharbor — a spark of me I sent ahead. And take the south road to the crater: the <b>star bridge</b> is waiting where I landed.");
+    setFlag("act2"); startQuest("sky1");
+    refreshHUD();
+    return;
+  }
+  if(flag("ended2")){
+    await say(...L,"Two lamps lit: one for the village, one for the whole night sky. You're rather good at this, you know.");
+    return;
+  }
+  if(threads()===0) await say(...L,"The star bridge rises from the crater, south of the square. Glint will meet you in Skyharbor — follow the threads from there.");
+  else await say(...L,"You carry "+threads()+" of 3 Moonthreads. I can feel the Loom holding its breath.");
+},
+
+async nimbus(){
+  const Nb=["☁️","Nimbus"];
+  if(!flag("met_nimbus")){ setFlag("met_nimbus");
+    await say(...Nb,"Ohh, a ground-customer! Wipe your boots — actually no, wait, that's the stock. Welcome to Cloud Goods!");
+  }
+  const c=await choice(...Nb,"What can I float you?",["Show me your wares","Any advice?","Just browsing"]);
+  if(c===0){ openShop("nimbus"); return; }
+  if(c===1){
+    if(!hasItem("skyboots")) await say(...Nb,"East path's too soft for ground-boots — you'd drop straight through to Tuesday. <b>Skyboots</b>, forty coins, never sink again.");
+    else if(!hasItem("moonlens")) await say(...Nb,"Selene swears the Prism Chamber beam is invisible without a <b>Moon Lens</b>. She's right, and I happen to sell them. Funny old world.");
+    else await say(...Nb,"The <b>Comet Kite</b> does nothing useful whatsoever. It is also my finest product. Sixty coins of pure rainbow showing-off.");
+    return;
+  }
+  await say(...Nb,"Browse away! Everything's tethered down. Learned that the hard way.");
+},
+
+async glint(){
+  const G=["✨","Glint"];
+  if(!flag("met_glint")){ setFlag("met_glint");
+    await say(...G,"You made it! I'm Glint — a spark of Lumen with my own opinions, most of them about you being brilliant.");
+    await say(...G,"Here's the shape of it: the Night Loom in the <b>Moon Temple</b> needs <b>three Moonthreads</b> woven back in. Two are kept in the sky regions; the third… is complicated. The Loom will explain. Loudly, possibly.");
+    await say(...G,"The <b>Thread of Breeze</b> is in the Gale Gardens, west. The <b>Thread of Gleam</b> is in Mirror Vale, east — you'll want Skyboots and a Moon Lens from Nimbus for that side.");
+    await say(...G,"Lumen saved you some pocket-light for supplies. Spend it wisely! Or on the kite. Honestly the kite is great.");
+    addCoins(20);
+    if(!S.quests.sky1) startQuest("sky1");
+    doneQuest("sky1"); startQuest("sky2"); startQuest("sky3");
+    return;
+  }
+  if(flag("ended2")){ await say(...G,"Look up tonight. That extra-smug star? That's Lumen. The slightly smug one next to it is me."); return; }
+  if(threads()>=2&&!flag("code_done")) await say(...G,"Two threads! The temple bridge will hold you now — north of the plaza. Mind the guardian: it asks for <b>three numbers</b>, and the Shadowdeep below the temple remembers them.");
+  else if(threads()>=2) await say(...G,"The guardian stood aside! Whatever waits in the loom chamber… be kind first and brave second. That's the keeper way.");
+  else if(flag("thread_breeze")) await say(...G,"One thread down! Mirror Vale next — Skyboots for the path, Moon Lens for the beam. Nimbus profits either way, the fluffy rascal.");
+  else if(flag("thread_gleam")) await say(...G,"One thread down! The Gale Gardens vanes are next — there's a rhyme on a sign up there that knows their true headings.");
+  else await say(...G,"Gale Gardens west, Mirror Vale east. And talk to everyone — sky folk hoard hints like dragons hoard gold.");
+},
+
+async cumulus(){
+  const C=["🎩","Mayor Cumulus"];
+  if(S.quests.letters==="on"&&!flag("let_c")&&itemCount("letters")>0){
+    take("letters"); setFlag("let_c");
+    await say(...C,"Post! For ME? Ahem — 'Dear Cumulus, your hat looks especially tall this week.' Zephyr is a scoundrel and a flatterer and my best friend.");
+    await say(...C,"Tell him the mayor's office confirms receipt. With dignity.");
+    return;
+  }
+  if(!flag("met_cumulus")){ setFlag("met_cumulus");
+    await say(...C,"Welcome to Skyharbor, ground-walker! Mayor Cumulus, at your service. Population eleven, twelve counting your good self, thirteen if the snail arrives. He sent word ahead. Three years ago.");
+    return;
+  }
+  if(flag("ended2")) await say(...C,"As mayor, I hereby declare you an honorary citizen of the sky. The ceremony is this handshake. Congratulations!");
+  else if(threads()>=2) await say(...C,"The temple, eh? Between us: the guardian's riddle-numbers live down in the Shadowdeep. Dark as a hat box in there — bring your lantern.");
+  else await say(...C,"The gardens are lovely this time of year. Windy, mind. Everything here is windy. It's the sky.");
+},
+
+async zephyr(){
+  const Z=["🎈","Captain Zephyr"];
+  if(!S.quests.letters){
+    await say(...Z,"Ah, a courier-shaped person! The <i>Wandering Sigh</i> is grounded — strained a rope, long story, there was a goose.");
+    await say(...Z,"Three letters need delivering: <b>Mayor Cumulus</b> here in town, <b>Keeper Gale</b> in the gardens, and <b>Selene</b> over in Mirror Vale. Take them?");
+    give("letters",3);
+    startQuest("letters");
+    await say(...Z,"Marvellous! And mind the gusts — letters fly better than couriers do.");
+    return;
+  }
+  const delivered=["let_c","let_g","let_s"].filter(f=>flag(f)).length;
+  if(delivered>=2&&!flag("bell_given")){
+    setFlag("bell_given");
+    await say(...Z,"Deliveries getting through already? You're faster than my balloon, and considerably less goose-prone.");
+    await say(...Z,"Here — my old <b>Wind Bell</b>. Rings knots right out of stubborn air. The garden gate up north is exactly that kind of stubborn.");
+    give("windbell");
+  }
+  if(delivered===3&&S.quests.letters==="on"){
+    doneQuest("letters"); addCoins(25);
+    await say(...Z,"All three delivered! The sky post lives on. Your wages, courier — and a standing invitation to fly with me once the rope forgives me.");
+    return;
+  }
+  if(S.quests.letters==="on"){
+    await say(...Z,"That's "+delivered+" of 3 delivered. Cumulus is by the hall, Gale keeps the gardens, Selene stargazes in Mirror Vale.");
+    return;
+  }
+  if(flag("ended2")) await say(...Z,"The night's so well-stitched now even the geese are navigating by it. High praise. From geese.");
+  else await say(...Z,"Wind's fair today. Somewhere. Probably.");
+},
+
+async twinkle(){
+  const Tw=["🌟","Twinkle"];
+  const n=[1,2,3].filter(i=>S.got["bug"+i]).length;
+  if(!S.quests.glowbugs){
+    await say(...Tw,"Have you seen my glowbugs?! Bzz, Bzzz and Keith! The big gust took them west into the Gale Gardens and they are NOT good at flying. They're glowbugs, not flybugs!");
+    startQuest("glowbugs");
+    await say(...Tw,"Just walk up to them gently and they'll hop in your satchel. They like satchels. Please hurry — Keith worries.");
+    return;
+  }
+  if(S.quests.glowbugs==="on"&&n>=3){
+    doneQuest("glowbugs"); addCoins(25);
+    await say(...Tw,"BZZ! BZZZ! KEITH! Oh thank you thank you! Keith says you're his favourite ground-person, which is HUGE, Keith doesn't even like me that much.");
+    await say(...Tw,"Here, glitter money! Stars find coins all the time, we just never have pockets.");
+    return;
+  }
+  if(S.quests.glowbugs==="on"){
+    await say(...Tw,"That's "+n+" of 3! "+(n<3?"They glow green and wobble when they're nervous. They're always nervous.":""));
+    return;
+  }
+  if(flag("ended2")) await say(...Tw,"The bugs are teaching me their wobble-dance to celebrate the new night. I'm SO bad at it. Want to see?!");
+  else await say(...Tw,"Bzz, Bzzz and Keith say hi! Keith says it with his whole face.");
+},
+
+async galek(){
+  const Gk=["🌬️","Keeper Gale"];
+  if(S.quests.letters==="on"&&!flag("let_g")&&itemCount("letters")>0){
+    take("letters"); setFlag("let_g");
+    await say(...Gk,"A letter? Out here? …It's from Zephyr. 'Your gardens flatten my flight plans weekly. Respectfully, fix your weather.' Ha! Never.");
+    return;
+  }
+  if(!flag("met_galek")){ setFlag("met_galek");
+    await say(...Gk,"Mind the gust lanes, traveller — they shove politely but they DO shove. I'm Gale. I keep the gardens, and the gardens keep me humble.");
+  }
+  if(!flag("vanes_done")){
+    await say(...Gk,"The four vanes have been bickering since the sky started fraying — and the Thread of Breeze won't settle till they agree.");
+    await say(...Gk,"My grandmother's rhyme sorts them out. It's carved on the sign by the old pedestal. <i>Rain, Dawn, Noon, Dusk</i> — each has a true heading.");
+  } else if(!flag("thread_breeze")){
+    await say(...Gk,"Listen to that… harmony. Go on, the thread is yours — you tuned the winds that carry it.");
+  } else if(flag("ended2")){
+    await say(...Gk,"The night blew in fresh and whole last evening. Best weather we've had in an age. Your doing, I hear.");
+  } else {
+    await say(...Gk,"The winds speak well of you. They gossip terribly, so that's saying something.");
+  }
+},
+
+async selene(){
+  const Se=["🔭","Selene"];
+  if(S.quests.letters==="on"&&!flag("let_s")&&itemCount("letters")>0){
+    take("letters"); setFlag("let_s");
+    await say(...Se,"Mail! …Zephyr writes: 'Saw a new comet Tuesday. Named it after you. It wobbles.' That is the nicest thing anyone has ever said about me.");
+    return;
+  }
+  if(!flag("met_selene")){ setFlag("met_selene");
+    await say(...Se,"Hush — no, wait, sound doesn't bother the stars. Old habit. I'm Selene. I've charted this sky for forty years, and lately the charts keep coming back <i>wrong</i>.");
+    await say(...Se,"There's a seam opening across the dark. The Loom's work, undone faster than it can mend. You're the keeper from below? Then the Prism Chamber matters to you.");
+  }
+  if(!flag("beam_done")){
+    await say(...Se,"The chamber holds the <b>Thread of Gleam</b>, guarded by a moonbeam puzzle. The beam is shy — without a <b>Moon Lens</b> you can't even see it. Nimbus stocks them, the opportunist.");
+    await say(...Se,"My notes are inside: bend the beam <i>skyward, sunward, then down</i>. Three true mirrors. The others are just vain.");
+  } else if(!flag("thread_gleam")){
+    await say(...Se,"You lit the crystal! The thread is yours — take it from the pedestal before it gets shy too.");
+  } else if(flag("ended2")){
+    await say(...Se,"My new chart of the mended sky is my finest work. There's a smudge in the corner. The smudge is me, crying a little.");
+  } else {
+    await say(...Se,"Clear skies tonight. Clearer soon, if you keep this up.");
+  }
+},
+
+async guardian(){
+  const Gd=["🗿","The Moon Guardian"];
+  if(flag("code_done")){
+    await say(...Gd,"THE NUMBERS WERE TRUE. PASS, LITTLE KEEPER. …I AM ALSO PROUD OF YOU. THIS VOICE IS THE ONLY ONE I HAVE.");
+    return;
+  }
+  await say(...Gd,"HALT. THE LOOM CHAMBER IS SEALED. SPEAK THE THREE NUMBERS THAT THE DEEP REMEMBERS.");
+  const found=["moth","lantern","key"].filter(s=>flag("stone_"+s)).length;
+  if(found===0){
+    await say(...Gd,"YOU DO NOT KNOW THEM. THE SHADOWDEEP BELOW THE WEST WING REMEMBERS WHAT I MUST NOT. BRING LIGHT. IT IS DARK. THAT IS THE POINT OF IT.");
+    const c=await choice(...Gd,"ATTEMPT THE NUMBERS ANYWAY?",["Try anyway","Come back later"]);
+    if(c===1){ await say(...Gd,"WISE. THE DEEP IS PATIENT. SO AM I. IT IS MOST OF MY JOB."); return; }
+  } else if(found<3){
+    await say(...Gd,"YOU CARRY "+found+" OF THE THREE NUMBERS. THE DEEP STILL HOLDS THE REST.");
+  } else {
+    await say(...Gd,"YOU HAVE WOKEN ALL THREE STONES. SPEAK, THEN: MOTH, LANTERN, KEY.");
+  }
+  const a1=await choice(...Gd,"WHAT DOES THE MOTH REMEMBER?",["Three","Five","Seven","Nine"]);
+  const a2=await choice(...Gd,"WHAT DOES THE LANTERN REMEMBER?",["Two","Four","Six","Eight"]);
+  const a3=await choice(...Gd,"WHAT DOES THE KEY REMEMBER?",["One","Three","Five","Seven"]);
+  if(a1===2&&a2===0&&a3===2){
+    setFlag("code_done");
+    sfx("fanfare"); flashT=24; shake=6;
+    await say(...Gd,"SEVEN. TWO. FIVE. …CORRECT. THE DOOR REMEMBERS ITSELF OPEN.");
+    await say(...Gd,"ONE MORE THING, KEEPER. WHAT WAITS INSIDE HAS BEEN ALONE A LONG TIME. IT UNPICKED THE SKY TO BE NOTICED. NOTICE IT GENTLY.");
+    respawnEnts(); save();
+  } else {
+    sfx("error"); shake=8;
+    await say(...Gd,"THE NUMBERS SCATTER LIKE STARTLED MOTHS. THE STONES OF THE DEEP KNOW THE TRUE THREE. SO WILL YOU, IN TIME.");
+  }
+},
+
+async umbra(){
+  const U=["🌑","Umbra"];
+  if(flag("thread_shade")){
+    if(flag("ended2")) await say(...U,"I keep the dusk now — the soft hour between your lamp and Lumen's stars. People wave at the dark. At <i>me</i>. It's wonderful.");
+    else await say(...U,"Take my thread to the Loom, keeper. I'll hold the shadows steady while you weave. It's… nice, holding them for a reason.");
+    return;
+  }
+  await say(...U,"…You came through the dark to get here. And you didn't even bring a torch big enough to burn it away. Just a little lantern. Considerate.");
+  await say(...U,"I am Umbra. I was here before the Loom — and when they wove the night all snug and starry, nobody wove a place for <i>me</i>.");
+  await say(...U,"So I started unpicking it. A thread a night. I shook your star loose, and I'm… I find I'm sorry about that. He screamed the whole way down. Very undignified.");
+  const c=await choice(...U,"Why does everyone get a place in the night except me?",
+    ["Maybe the night needs you most of all","You shook my friend out of the sky!","Would you like to help us mend it?"]);
+  if(c===0) await say(...U,"…Needs me? The dark, <i>needed</i>? Say that again slowly. I want to remember the shape of it.");
+  if(c===1){ await say(...U,"I KNOW. I know. He's the one who glows smug at me from the lamp every… look, I said I was sorry. Shadows apologise badly. We've had no practice.");
+    await say(...U,"But you crossed the deep to scold me in person. That's more attention than I've had in three hundred years. I'll take it."); }
+  if(c===2) await say(...U,"<i>Help?</i> You want the un-picker to be a re-weaver? …Yes. Yes, alright. Don't make it weird.");
+  await say(...U,"Here — the <b>Moonthread of Shade</b>. I've been hoarding it like a dragon with one sock. The Loom needs all three: breeze, gleam, and shade. Even the dark belongs in the weave. <i>Especially</i> the dark.");
+  setFlag("thread_shade");
+  sfx("shard"); flashT=24;
+  toast("🧵 Got the <b>Moonthread of Shade</b>!",3000);
+  if(!S.quests.sky4) startQuest("sky4");
+  refreshHUD(); respawnEnts(); save();
+  await say(...U,"Go on. I'll watch from right here. Watching is my best thing.");
+},
+});
+
+/* Sir Plod, now also a sky knight */
+DLGS.plod=async function(){
+  const P=["🐌","Sir Plod"];
+  const GROUND=["village","forest","cove","peak","crater"], SKY=["galegardens","mirrorvale","moontemple"];
+  if(!S.quests.plod) startQuest("plod");
+  const here=S.map;
+  if(!S.plod[here]){
+    S.plod[here]=true;
+    const gn=GROUND.filter(m=>S.plod[m]).length;
+    const sn=SKY.filter(m=>S.plod[m]).length;
+    const lines={
+      village:"A knight! Questing! Yes, I am Sir Plod, and I am crossing the ENTIRE Hollow. Started in spring. Of some year.",
+      forest:"You again! See? PROGRESS. The trees here gossip terribly. About my pace, mostly. Rude.",
+      cove:"Sand, my old nemesis. Beautiful, but it gets in the shell. Still — onward! Eventually!",
+      peak:"C-c-cold! But a knight does not stop. A knight merely proceeds extremely gradually.",
+      crater:"The final region! I have crossed the WHOLE Hollow! They said it could not be done by a snail. They were nearly right!",
+      galegardens:"A gust picked me up on Tuesday and now I quest in the SKY. I have decided this was intentional. Knights adapt!",
+      mirrorvale:"The crystals show my reflection. Heroic. Gleaming. Slightly behind schedule.",
+      moontemple:"A TEMPLE. AT MY PACE. Squire-witness, we have peaked. Do not tell the mountain I said that.",
+    };
+    await say(...P,lines[here]||"Onward!");
+    if(GROUND.includes(here)){
+      if(gn>=5&&S.quests.plod==="on"){
+        await say(...P,"And YOU have witnessed the entire quest! Every region! A knight rewards his squire-witness. My treasure — I shan't be needing it. Too heavy anyway.");
+        addCoins(50); give("medal"); doneQuest("plod"); sfx("fanfare");
+      } else if(S.quests.plod==="on"){
+        await say(...P,"You've now seen me in <b>"+gn+" of 5</b> regions. Witness my whole journey and you shall share in my treasure. Knight's honour!");
+      }
+    } else {
+      if(!S.quests.plodsky) startQuest("plodsky");
+      if(sn>=3&&S.quests.plodsky==="on"){
+        await say(...P,"Three sky regions, fully knighted! You witnessed history at its slowest, squire. Take the Sky Medal — and the sky treasure. Clouds are FULL of loose change, who knew?");
+        addCoins(60); give("skymedal"); doneQuest("plodsky"); sfx("fanfare");
+      } else if(S.quests.plodsky==="on"){
+        await say(...P,"That's <b>"+sn+" of 3</b> sky regions witnessed. The quest continues! Upward! Ish!");
+      }
+    }
+    return;
+  }
+  await say(...P,"Still here. Building momentum. It takes several days to build momentum when you're a snail. It's mostly paperwork.");
+};
+
+/* ---------- the Night Loom finale ---------- */
+async function loomDlg(){
+  const L=["🕸️","The Night Loom"];
+  if(flag("ended2")){
+    await say(...L,"The great Loom hums to itself, weaving tomorrow's night in advance. Breeze, gleam and shade run through it like three old friends mid-story.");
+    return;
+  }
+  if(threads()<3){
+    await say(...L,"The great Loom stands half-strung, its empty rows sighing in the draught. It holds places for three threads — <b>you carry "+threads()+"</b>.");
+    if(flag("code_done")&&!flag("thread_shade"))
+      await say(...L,"The shadow beside the Loom pretends not to watch you. It is very bad at pretending.");
+    return;
+  }
+  await say(...L,"The three Moonthreads rise from your satchel — <i>breeze, gleam, shade</i> — and the Loom pulls them in like a held breath let go.");
+  await say("🌑","Umbra","Steady… steady… <i>there</i>. Weave the dark one through the middle. The night needs a soft part. That part is me.");
+  sfx("fanfare"); flashT=40; startFireworks();
+  setFlag("ended2"); doneQuest("sky4");
+  await say("🌠","","Above the temple, the torn seam draws itself closed. Stars pour back into their places like an audience finding their seats.");
+  await say("⭐","Lumen","(faintly, from far below) <i>I FELT THAT! THE SKY FITS AGAIN! WELL DONE, KEEPER!</i>");
+  await say("🌑","Umbra","Huh. Look at that. There's a me-shaped place in the weave now. There always was, apparently. It just needed… mending in.");
+  await say("🌠","","Night settles over the Hollow and the sky alike — deep, warm, and certain, with one star that waves and one shadow that waves back.");
+  save();
+  showCredits2();
+}
+function showCredits2(){
+  const sparkGot=Object.keys(S.got).filter(k=>k.includes("_s")&&!k.startsWith("ms_")).length;
+  const moonGot=Object.keys(S.got).filter(k=>k.startsWith("ms_")).length;
+  const qDone=Object.values(S.quests).filter(v=>v==="done").length;
+  const total=Object.keys(QUESTS).length;
+  $("#credits h3").textContent="The Night Is Whole Again";
+  $("#credbody").innerHTML=
+    "<p>The Loom weaves, Lumen shines, and Umbra keeps the dusk — the gentle hour when both their shifts overlap and nobody minds.</p>"+
+    "<p><b>You mended a lamp, and then you mended the sky. Thank you for playing, little keeper.</b></p>"+
+    '<p class="stat">Shards: <b>'+S.shards+"/5</b> · Threads: <b>"+threads()+"/3</b> · Quests: <b>"+qDone+"/"+total+"</b></p>"+
+    '<p class="stat">Sparkles: <b>'+sparkGot+"/13</b> · Moonstones: <b>"+moonGot+"/10</b> · Sir Plod: <b>"+
+    Object.keys(S.plod).length+"/8</b> regions</p>"+
+    '<p class="stat">Both worlds stay open — every secret, snail and citizen is still out there.</p>'+
+    '<p class="stat" style="margin-top:.6rem">A Wild Olive Studios adventure 🫒</p>';
+  panelOpen("credits");
+  mode="panel";
+}
 
 showTitle();
 </script>
