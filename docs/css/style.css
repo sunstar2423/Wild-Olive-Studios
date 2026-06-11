@@ -269,7 +269,11 @@ main, .nav, .footer, .marquee { position: relative; z-index: 1; }
   border-radius: var(--radius);
   overflow: hidden;
   display: flex; flex-direction: column;
+  position: relative;
   transition: transform .3s cubic-bezier(.2,.9,.3,1), box-shadow .3s, border-color .3s;
+}
+.game-card__play-link {
+  position: absolute; inset: 0; z-index: 2;
 }
 .game-card:hover { transform: translateY(-6px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--accent, var(--olive)) 50%, transparent); }
 .game-card__art { position: relative; }
