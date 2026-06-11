@@ -18,11 +18,11 @@ _(set GitHub Pages to deploy from the `/docs` folder — see below)_
   - An animated olive-branch hero scene that "grows" on load (pure SVG + CSS).
   - A live particle/pollen field rendered on a `<canvas>` background.
   - Floating sprites, a scrolling marquee, animated stat counters, hover-reactive game cards, and scroll-reveal transitions.
-- **Game showcase grid** ready to fill in as real games ship (3 concept titles + a "coming soon" slot).
+- **Game showcase grid** with handmade cover art for all six playable games (plus a "coming soon" slot).
 - **Links to indie platforms** — itch.io, Steam, plus Bluesky, Discord, YouTube and GitHub.
 - **Fully responsive** with a mobile nav menu.
 - **Accessible & considerate** — semantic HTML, alt text, and full `prefers-reduced-motion` support (all animation is disabled for users who ask for it).
-- **Social share card** + favicon, all as crisp SVG.
+- **Social share card** (PNG, so it renders on every platform) + crisp SVG favicon & logo.
 
 ---
 
@@ -38,7 +38,7 @@ by folders (not branches). Everything lives on `main`.
 │   ├── 404.html            # custom not-found page
 │   ├── css/style.css       # all styling + animations
 │   ├── js/main.js          # canvas background, scroll reveals, counters, form
-│   ├── assets/             # logo.svg, favicon.svg, social-card.svg
+│   ├── assets/             # logo.svg, favicon, covers/, social-card.png
 │   ├── play/               # HTML5 game BUILDS — playable in the browser
 │   │   └── <game-slug>/
 │   └── .nojekyll           # serve files as-is (no Jekyll processing)
