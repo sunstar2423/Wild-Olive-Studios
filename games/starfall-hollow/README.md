@@ -38,6 +38,28 @@ collectibles (10 moonstones), three more Sir Plod encounters, four new music
 themes, a new push-wind movement mechanic, and a second, true ending at the
 Night Loom — roughly doubling the length of the story.
 
+### Act III — The Undergrove
+
+Mending the sky isn't the end either. Three hundred years of pulled night-thread
+sank *beneath* the Hollow and tangled the four **Season Seeds** around the roots
+of the **First Tree** — the wild olive everything grew from. The seasons jam,
+the tide stops, and a whirlpool opens in the Tide Cave:
+
+| Region | What waits there |
+|---|---|
+| 🦡 **Rootholme** | The town beneath everything — Elder Bracken, Tuber's Deep Goods, a glow-worm lamplighter, and four wild tunnels |
+| 🍄 **Fungalwood** | Mushroom groves and the Sprout Vault — a genuine **sokoban block-pushing puzzle** (machine-verified solvable, and not trivially) |
+| 🌊 **Rivergloam** | A buried sea ruled by the **Season Stone**: bloom grows vine bridges, frost freezes the water into slideable ice — toggling shrines re-shapes the whole map |
+| 🔥 **The Embervault** | Lava rivers, steam-vent lifts, and five braziers that must be lit in the order of the Stoker's Song |
+| 🚪 **Catacomb of Doors** | A three-colour switch-and-gate labyrinth (minimum five toggles — the validator checked) guarding the Winter Seed |
+| 🌳 **The First Tree** | Snarl — a creature knotted from every lost thing in the Hollow — three Great Knots to untie with music, riddles and kindness, and a finale where Lumen and Umbra come down to help plant the year |
+
+Act III adds the Mole-made Helm, Bubble Charm, Season Stone and Firefly Crown,
+12 dewdrop collectibles, four more side quests (relight Wick's lanterns,
+Pebble's marbles, Brine's pearlsnails, Sir Plod's deep arc), five new music
+themes, block-pushing and season-shifting mechanics, and a third, final ending
+at the Heartroot Altar.
+
 ### Systems
 
 - **Story chapters** — five main quests gate the world open one region at a

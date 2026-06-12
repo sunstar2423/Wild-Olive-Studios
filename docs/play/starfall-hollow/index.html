@@ -468,8 +468,8 @@ function gainShard(i){ // i = index 0..4
    w wall  ^ roof  d door  f fence  m plaza/mosaic  _ wood floor  o boulder
    ===================================================================== */
 /*WORLD-START*/
-const SOLID = new Set(["#","T","t","~","r","w","^","f","o","x","M","C","e"]);
-const GUST = {"v":"down",">":"right","<":"left"};
+const SOLID = new Set(["#","T","t","~","r","w","^","f","o","x","M","C","e","R","F","B","l"]);
+const GUST = {"v":"down",">":"right","<":"left","7":"up"};
 const SLIDE = new Set(["i"]);
 
 const MAPS = {
@@ -531,6 +531,7 @@ village:{
     {x:4,y:2,kind:"sparkle",id:"v_s1"},
     {x:30,y:21,kind:"sparkle",id:"v_s2"},
     ...(flag("ended")?[{x:15,y:12,kind:"npc",id:"lumen2",name:"Lumen",em:"⭐",cols:["#fff6c9","#ffd166"],dlg:"lumen2"}]:[]),
+    ...(flag("ended3")?[{x:19,y:12,kind:"npc",id:"tassel",name:"Tassel",em:"🌱",cols:["#7ad77a","#ffd166"],dlg:"tassel"}]:[]),
   ],
 },
 
@@ -704,6 +705,7 @@ tidecave:{
     {x:12,y:8,kind:"sign",text:"Five shells sing in the dark. Listen to their song, then answer it back, note for note."},
     {x:4,y:11,kind:"chest",id:"t_c1",coins:20},
     {x:19,y:11,kind:"sparkle",id:"t_s1"},
+    ...(flag("act3")?[{x:12,y:6,kind:"whirlpool"}]:[]),
   ],
 },
 
@@ -1121,6 +1123,360 @@ shadowdeep:{ name:"The Shadowdeep", song:"cave", amb:"drip", dark:true,
     {x:20,y:13,kind:"chest",id:"sd_c1",coins:22},
   ],
 },
+
+rootholme:{ name:"Rootholme", song:"rootholme", amb:"fireflies",
+  rows:[
+  "RRRRRRRRRRRRRRRRRhhRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRhhRRRRRRRRRRRRRRRRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhh~~~~hhhhhhhhhhhhhhhhhRRRRRhhhRR",
+  "RRhhh~~~~hhhhhhhhhhhhhhhhhRRRRRhhhRR",
+  "RRhhh~~~~hhhhhhhhhhhhhhhhhRRdRRhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhRRRRRhhhhmmmmmmmmmmhhhhhhhhhhhRR",
+  "RRhhRRRRRhhhhmmmmmmmmmmhhhhhhhhhhhRR",
+  "RRhhRRdRRhhhhmmmmmmmmmmhhhhhhhhhhhRR",
+  "hhhhhhhhhhhhhmmmmmmmmmmhhhhhhhhhhhhh",
+  "hhhhhhhhhhhhhmmmmmmmmmmhhhhhhhhhhhhh",
+  "RRhhhhhhhhhhhmmmmmmmmmmhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhmmmmmmmmmmhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhmmmmmmmmmmhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhh~~~~hhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhh~~~~hhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhh~~~~hhhRR",
+  "RRcchhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRdchhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRcchhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRRRRRRRRRRRRRRRRhhRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRhhRRRRRRRRRRRRRRRRR",
+  ],
+  warps:[
+    {x:17,y:0,w:2,h:2, to:["embervault",18,27,"up"],
+      req:()=>hasItem("helm")||"Pebbles rattle down the north stair like popcorn. Without a hard <b>Mole-made Helm</b>, that's a headache waiting to happen."},
+    {x:0,y:12,w:1,h:2, to:["fungalwood",43,15,"left"]},
+    {x:34,y:12,w:2,h:2, to:["rivergloam",2,15,"right"],
+      req:()=>hasItem("bubblecharm")||"Gloam-spray hisses up the east tunnel — it soaks through everything but a <b>Bubble Charm</b>. Tuber stocks them."},
+    {x:17,y:24,w:2,h:2, to:["deepdoors",14,23,"down"],
+      req:()=>seeds()>=2||"A stone face above the south stair grinds: 'RETURN WITH TWO SEASONS IN YOUR POCKET.'"},
+    {x:2,y:22,w:1,h:1, to:["firsttree",14,26,"up"],
+      req:()=>seeds()>=4||"The Heartroot Door stands fast. Four hollows in its bark wait for four seeds."},
+  ],
+  ents:()=>[
+    {x:28,y:8,kind:"npc",id:"bracken",name:"Elder Bracken",em:"🦡",cols:["#9b8a72","#3d3630"],dlg:"bracken"},
+    {x:28,y:6,kind:"doormsg",text:"Bracken's den. It smells of root tea and very old maps — Elm would approve."},
+    {x:6,y:11,kind:"shopdoor3"},
+    {x:20,y:18,kind:"npc",id:"wick",name:"Wick the Lamplighter",em:"🪱",cols:["#d7ff8a","#7a9b3a"],dlg:"wick"},
+    {x:10,y:16,kind:"npc",id:"pebble",name:"Pebble",em:"🐹",cols:["#c4a484","#6b4226"],dlg:"pebble"},
+    {x:32,y:14,kind:"npc",id:"brine",name:"Brine",em:"🦎",cols:["#ffb3c1","#e85d75"],dlg:"brine"},
+    {x:11,y:6,kind:"npc",id:"loam",name:"Granny Loam",em:"🍄",cols:["#b8a08a","#857060"],dlg:"loam"},
+    {x:17,y:20,kind:"geyser"},
+    {x:14,y:17,kind:"sign",text:"Rootholme — deepest town in the Hollow. Mind your head, mind the moss, mind Granny Loam's opinions."},
+    {x:4,y:22,kind:"sign",text:"The Heartroot Door. It opens only for one carrying all four seasons."},
+    {x:24,y:20,kind:"deeplamp",id:"lr"},
+    {x:32,y:3,kind:"chest",id:"rh_c1",coins:18},
+    {x:3,y:3,kind:"sparkle",id:"dd_r1"},
+    {x:32,y:21,kind:"sparkle",id:"dd_r2"},
+  ],
+},
+
+fungalwood:{ name:"Fungalwood", song:"fungal", amb:"fireflies", outdoor:false, twilight:true,
+  rows:[
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhRRRRRRRRRRRRRRRhhhhhhhhhhhhhhhhFhhhhhhhhRR",
+  "RRhhRRRRRRRRRRRRRRRhhhhhhhhhhhhhhhhhhhFhhhhhRR",
+  "RRhhRRcccccccccccRRhhhhhhhhhhhhhhhhhhhhFhhhhRR",
+  "RRhhRRcccccccccccRRhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhRRcccccccccccRRhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhRRcccccccccccRRhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhRRcccccccccccRRhhhhhhhhFhhhhhhhhhhFhhhhhRR",
+  "RRhhRRcccccccccccRRhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhRRcccccccccccRRhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhRRRRRRRcRRRRRRRhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhRRRRRRRhRRRRRRRhhhhhhhhFhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhFhhhhhhhhhhhhhhh",
+  "RRhhhhhhhhhhhhhhFhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+  "RRhhhhhhhhhFFhhhhhhhhhhhhFhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhFhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhFhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhFhhhhhhhRR",
+  "RRhhhhhhhhhFhhhhFhhhhhhhhhhhhhhhhFhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhFhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhFhhhhhhhhhhFhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhFhhhhhhhhhhhhFhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhFhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhFhhhhhhhhhhhhhhhhhFhhhhFhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhFhhFhhFhhhhhhhhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  ],
+  warps:[ {x:45,y:14,w:1,h:3, to:["rootholme",2,12,"right"]} ],
+  ents:()=>{
+    const e=[
+      {x:30,y:8,kind:"npc",id:"cap",name:"Farmer Cap",em:"🍄",cols:["#d4665a","#f0e0c0"],dlg:"cap"},
+      {x:36,y:26,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+      {x:13,y:14,kind:"sign",text:"The Sprout Vault. Old mole custom: if your stones get stuck, step out and back — the room rolls them home."},
+      {x:40,y:16,kind:"sign",text:"Fungalwood. The mushrooms are friendly. The big ones are furniture."},
+      {x:23,y:28,kind:"deeplamp",id:"lf"},
+      {x:40,y:29,kind:"chest",id:"fw_c1",coins:20},
+      {x:40,y:4,kind:"sparkle",id:"dd_f1"},
+      {x:20,y:20,kind:"sparkle",id:"dd_f2"},
+      {x:4,y:25,kind:"sparkle",id:"dd_f3"},
+      {x:14,y:6,kind:"seedped",seed:"spring",need:"spring_plates"},
+      {x:9,y:8,kind:"pillar2"},
+      {x:7,y:6,kind:"plate",id:"p1"},{x:7,y:8,kind:"plate",id:"p2"},{x:7,y:10,kind:"plate",id:"p3"},
+    ];
+    if(!flag("spring_plates")){
+      e.push({x:10,y:6,kind:"rootstone",id:"s1"},{x:11,y:8,kind:"rootstone",id:"s2"},{x:10,y:10,kind:"rootstone",id:"s3"});
+    }
+    if(S.quests.marbles==="on"&&!S.got.mar1) e.push({x:5,y:29,kind:"marble",id:"mar1"});
+    return e;
+  },
+},
+
+rivergloam:{ name:"Rivergloam", song:"gloam", amb:"starbits", twilight:true,
+  rows:[
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRhhhhhhhhhh444444444444444444444444444444RR",
+  "RRhhhhhhhhhh444444444444444444444444444444RR",
+  "RRhhhhhhhhhh444444444444444444444444444444RR",
+  "RRhhhhhhhhhh444444444444444444hhhhhhhh4444RR",
+  "RRhhhhhhhhhh444444444444444444hhhhhhhh4444RR",
+  "RRhhhhhhhhhh444444444444444444hhhhhhhh4444RR",
+  "RRhhhhhhhhhh444444444444444444hhhhhhhh4444RR",
+  "RRhhhhhhhhhh444444444444444444hhhhhhhh4444RR",
+  "RRhhhhhhhhhh444444444444444444hhhhhhhh4444RR",
+  "RRhhhhhhhhhh444444444444444444444544444444RR",
+  "RRhhhhhhhhhh4444hhhhhh44444444444544444444RR",
+  "RRhhhhhhhhhh4444hhhhhh44444444444544444444RR",
+  "hhhhhhhhhhhh4444hhhhhh44444444444544444444RR",
+  "hhhhhhhhhhhh5555hhhhhh44444444444544444444RR",
+  "hhhhhhhhhhhh4444hhhhhh44444444444544444444RR",
+  "RRhhhhhhhhhh4444hhhhhh44444444444544444444RR",
+  "RRhhhhhhhhhh4444hhhhhh44444444444544444444RR",
+  "RRhhhhhhhhhh444444444444444444444544444444RR",
+  "RRhhhhhhhhhh444444444444444444444544444444RR",
+  "RRhhhhhhhhhh444444444444444444444544444444RR",
+  "RRhhhhhhhhhh444444444444444444444544444444RR",
+  "RRhhhhhhhhhh444444444444444444444544444444RR",
+  "RRhhhhhhhhhh444444444444444444444544444444RR",
+  "RRhhhhhhhhhh444444444444444444444544444444RR",
+  "RRhhhhhhhhhh444444444444444444444544444444RR",
+  "RRhhhhhhhhhh444444444444444444hhhhhhh44444RR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhh44hhhhhhhhhhhhRR",
+  "RRhhhhhhhhhhhhhhhhhhhhhhhhhh44hhhhhhhhhhhhRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  ],
+  warps:[ {x:0,y:14,w:1,h:3, to:["rootholme",33,12,"left"]} ],
+  ents:()=>{
+    const e=[
+      {x:6,y:12,kind:"shrine"},
+      {x:18,y:13,kind:"shrine"},
+      {x:32,y:6,kind:"shrine"},
+      {x:34,y:28,kind:"shrine"},
+      {x:35,y:7,kind:"seedped",seed:"autumn",need:null},
+      {x:4,y:15,kind:"sign",text:"Rivergloam. In bloom the vines reach; in frost the water holds. The shrines remember both, and so should you."},
+      {x:5,y:24,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+      {x:3,y:8,kind:"deeplamp",id:"lg"},
+      {x:36,y:9,kind:"chest",id:"rg_c1",coins:22},
+      {x:3,y:28,kind:"sparkle",id:"dd_g1"},
+      {x:16,y:17,kind:"sparkle",id:"dd_g2"},
+      {x:36,y:5,kind:"sparkle",id:"dd_g3"},
+      {x:30,y:12,kind:"boulder"},
+      {x:29,y:7,kind:"boulder"},
+      {x:26,y:20,kind:"boulder"},
+      {x:38,y:15,kind:"boulder"},
+      {x:22,y:5,kind:"boulder"},
+      {x:24,y:6,kind:"boulder"},
+      {x:21,y:8,kind:"boulder"},
+      {x:23,y:9,kind:"boulder"},
+      {x:25,y:10,kind:"boulder"},
+      {x:27,y:3,kind:"boulder"},
+    ];
+    if(S.quests.marbles==="on"&&!S.got.mar2) e.push({x:17,y:12,kind:"marble",id:"mar2"});
+    if(S.quests.snails==="on"){
+      if(!S.got.ps1) e.push({x:8,y:20,kind:"pearlsnail",id:"ps1"});
+      if(!S.got.ps2) e.push({x:19,y:16,kind:"pearlsnail",id:"ps2"});
+      if(!S.got.ps3) e.push({x:31,y:28,kind:"pearlsnail",id:"ps3"});
+    }
+    return e;
+  },
+},
+
+embervault:{ name:"The Embervault", song:"ember", amb:"embers", ember:true,
+  rows:[
+  "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+  "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBccccccccccBBBBBcccccccccccccccccccBB",
+  "BBccccccccccBBBBBcccccccccccccccccccBB",
+  "BBccccccccccBBBBBcccccccccccccccccccBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBlllccllllllllllllllllllllcccccccccBB",
+  "BBlllccllllllllllllllllllllcccccccccBB",
+  "BBccc77ccccccccccccccccccccccc77ccccBB",
+  "BBccc77cccccccccccccccBBBBBccc77ccccBB",
+  "BBccc77cccccccccccccccBBBBBccc77ccccBB",
+  "BBccc77cccccccccccccccBBBBBccc77ccccBB",
+  "BBccc77ccccccccccccccccccccccc77ccccBB",
+  "BBccc77ccccccccccccccccccccccc77ccccBB",
+  "BBccccccccclllllllllllllllllllllllllBB",
+  "BBccccccccclllllllllllllllllllllllllBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBccccccccccccBBBBBcccccccccccccccccBB",
+  "BBccccccccccccBBBBBcccccccccccccccccBB",
+  "BBccccccccccccBBBBBcccccccccccccccccBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBccccccccccccccccccccccccccccccccccBB",
+  "BBBBBBBBBBBBBBBBBBccBBBBBBBBBBBBBBBBBB",
+  "BBBBBBBBBBBBBBBBBBccBBBBBBBBBBBBBBBBBB",
+  ],
+  warps:[ {x:18,y:29,w:2,h:1, to:["rootholme",17,2,"down"]} ],
+  ents:()=>{
+    const e=[
+      {x:17,y:26,kind:"sign",text:"The Stoker's Song — 'EMBER wakes CINDER, CINDER wakes FLICKER, FLICKER wakes BLAZE, and BLAZE wakes the GLOW.'"},
+      {x:8,y:5,kind:"brazier",id:"ember"},
+      {x:25,y:4,kind:"brazier",id:"cinder"},
+      {x:33,y:13,kind:"brazier",id:"flicker"},
+      {x:9,y:22,kind:"brazier",id:"blaze"},
+      {x:28,y:24,kind:"brazier",id:"glow"},
+      {x:19,y:5,kind:"seedped",seed:"summer",need:"braziers_done"},
+      {x:24,y:20,kind:"npc",id:"plod",name:"Sir Plod",em:"🐌",cols:["#c9a86a","#8a6"],dlg:"plod"},
+      {x:3,y:25,kind:"deeplamp",id:"le"},
+      {x:12,y:26,kind:"chest",id:"ev_c1",coins:24},
+      {x:3,y:3,kind:"sparkle",id:"dd_e1"},
+      {x:34,y:26,kind:"sparkle",id:"dd_e2"},
+    ];
+    if(S.quests.marbles==="on"&&!S.got.mar3) e.push({x:34,y:3,kind:"marble",id:"mar3"});
+    return e;
+  },
+},
+
+deepdoors:{ name:"Catacomb of Doors", song:"cave", amb:"drip", dark:true,
+  rows:[
+  "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrcccccccrrrrrrrrrrr",
+  "rrrrrrrrrrrrcccccccrrrrrrrrrrr",
+  "rrrrrrrrrrrrcccccccrrrrrrrrrrr",
+  "rrrrrrrrrrrrcccccccrrrrrrrrrrr",
+  "rrrrrcccccccccccrrrrrrrrrrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrrrrrrr",
+  "rrrrrcrrrrrrrrrccccccccccrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrrcrrrrrrrrrcrrrrrrrrcrrrrr",
+  "rrrrcccccccccccccccccccccccrrr",
+  "rrrrcccccccccccccccccccccccrrr",
+  "rrrrcccccccccccccccccccccccrrr",
+  "rrrrcccccccccccccccccccccccrrr",
+  "rrrrcccccccccccccccccccccccrrr",
+  "rrrrrrrrrrrrrrccrrrrrrrrrrrrrr",
+  "rrrrrrrrrrrrrrccrrrrrrrrrrrrrr",
+  ],
+  warps:[ {x:14,y:25,w:2,h:1, to:["rootholme",17,23,"down"]} ],
+  ents:()=>{
+    const e=[
+      {x:10,y:21,kind:"sign",text:"Carved deep: 'AMBER opens the way forward — and shuts the way aside. TEAL reaches where amber cannot. VIOLET waits for both.'"},
+      {x:6,y:20,kind:"togswitch",color:"A"},
+      {x:24,y:10,kind:"togswitch",color:"B"},
+      {x:5,y:6,kind:"togswitch",color:"C"},
+      {x:15,y:17,kind:"toggate",color:"A",openWhen:true},
+      {x:15,y:12,kind:"toggate",color:"B",openWhen:true},
+      {x:15,y:7,kind:"toggate",color:"C",openWhen:true},
+      {x:24,y:17,kind:"toggate",color:"A",openWhen:true},
+      {x:5,y:16,kind:"toggate",color:"A",openWhen:false},
+      {x:5,y:12,kind:"toggate",color:"B",openWhen:true},
+      {x:15,y:3,kind:"seedped",seed:"winter",need:null},
+      {x:22,y:21,kind:"deeplamp",id:"ld"},
+      {x:4,y:22,kind:"chest",id:"cd_c1",coins:20},
+      {x:25,y:20,kind:"sparkle",id:"dd_d1"},
+    ];
+    if(S.quests.marbles==="on"&&!S.got.mar4) e.push({x:13,y:3,kind:"marble",id:"mar4"});
+    return e;
+  },
+},
+
+firsttree:{ name:"The First Tree", song:"firsttree", amb:"fireflies",
+  rows:[
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhRRRRhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhRRRRRRhhhhhhhhhRRR",
+  "RRRhhhhhhhhhRRRRRRhhhhhhhhhRRR",
+  "RRRhhhhhhhhhRRRRRRhhhhhhhhhRRR",
+  "RRRhhhhhhhhhRRRRRRhhhhhhhhhRRR",
+  "RRRhhhhhhhhhRRRRRRhhhhhhhhhRRR",
+  "RRRhhhhhhhhhRRRRRRhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRhhhhhhhhhhhhhhhhhhhhhhhhRRR",
+  "RRRRRRRRRRRRRRhhRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRhhRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRhhRRRRRRRRRRRRRR",
+  ],
+  warps:[ {x:14,y:27,w:2,h:1, to:["rootholme",3,22,"down"]} ],
+  ents:()=>{
+    const e=[
+      {x:12,y:24,kind:"sign",text:"The First Tree. Every olive in the Hollow remembers being this seed."},
+      {x:24,y:4,kind:"sparkle",id:"dd_t1"},
+    ];
+    if(!flag("ended3")){
+      if(!flag("knot_echo")) e.push({x:8,y:16,kind:"knot",id:"echo"});
+      if(!flag("knot_riddle")) e.push({x:21,y:16,kind:"knot",id:"riddle"});
+      if(!flag("knot_name")) e.push({x:14,y:19,kind:"knot",id:"name"});
+      const allKnots=flag("knot_echo")&&flag("knot_riddle")&&flag("knot_name");
+      if(!allKnots||!flag("snarl_freed"))
+        e.push({x:14,y:13,kind:"npc",id:"snarl",name:"???",em:"🧶",cols:["#7d6bd4","#ffd166"],dlg:"snarl"});
+      if(flag("snarl_freed")){
+        e.push({x:17,y:14,kind:"npc",id:"snarl",name:"Snarl",em:"🧶",cols:["#7d6bd4","#ffd166"],dlg:"snarl"});
+        e.push({x:14,y:13,kind:"seedaltar"});
+        e.push({x:11,y:15,kind:"npc",id:"lumen3",name:"Lumen",em:"⭐",cols:["#fff6c9","#ffd166"],dlg:"lumen3"});
+        e.push({x:18,y:15,kind:"npc",id:"umbra3",name:"Umbra",em:"🌑",cols:["#2a2440","#b18cff"],dlg:"umbra3"});
+      }
+    } else {
+      e.push({x:14,y:13,kind:"seedaltar"});
+      e.push({x:12,y:15,kind:"npc",id:"tassel",name:"Tassel",em:"🌱",cols:["#7ad77a","#ffd166"],dlg:"tassel"});
+    }
+    return e;
+  },
+},
 };
 /*WORLD-END*/
 
@@ -1503,6 +1859,19 @@ async pinch(){
 
 async marra(){
   const M=["⚓","Captain Marra"];
+  if(flag("ended2")&&!flag("act3")){
+    await say(...M,"Sailor… the tide has <b>stopped</b>. Not slow. Stopped. Forty years at sea and I've never seen the water hold its breath before.");
+    await say(...M,"And there's a sound under the tide cave — like the ocean going down a plughole. If anyone's going to look, it ought to be the one the sea picked.");
+    return;
+  }
+  if(flag("act3")&&!flag("ended3")){
+    await say(...M,"The whirlpool in the tide cave is holding steady — like it's waiting for you. Mind the spin and breathe out going down.");
+    return;
+  }
+  if(flag("ended3")){
+    await say(...M,"Tide came back in this morning like it was embarrassed about the whole thing. Brought driftwood, three crabs and a hat. The sea apologises in its own way.");
+    return;
+  }
   if(!flag("shard_tide")) await say(...M,"That cave's been groaning a strange song since the star fell. Five notes, over and over. If you go in, <i>listen before you touch</i>, sailor.");
   else if(flag("ended")) await say(...M,"From the water you can see the Heartlamp's glow on the clouds. Best lighthouse this coast ever had. I'd salute, but I'd drop my tea.");
   else await say(...M,"You sang the shells right, didn't you? Knew it. Sea picks its favourites and it picked you.");
@@ -1996,6 +2365,7 @@ function updateParticles(dt){
   for(const a of ambParts){
     a.p+=dt*.001;
     if(MAP.amb==="snow"){ a.y+=a.s*dt/16; a.x+=Math.sin(a.p)*.4; if(a.y>MAP.h*T) a.y=-8; }
+    else if(MAP.amb==="embers"){ a.y-=a.s*1.2*dt/16; a.x+=Math.sin(a.p*3)*.3; if(a.y<-8) a.y=MAP.h*T+8; }
     else if(MAP.amb==="drip"){ a.y+=a.s*1.8*dt/16; if(a.y>MAP.h*T) a.y=Math.random()*-40; }
     else { a.x+=Math.sin(a.p)*.25; a.y+=Math.cos(a.p*.8)*.2; }
   }
@@ -2569,13 +2939,14 @@ function render(t){
     else if(MAP.amb==="seaspark"){ ctx.globalAlpha=.2+tw*.5; disc(ctx,a.x,a.y,1.2,"#9fd0ef"); }
     else if(MAP.amb==="starbits"){ ctx.globalAlpha=.25+tw*.65; disc(ctx,a.x,a.y,1.5,"#e8d9ff"); }
     else if(MAP.amb==="drip"){ ctx.globalAlpha=.35; disc(ctx,a.x,a.y,1,"#9bd9ff"); }
+    else if(MAP.amb==="embers"){ ctx.globalAlpha=.3+tw*.55; disc(ctx,a.x,a.y,1.3,tw>.5?"#ffb13c":"#e85d2a"); }
     else { ctx.globalAlpha=.18+tw*.3; disc(ctx,a.x,a.y,1.2,"#cbbf9e"); }
   }
   ctx.restore();
   ctx.restore();
   // lighting overlays (screen space)
   if(MAP.dark){
-    const r=hasItem("lantern")?120:46;
+    const r=(hasItem("lantern")?120:46)+(hasItem("helm")?16:0)+(hasItem("crown")?20:0);
     const px=S.x-cam.x-sx, py=S.y-cam.y-sy;
     const grd=ctx.createRadialGradient(px,py,r*.35,px,py,r);
     grd.addColorStop(0,"rgba(6,6,14,0)");
@@ -2584,6 +2955,8 @@ function render(t){
     ctx.fillStyle=grd; ctx.fillRect(0,0,VW,VH);
   } else if(MAP.twilight){
     ctx.fillStyle="rgba(28,42,84,.3)"; ctx.fillRect(0,0,VW,VH);
+  } else if(MAP.ember){
+    ctx.fillStyle="rgba(120,40,10,.16)"; ctx.fillRect(0,0,VW,VH);
   } else if(MAP.id==="crater"&&!flag("ended")){
     ctx.fillStyle="rgba(30,18,52,.22)"; ctx.fillRect(0,0,VW,VH);
   }
@@ -2810,6 +3183,14 @@ function renderJournal(resetTabs=true){
         ["mirrorvale","💎","Mirror Vale","Selene's observatory and the Prism Chamber's shy moonbeam.",true],
         ["moontemple","🌙","Moon Temple","The Night Loom — and the Shadowdeep counting beneath it.",threads()>=2],
       ]:[]),
+      ...(flag("act3")?[
+        ["rootholme","🦡","Rootholme","The town beneath everything. Bracken's den, Tuber's Deep Goods, and four wild tunnels.",true],
+        ["fungalwood","🍄","Fungalwood","Mushroom groves and the Sprout Vault's rolling stones.",true],
+        ["rivergloam","🌊","Rivergloam","A buried sea that obeys the Season Stone — bloom reaches, frost holds.",true],
+        ["embervault","🔥","The Embervault","Lava-light, steam vents, and the five braziers of the Stoker's Song.",true],
+        ["deepdoors","🚪","Catacomb of Doors","Amber, teal and violet — a lock you have a conversation with.",seeds()>=2],
+        ["firsttree","🌳","The First Tree","Where the year grows from. Something is knotted around its roots.",seeds()>=4],
+      ]:[]),
     ];
     let html="";
     for(const [id,em,name,desc,known] of regions){
@@ -2824,8 +3205,12 @@ function renderJournal(resetTabs=true){
     const moonGot=Object.keys(S.got).filter(k=>k.startsWith("ms_")).length;
     const qDone=Object.values(S.quests).filter(v=>v==="done").length;
     let rec="Shards: "+S.shards+"/5 · Quests done: "+qDone+" · Sparkles: "+sparkGot+"/13 · Sir Plod: "+
-      Object.keys(S.plod).length+"/"+(flag("act2")?8:5)+" regions";
+      Object.keys(S.plod).length+"/"+(flag("act3")?11:(flag("act2")?8:5))+" regions";
     if(flag("act2")) rec+=" · Threads: "+threads()+"/3 · Moonstones: "+moonGot+"/10";
+    if(flag("act3")){
+      const dewGot=Object.keys(S.got).filter(k=>k.startsWith("dd_")).length;
+      rec+=" · Seeds: "+seeds()+"/4 · Dewdrops: "+dewGot+"/12";
+    }
     html+='<div class="qitem"><b>📊 Adventure record</b><p>'+rec+"</p></div>";
     body.innerHTML=html;
   }
@@ -2871,6 +3256,8 @@ $("#bfree").addEventListener("click",()=>{
   closePanels(); mode="play"; respawnEnts();
   if(flag("ended")&&!flag("act2")&&S.map==="village")
     toast("⭐ Lumen has stepped out of the Heartlamp — he looks like he has news…",3600);
+  else if(flag("ended2")&&!flag("act3"))
+    toast("🌊 Far below, a tide forgets to turn… Lumen waits by the Heartlamp in Willowdale.",4000);
 });
 
 /* ---- title screen ---- */
@@ -3813,6 +4200,1135 @@ function showCredits2(){
   panelOpen("credits");
   mode="panel";
 }
+
+/* =====================================================================
+   ACT III — THE UNDERGROVE
+   The pulled threads of three hundred nights sank beneath the Hollow
+   and tangled the seasons around the roots of the First Tree.
+   ===================================================================== */
+function seeds(){ return ["spring","summer","autumn","winter"].filter(s=>flag("seed_"+s)).length; }
+
+Object.assign(ITEMS,{
+  helm:       { em:"⛑️", name:"Mole-made Helm", d:"Hard hat with a built-in glowstone. Laughs at falling pebbles." },
+  bubblecharm:{ em:"💠", name:"Bubble Charm",   d:"Wraps you in a soap-thin shimmer. Gloam-spray slides right off." },
+  seasonstone:{ em:"🌗", name:"Season Stone",   d:"Half bloom, half frost. Wakes the shrines of the Undergrove." },
+  crown:      { em:"👑", name:"Firefly Crown",  d:"A circlet of living lights. Glows, sparkles, shows off." },
+  deepmedal:  { em:"🏅", name:"Deep Medal",     d:"For witnessing a snail conquer the underworld." },
+});
+Object.assign(QUESTS,{
+  deep1:{ name:"Beneath the Hollow",   d:"The seasons are tangled and the tide has stopped. Dive through the whirlpool in the Tide Cave and find Rootholme's elder." },
+  deep2:{ name:"The Spring Seed",      d:"A Season Seed sleeps in Fungalwood's Sprout Vault, west of Rootholme. The old root-stones must rest on their three plates." },
+  deep3:{ name:"The Summer Seed",      d:"A Season Seed waits in the Embervault, north of Rootholme. Five braziers, one Stoker's Song, one correct order." },
+  deep4:{ name:"The Autumn Seed",      d:"A Season Seed lies across the Rivergloam, east of Rootholme. Use the Season Stone at the shrines — bloom reaches, frost holds." },
+  deep5:{ name:"The Winter Seed",      d:"A Season Seed is locked in the Catacomb of Doors, south of Rootholme. Amber, teal and violet switches guard it — in a very particular order." },
+  deep6:{ name:"The First Tree",       d:"All four seasons found! Open the Heartroot Door in Rootholme and carry them to the First Tree." },
+  lamps:{ name:"Wick's Dark Patch",    d:"Five deep-lanterns have gone out across the Undergrove. Relight them all for Wick the lamplighter." },
+  marbles:{ name:"Pebble's Marbles",   d:"Pebble dropped four marbles down four different tunnels. Find one in each Undergrove region." },
+  snails:{ name:"Brine's Pearlsnails", d:"Three pearlsnails wandered off across the Rivergloam. Brine wants them home before they unionise." },
+  plodeep:{ name:"The Slowest Knight: The Depths", d:"Sir Plod fell down the whirlpool — on purpose, he insists. Greet him in all three deep regions." },
+});
+SHOPS.tuber={ title:"Tuber's Deep Goods", items:[
+  {id:"helm",price:40,once:true},
+  {id:"bubblecharm",price:35,once:true},
+  {id:"crown",price:70,once:true},
+]};
+Object.assign(SONGS,{
+  rootholme:{ bpm:92, root:53, scale:"major", prog:[0,5,1,4], lead:.4,  arp:"sparse", bass:true, pad:true,  leadType:"sine", seed:103 },
+  fungal:   { bpm:100,root:57, scale:"dorian",prog:[0,3,2,3], lead:.5,  arp:"updown", bass:true, pad:false, leadType:"triangle", seed:107 },
+  gloam:    { bpm:60, root:48, scale:"lydian",prog:[0,4,3,4], lead:.22, arp:"sparse", bass:false,pad:true,  leadType:"sine", seed:109 },
+  ember:    { bpm:96, root:50, scale:"minor", prog:[0,0,5,6], lead:.4,  arp:"up",     bass:true, pad:false, leadType:"triangle", seed:113 },
+  firsttree:{ bpm:72, root:60, scale:"major", prog:[0,3,5,4], lead:.35, arp:"sparse", bass:true, pad:true,  leadType:"sine", seed:127 },
+});
+["shrine","brazier","seedped","seedaltar","knot","deeplamp","geyser","whirlpool",
+ "togswitch","toggate","rootstone","pillar2"].forEach(k=>SOLID_ENTS.add(k));
+
+/* ---------- season-aware tiles ---------- */
+const _tileAt0=tileAt;
+tileAt=function(m,tx,ty){
+  const ch=_tileAt0(m,tx,ty);
+  if(ch==="4") return flag("season_frost")?"i":"~";
+  if(ch==="5") return flag("season_frost")?"e":"b";
+  return ch;
+};
+/* gates are only solid when closed */
+function gateOpen(e){
+  const on=flag("sw_"+e.color);
+  return e.openWhen?on:!on;
+}
+const _entAt0=entAt;
+entAt=function(tx,ty){
+  const e=_entAt0(tx,ty);
+  if(e&&e.kind==="toggate"&&gateOpen(e)) return undefined;
+  return e;
+};
+
+/* ---------- pushing root-stones & pressure plates ---------- */
+let pushCool=0;
+function checkPlates(){
+  if(flag("spring_plates")||S.map!=="fungalwood") return;
+  const plates=ents.filter(e=>e.kind==="plate");
+  const stones=ents.filter(e=>e.kind==="rootstone");
+  if(plates.length&&plates.every(p=>stones.some(s=>s.x===p.x&&s.y===p.y))){
+    setFlag("spring_plates");
+    sfx("fanfare"); flashT=22;
+    toast("🌱 The three plates sink — deep below, something stretches awake!",3200);
+    respawnEnts(); save();
+  }
+}
+const _update2=update;
+update=function(dt){
+  _update2(dt);
+  if(mode!=="play"||!MAP) return;
+  pushCool-=dt;
+  const d=inputDir();
+  if(d&&pushCool<=0&&!sliding){
+    const [tx,ty]=playerTile();
+    const [dx,dy]=DIRV[d];
+    const stone=ents.find(e=>e.kind==="rootstone"&&e.x===tx+dx&&e.y===ty+dy);
+    if(stone){
+      const bx=stone.x+dx, by=stone.y+dy;
+      const tile=tileAt(MAP,bx,by);
+      const blockedByEnt=ents.some(e=>e!==stone&&e.x===bx&&e.y===by&&e.kind!=="plate"&&e.kind!=="sparkle");
+      if(!SOLID.has(tile)&&!blockedByEnt){
+        stone.x=bx; stone.y=by;
+        pushCool=240;
+        sfx("push");
+        checkPlates();
+      }
+    }
+  }
+};
+
+/* ---------- pickups: dewdrops, marbles, pearlsnails ---------- */
+const _checkPickups2=checkPickups;
+checkPickups=function(){
+  _checkPickups2();
+  const [tx,ty]=playerTile();
+  const mar=ents.find(e=>e.kind==="marble"&&e.x===tx&&e.y===ty);
+  if(mar&&S.quests.marbles==="on"){
+    S.got[mar.id]=true; ents=ents.filter(e=>e!==mar);
+    sfx("coin"); burst(tx*T+T/2,ty*T+T/2,"#b18cff",10);
+    const n=[1,2,3,4].filter(i=>S.got["mar"+i]).length;
+    toast("🔮 Found one of Pebble's marbles! ("+n+" of 4)"); save();
+  }
+  const ps=ents.find(e=>e.kind==="pearlsnail"&&e.x===tx&&e.y===ty);
+  if(ps&&S.quests.snails==="on"){
+    S.got[ps.id]=true; ents=ents.filter(e=>e!==ps);
+    sfx("sparkle"); burst(tx*T+T/2,ty*T+T/2,"#ffd1dc",10);
+    const n=[1,2,3].filter(i=>S.got["ps"+i]).length;
+    toast("🐚 A pearlsnail hops in your satchel! ("+n+" of 3)"); save();
+  }
+};
+const _refreshHUD2=refreshHUD;
+refreshHUD=function(){
+  _refreshHUD2();
+  if(S&&flag("act3")) $("#hudshards").textContent="🌱 "+seeds()+" / 4";
+};
+/* dewdrops show teal-green */
+const _sfx0=sfx;
+sfx=function(n){
+  if(n==="push"){ if(AC){ tone(110,.14,"sine",.22,null,gSfx,70); noiseBurst(.08,.1); } return; }
+  if(n==="shimmer"){ if(AC){ [880,1109,1480].forEach((f,i)=>tone(f,.5,"sine",.1,AC.currentTime+i*.05)); } return; }
+  _sfx0(n);
+};
+const _trail2=trail;
+trail=function(x,y){
+  if(hasItem("crown")){
+    particles.push({x:x+(Math.random()*10-5),y:y+(Math.random()*6-3),vx:0,vy:-.18,life:800,t:0,
+      color:Math.random()<.5?"#d7ff8a":"#ffd166",r:1.4});
+  } else _trail2(x,y);
+};
+const _drawPlayer0=drawPlayer;
+drawPlayer=function(g,t){
+  _drawPlayer0(g,t);
+  if(hasItem("crown")){
+    const x=S.x, y=S.y-18+Math.sin(t*.003)*.7;
+    for(let i=0;i<3;i++){
+      const a=t*.002+i*2.1;
+      disc(g,x+Math.cos(a)*7,y+Math.sin(a)*2.4,1.3,i%2?"#d7ff8a":"#ffd166");
+    }
+  }
+};
+
+/* ---------- Act III tiles ---------- */
+Object.assign(PAL,{
+  root1:"#4a3b2e", root2:"#5a4938", rootHi:"#6e5a45",
+  moss1:"#3e6e58", moss2:"#46805f", mossHi:"#5da877",
+  shroomS:"#d9c9a3", shroomC:"#d4665a",
+  bas1:"#3a3034", bas2:"#453a3f", basTop:"#574a50",
+  lava1:"#e85d2a", lava2:"#ffb13c",
+});
+const _drawTileBase2=drawTileBase;
+drawTileBase=function(g,ch,tx,ty){
+  const x=tx*T,y=ty*T,r=hash2(tx,ty);
+  switch(ch){
+    case "R":{
+      rr(g,x,y,T,T,PAL.root1);
+      g.strokeStyle=PAL.rootHi; g.lineWidth=3;
+      g.beginPath(); g.moveTo(x,y+8+r*10);
+      g.quadraticCurveTo(x+16,y+2+r*16,x+T,y+10+((r*37)%1)*12); g.stroke();
+      g.strokeStyle=PAL.root2; g.lineWidth=2.4;
+      g.beginPath(); g.moveTo(x,y+22-r*6);
+      g.quadraticCurveTo(x+18,y+28-r*10,x+T,y+24); g.stroke();
+      if(r>.8) disc(g,x+8+r*14,y+8+((r*53)%1)*14,1.4,"#8fd4a8");
+      break;
+    }
+    case "h":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.moss1:PAL.moss2);
+      if(r>.55) disc(g,x+6+r*18,y+6+((r*71)%1)*18,1.6,PAL.mossHi);
+      if(r>.85) disc(g,x+20-r*10,y+20-r*8,1.2,"#8fd4a8");
+      break;
+    }
+    case "F":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.moss1:PAL.moss2);
+      rr(g,x+12,y+12,8,16,PAL.shroomS);
+      g.fillStyle=r>.5?PAL.shroomC:"#b18cff";
+      g.beginPath(); g.ellipse(x+16,y+12,13,8,0,Math.PI,0); g.fill();
+      disc(g,x+10,y+8,2,"#fff"); disc(g,x+20,y+9,2.4,"#fff");
+      break;
+    }
+    case "B":{
+      rr(g,x,y,T,T,PAL.bas1);
+      rr(g,x,y,T,5,PAL.basTop);
+      rr(g,x+4+r*6,y+11,10,7,PAL.bas2);
+      rr(g,x+18,y+20,9,6,PAL.bas2);
+      if(r>.78) rr(g,x+6,y+22,4,2,"#e85d2a");
+      break;
+    }
+    case "l":{
+      rr(g,x,y,T,T,PAL.lava1);
+      g.fillStyle=PAL.lava2;
+      g.beginPath(); g.arc(x+8+r*10,y+10+((r*43)%1)*12,4+r*3,0,7); g.fill();
+      break;
+    }
+    case "7":{
+      rr(g,x,y,T,T,(tx+ty)%2?PAL.cave1:PAL.cave2);
+      g.strokeStyle="rgba(255,209,150,.4)"; g.lineWidth=1.6;
+      for(let i=0;i<3;i++){
+        g.beginPath(); g.moveTo(x+8+i*8,y+26); g.quadraticCurveTo(x+8+i*8+3,y+16,x+8+i*8,y+6); g.stroke();
+      }
+      break;
+    }
+    default: _drawTileBase2(g,ch,tx,ty);
+  }
+};
+const _drawTileFx0=drawTileFx;
+drawTileFx=function(g,t){
+  _drawTileFx0(g,t);
+  if(!MAP) return;
+  const x0=Math.floor(cam.x/T), y0=Math.floor(cam.y/T);
+  const x1=Math.ceil((cam.x+VW)/T), y1=Math.ceil((cam.y+VH)/T);
+  for(let ty=y0;ty<=y1;ty++) for(let tx=x0;tx<=x1;tx++){
+    const ch=tileAt(MAP,tx,ty);
+    if(ch==="l"){
+      const r=hash2(tx,ty);
+      const ph=Math.sin(t*.003+tx*1.7+ty*1.1+r*6);
+      if(ph>.2){ g.fillStyle="rgba(255,220,120,"+(.1+ph*.22)+")";
+        g.fillRect(tx*T+3+r*14, ty*T+6+((r*61)%1)*16, 9, 3); }
+    }
+  }
+};
+
+/* ---------- Act III entity drawing ---------- */
+const SEED_COL={spring:"#7ad77a",summer:"#ffd166",autumn:"#e8833a",winter:"#9fd0ef"};
+const _drawNPC2=drawNPC;
+drawNPC=function(g,e,t){
+  const x=e.x*T+T/2, y=e.y*T+T/2;
+  const bob=Math.sin(t*.003+e.x*1.7)*1.2, by=y+bob;
+  switch(e.id){
+    case "lumen3": _drawNPC2(g,Object.assign({},e,{id:"lumen"}),t); return;
+    case "umbra3": _drawNPC2(g,Object.assign({},e,{id:"umbra"}),t); return;
+    case "bracken":{
+      drawShadow(g,x,y+10,10);
+      g.fillStyle="#9b8a72";
+      g.beginPath(); g.ellipse(x,by+1,9.4,11,0,0,7); g.fill();
+      disc(g,x,by-9,6.6,"#cfc4b2");
+      // badger stripes
+      g.fillStyle="#3d3630";
+      g.beginPath(); g.ellipse(x-3,by-9,1.8,5.4,.2,0,7); g.fill();
+      g.beginPath(); g.ellipse(x+3,by-9,1.8,5.4,-.2,0,7); g.fill();
+      disc(g,x-2.8,by-10,1.2,"#fff"); disc(g,x+2.8,by-10,1.2,"#fff");
+      disc(g,x,by-5.4,1.8,"#3d3630");
+      // spectacles + cane
+      g.strokeStyle="#caa84e"; g.lineWidth=1.2;
+      g.beginPath(); g.arc(x-2.8,by-10,2.4,0,7); g.stroke();
+      g.beginPath(); g.arc(x+2.8,by-10,2.4,0,7); g.stroke();
+      g.strokeStyle="#8a6a48"; g.lineWidth=2;
+      g.beginPath(); g.moveTo(x+10,by+11); g.lineTo(x+10,by-6); g.stroke();
+      return;
+    }
+    case "wick":{
+      drawShadow(g,x,y+9,8);
+      // glow-worm: segmented body
+      g.fillStyle="#d7ff8a";
+      for(let i=0;i<4;i++) disc(g,x-7+i*4.6,by+4-Math.sin(t*.004+i)*2,4.4-i*.4,i%2?"#c2ef72":"#d7ff8a");
+      disc(g,x-9,by,4.8,"#e7ffb0");
+      g.fillStyle="#27313f";
+      rr(g,x-11,by-2,1.6,2); rr(g,x-7.6,by-2,1.6,2);
+      // little lamp on a pole
+      g.strokeStyle="#8a6a48"; g.lineWidth=1.6;
+      g.beginPath(); g.moveTo(x+8,by+6); g.lineTo(x+8,by-9); g.stroke();
+      const grd=g.createRadialGradient(x+8,by-11,1,x+8,by-11,8);
+      grd.addColorStop(0,"rgba(255,233,168,.9)"); grd.addColorStop(1,"rgba(255,233,168,0)");
+      g.fillStyle=grd; g.beginPath(); g.arc(x+8,by-11,8,0,7); g.fill();
+      disc(g,x+8,by-11,2.6,"#ffe9a8");
+      return;
+    }
+    case "pebble": case "loam":{
+      const old=e.id==="loam";
+      drawShadow(g,x,y+9,8);
+      g.fillStyle=old?"#b8a08a":"#c4a484";
+      g.beginPath(); g.ellipse(x,by+2,old?8:7,old?9:8,0,0,7); g.fill();
+      // snout
+      disc(g,x,by-4,4.6,old?"#cdbba8":"#d8bb9b");
+      disc(g,x,by-3,1.6,"#e8839a");
+      g.fillStyle="#27313f";
+      disc(g,x-3,by-6,1.1,"#27313f"); disc(g,x+3,by-6,1.1,"#27313f");
+      // paws
+      disc(g,x-7,by+5,2.6,old?"#a08a76":"#b09070");
+      disc(g,x+7,by+5,2.6,old?"#a08a76":"#b09070");
+      if(old){ // shawl + bun
+        g.fillStyle="#857060";
+        g.beginPath(); g.moveTo(x-8,by); g.quadraticCurveTo(x,by+4,x+8,by); g.lineTo(x+6,by-3); g.quadraticCurveTo(x,by,x-6,by-3); g.closePath(); g.fill();
+        disc(g,x,by-11,2.6,"#cdbba8");
+      } else { rr(g,x-2,by-12,4,3,"#6b4226"); }
+      return;
+    }
+    case "brine":{
+      drawShadow(g,x,y+9,9);
+      g.fillStyle="#ffb3c1";
+      g.beginPath(); g.ellipse(x,by+2,9,7,0,0,7); g.fill();
+      // tail
+      g.beginPath(); g.ellipse(x+10,by+4,5,3,-.4,0,7); g.fill();
+      disc(g,x-4,by-4,6,"#ffc1cd");
+      // axolotl gills
+      g.strokeStyle="#e85d75"; g.lineWidth=2;
+      for(const a of [-1.1,-.5,.1]){
+        g.beginPath(); g.moveTo(x-8,by-6); g.lineTo(x-8+Math.cos(a+Math.PI)*6,by-6+Math.sin(a+Math.PI)*6); g.stroke();
+        g.beginPath(); g.moveTo(x,by-6); g.lineTo(x+Math.cos(a)*6,by-6+Math.sin(a)*6); g.stroke();
+      }
+      g.fillStyle="#27313f";
+      disc(g,x-6,by-5,1.2,"#27313f"); disc(g,x-1,by-5,1.2,"#27313f");
+      g.strokeStyle="#27313f"; g.lineWidth=1.2;
+      g.beginPath(); g.arc(x-3.5,by-2,2,.3,Math.PI-.3); g.stroke();
+      return;
+    }
+    case "cap":{
+      drawShadow(g,x,y+9,8);
+      g.fillStyle="#f0e0c0";
+      g.beginPath(); g.ellipse(x,by+2,6.4,8,0,0,7); g.fill();
+      g.fillStyle="#d4665a";
+      g.beginPath(); g.ellipse(x,by-7,11,6.4,0,Math.PI,0); g.fill();
+      disc(g,x-5,by-9,2,"#fff"); disc(g,x+4,by-10,2.4,"#fff");
+      g.fillStyle="#27313f";
+      rr(g,x-3,by-4,1.8,2.2); rr(g,x+1.4,by-4,1.8,2.2);
+      // pitchfork
+      g.strokeStyle="#8a6a48"; g.lineWidth=1.8;
+      g.beginPath(); g.moveTo(x+9,by+10); g.lineTo(x+9,by-8); g.stroke();
+      g.beginPath(); g.moveTo(x+7,by-8); g.lineTo(x+7,by-12); g.moveTo(x+9,by-8); g.lineTo(x+9,by-12); g.moveTo(x+11,by-8); g.lineTo(x+11,by-12); g.stroke();
+      return;
+    }
+    case "snarl":{
+      const freed=flag("snarl_freed");
+      drawShadow(g,x,y+11,12);
+      // tangle ball of thread
+      const cols=["#7d6bd4","#9fd0ef","#ffd166","#e8833a"];
+      for(let i=0;i<7;i++){
+        g.strokeStyle=cols[i%4]; g.lineWidth=2.2; g.globalAlpha=.85;
+        const a=i*1.7+(freed?t*.0006:t*.0015);
+        g.beginPath();
+        g.ellipse(x,by-2,10-i*.8,7+((i*3)%5),a,0,7); g.stroke();
+      }
+      g.globalAlpha=1;
+      // eyes peeking from the tangle
+      disc(g,x-3.4,by-4,2.6,"#fff6c9"); disc(g,x+3.4,by-4,2.6,"#fff6c9");
+      disc(g,x-3.4,by-4,1.2,"#27313f"); disc(g,x+3.4,by-4,1.2,"#27313f");
+      if(freed){ g.strokeStyle="#fff6c9"; g.lineWidth=1.4;
+        g.beginPath(); g.arc(x,by+1,2.6,.3,Math.PI-.3); g.stroke(); }
+      // loose thread ends
+      g.strokeStyle="#7d6bd4"; g.lineWidth=1.6;
+      g.beginPath(); g.moveTo(x-9,by+5); g.quadraticCurveTo(x-14,by+9,x-12,by+13); g.stroke();
+      g.beginPath(); g.moveTo(x+9,by+4); g.quadraticCurveTo(x+15,by+7,x+13,by+12); g.stroke();
+      return;
+    }
+    case "tassel":{
+      drawShadow(g,x,y+9,7);
+      g.fillStyle="#7ad77a";
+      g.beginPath(); g.ellipse(x,by+2,6,7.4,0,0,7); g.fill();
+      disc(g,x,by-6,5,"#8fe48f");
+      g.fillStyle="#27313f";
+      rr(g,x-2.6,by-7,1.6,2); rr(g,x+1,by-7,1.6,2);
+      g.strokeStyle="#27313f"; g.lineWidth=1.2;
+      g.beginPath(); g.arc(x-.7,by-4,1.8,.3,Math.PI-.3); g.stroke();
+      // sprout on head
+      g.strokeStyle="#3a924c"; g.lineWidth=2;
+      g.beginPath(); g.moveTo(x,by-11); g.quadraticCurveTo(x+1,by-15,x,by-17); g.stroke();
+      g.fillStyle="#7ad77a";
+      g.beginPath(); g.ellipse(x-3,by-16,3.4,1.8,-.5,0,7); g.fill();
+      g.beginPath(); g.ellipse(x+3,by-17,3.4,1.8,.5,0,7); g.fill();
+      // thread bracelet (a keepsake from Snarl)
+      g.strokeStyle="#7d6bd4"; g.lineWidth=1.4;
+      g.beginPath(); g.arc(x-6,by+4,2,0,7); g.stroke();
+      return;
+    }
+  }
+  _drawNPC2(g,e,t);
+};
+const _drawEnt2=drawEnt;
+drawEnt=function(g,e,t){
+  const x=e.x*T, y=e.y*T, cx=x+T/2, cy=y+T/2;
+  switch(e.kind){
+    case "sparkle":
+      if(e.id&&e.id.startsWith("dd_")){
+        const tw=Math.sin(t*.006+e.x*2.1)*.5+.5;
+        g.save(); g.globalAlpha=.5+tw*.5;
+        g.fillStyle="#8fe4c8";
+        g.translate(cx,cy-2+Math.sin(t*.003+e.y)*2);
+        g.beginPath(); g.ellipse(0,0,3.4,4.6,0,0,7); g.fill();
+        g.fillStyle="#d8fff0"; g.beginPath(); g.ellipse(-1,-1.4,1.2,1.8,0,0,7); g.fill();
+        g.restore();
+        return;
+      }
+      break;
+    case "geyser": case "whirlpool":{
+      const wat=e.kind==="whirlpool";
+      g.save(); g.translate(cx,cy);
+      g.rotate(t*(wat?.004:-.003));
+      for(let i=0;i<3;i++){
+        g.strokeStyle=wat?"rgba(159,208,239,.8)":"rgba(143,228,200,.8)"; g.lineWidth=2.6;
+        g.rotate(Math.PI*2/3);
+        g.beginPath(); g.arc(0,0,5+i*3.4,0,Math.PI*1.2); g.stroke();
+      }
+      g.restore();
+      const grd=g.createRadialGradient(cx,cy,2,cx,cy,16);
+      grd.addColorStop(0,wat?"rgba(159,208,239,.45)":"rgba(143,228,200,.45)");
+      grd.addColorStop(1,"rgba(159,208,239,0)");
+      g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,16,0,7); g.fill();
+      return;
+    }
+    case "shrine":{
+      drawShadow(g,cx,y+T-3,10);
+      const frost=flag("season_frost");
+      rr(g,x+6,y+2,6,26,"#5a4938"); rr(g,x+20,y+2,6,26,"#5a4938");
+      rr(g,x+4,y-2,24,6,"#6e5a45");
+      const grd=g.createRadialGradient(cx,cy,2,cx,cy,14);
+      const col=frost?"159,208,239":"122,215,122";
+      grd.addColorStop(0,"rgba("+col+",.8)"); grd.addColorStop(1,"rgba("+col+",0)");
+      g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,14,0,7); g.fill();
+      g.strokeStyle=frost?"#9fd0ef":"#7ad77a"; g.lineWidth=2; g.fillStyle=g.strokeStyle;
+      if(frost){ for(let i=0;i<3;i++){ const a=i*Math.PI/3;
+        g.beginPath(); g.moveTo(cx-Math.cos(a)*6,cy-Math.sin(a)*6); g.lineTo(cx+Math.cos(a)*6,cy+Math.sin(a)*6); g.stroke(); } }
+      else { g.beginPath(); g.ellipse(cx,cy,4,6.4,.5,0,7); g.fill(); }
+      return;
+    }
+    case "brazier":{
+      const lit=flag("braziers_done")||brazSeq.includes(e.id);
+      drawShadow(g,cx,y+T-3,9);
+      rr(g,x+9,y+14,14,9,"#574a50"); rr(g,x+7,y+21,18,4,"#453a3f");
+      rr(g,x+11,y+11,10,4,"#6a5a60");
+      if(lit){
+        const f=Math.sin(t*.02+e.x)*2;
+        g.fillStyle="#ff9d3c";
+        g.beginPath(); g.moveTo(cx-5,y+12); g.quadraticCurveTo(cx-3+f,y-2,cx,y-5); g.quadraticCurveTo(cx+3-f,y-1,cx+5,y+12); g.closePath(); g.fill();
+        g.fillStyle="#ffd166";
+        g.beginPath(); g.moveTo(cx-2.4,y+12); g.quadraticCurveTo(cx+f*.4,y+4,cx,y+1); g.quadraticCurveTo(cx+1.6,y+5,cx+2.4,y+12); g.closePath(); g.fill();
+      } else if(Math.sin(t*.008+e.x*3)>.94) disc(g,cx,y+13,1.6,"#7a5c3e");
+      return;
+    }
+    case "rootstone":{
+      drawShadow(g,cx,cy+10,11);
+      disc(g,cx,cy+2,11,"#6e5a45");
+      disc(g,cx-3,cy-2,7,"#7d6852");
+      disc(g,cx+4,cy+5,3.4,PAL.moss1);
+      disc(g,cx-6,cy+6,2.6,PAL.moss2);
+      return;
+    }
+    case "plate":{
+      const covered=ents.some(s=>s.kind==="rootstone"&&s.x===e.x&&s.y===e.y);
+      g.strokeStyle=covered||flag("spring_plates")?"#7ad77a":"#8d92c4"; g.lineWidth=2.4;
+      g.beginPath(); g.arc(cx,cy,9,0,7); g.stroke();
+      g.beginPath(); g.arc(cx,cy,4.4,0,7); g.stroke();
+      return;
+    }
+    case "pillar2":{
+      drawShadow(g,cx,y+T-2,10);
+      rr(g,x+9,y-4,14,32,"#5a4938"); rr(g,x+6,y+24,20,5,"#4a3b2e"); rr(g,x+6,y-8,20,5,"#6e5a45");
+      disc(g,x+12,y+6,3,PAL.moss2); disc(g,x+20,y+14,2.4,PAL.moss1);
+      return;
+    }
+    case "togswitch":{
+      const cols={A:"#ffd166",B:"#2bb3a3",C:"#b18cff"};
+      const on=flag("sw_"+e.color);
+      drawShadow(g,cx,y+T-5,8);
+      rr(g,x+10,y+16,12,9,"#453a3f");
+      g.strokeStyle=cols[e.color]; g.lineWidth=3.6;
+      g.beginPath(); g.moveTo(cx,y+18);
+      if(on) g.lineTo(cx+7,y+8); else g.lineTo(cx-7,y+8);
+      g.stroke();
+      disc(g,on?cx+7:cx-7,y+8,3.4,cols[e.color]);
+      return;
+    }
+    case "toggate":{
+      const cols={A:"#ffd166",B:"#2bb3a3",C:"#b18cff"};
+      const open=gateOpen(e);
+      g.strokeStyle=cols[e.color]; g.lineWidth=2;
+      // posts
+      rr(g,x+1,y+2,4,T-4,"#574a50"); rr(g,x+T-5,y+2,4,T-4,"#574a50");
+      disc(g,x+3,y+4,2,cols[e.color]); disc(g,x+T-3,y+4,2,cols[e.color]);
+      if(!open){
+        g.lineWidth=3;
+        for(let i=0;i<3;i++){
+          g.beginPath(); g.moveTo(x+5,y+8+i*8); g.lineTo(x+T-5,y+8+i*8); g.stroke();
+        }
+      } else {
+        g.globalAlpha=.3;
+        g.beginPath(); g.moveTo(x+5,y+6); g.lineTo(x+T-5,y+6); g.stroke();
+        g.globalAlpha=1;
+      }
+      return;
+    }
+    case "seedped":{
+      const ready=!e.need||flag(e.need);
+      const taken=flag("seed_"+e.seed);
+      drawShadow(g,cx,y+T-3,10);
+      rr(g,x+9,y+8,14,20,"#5a4938"); rr(g,x+6,y+24,20,5,"#4a3b2e"); rr(g,x+6,y+6,20,4,"#6e5a45");
+      if(ready&&!taken){
+        const fl=Math.sin(t*.005)*3;
+        const col=SEED_COL[e.seed];
+        const grd=g.createRadialGradient(cx,y+fl-2,2,cx,y+fl-2,18);
+        grd.addColorStop(0,col+"ee"); grd.addColorStop(1,col+"00");
+        g.fillStyle=grd; g.beginPath(); g.arc(cx,y+fl-2,18,0,7); g.fill();
+        g.fillStyle=col;
+        g.beginPath(); g.ellipse(cx,y+fl-2,4.4,6,.3,0,7); g.fill();
+        g.strokeStyle="#fff"; g.lineWidth=1.2;
+        g.beginPath(); g.moveTo(cx,y+fl-7); g.quadraticCurveTo(cx+3,y+fl-10,cx+2,y+fl-12); g.stroke();
+      }
+      return;
+    }
+    case "seedaltar":{
+      drawShadow(g,cx,y+T-2,13);
+      rr(g,x+4,y+10,24,16,"#5a4938"); rr(g,x+2,y+22,28,6,"#4a3b2e"); rr(g,x+2,y+8,28,4,"#6e5a45");
+      const done=flag("ended3");
+      let i=0;
+      for(const sd of ["spring","summer","autumn","winter"]){
+        const px=x+8+(i%2)*16, py=y+12+Math.floor(i/2)*8; i++;
+        if(flag("seed_"+sd)||done){
+          disc(g,px,py,3.4,SEED_COL[sd]);
+          if(done){ const grd=g.createRadialGradient(px,py,1,px,py,8);
+            grd.addColorStop(0,SEED_COL[sd]+"aa"); grd.addColorStop(1,SEED_COL[sd]+"00");
+            g.fillStyle=grd; g.beginPath(); g.arc(px,py,8,0,7); g.fill(); }
+        } else { g.strokeStyle="#8d92c4"; g.lineWidth=1.4;
+          g.beginPath(); g.arc(px,py,3.4,0,7); g.stroke(); }
+      }
+      return;
+    }
+    case "knot":{
+      drawShadow(g,cx,cy+10,11);
+      const cols={echo:"#9fd0ef",riddle:"#ffd166",name:"#ff9bb0"};
+      const col=cols[e.id]||"#7d6bd4";
+      for(let i=0;i<5;i++){
+        g.strokeStyle=i%2?col:"#7d6bd4"; g.lineWidth=2.6;
+        g.beginPath(); g.ellipse(cx,cy,9-i,6+((i*4)%6),i*1.3+t*.0008,0,7); g.stroke();
+      }
+      // taut thread running up toward the tree
+      g.strokeStyle="#7d6bd4"; g.lineWidth=1.8;
+      g.beginPath(); g.moveTo(cx,cy-7); g.quadraticCurveTo(cx+(14-e.x)*.8,cy-22,cx+(14-e.x)*2,cy-34); g.stroke();
+      return;
+    }
+    case "deeplamp":{
+      const lit=flag("lamp_"+e.id);
+      drawShadow(g,cx,y+T-3,8);
+      rr(g,cx-2,y+2,4,26,"#4a3b2e");
+      rr(g,cx-7,y+T-6,14,4,"#5a4938");
+      if(lit){
+        const grd=g.createRadialGradient(cx,y+2,2,cx,y+2,18);
+        grd.addColorStop(0,"rgba(215,255,138,.85)"); grd.addColorStop(1,"rgba(215,255,138,0)");
+        g.fillStyle=grd; g.beginPath(); g.arc(cx,y+2,18,0,7); g.fill();
+      }
+      g.fillStyle=lit?"#e7ffb0":"#2a2435";
+      g.beginPath(); g.arc(cx,y+2,5,0,7); g.fill();
+      g.strokeStyle="#8a6a48"; g.lineWidth=1.6; g.stroke();
+      return;
+    }
+    case "marble":{
+      const tw=Math.sin(t*.005+e.x)*1.4;
+      drawShadow(g,cx,cy+5,4);
+      disc(g,cx,cy+tw*.4,4,"#b18cff");
+      disc(g,cx-1.4,cy-1.4+tw*.4,1.4,"#e8ddff");
+      return;
+    }
+    case "pearlsnail":{
+      const sx=cx+Math.sin(t*.001+e.x)*2;
+      drawShadow(g,sx,cy+6,6);
+      g.fillStyle="#d9c9a3";
+      g.beginPath(); g.ellipse(sx-2,cy+4,6,2.6,0,0,7); g.fill();
+      disc(g,sx+2,cy,4.6,"#ffd1dc");
+      disc(g,sx+2,cy,2.4,"#fff");
+      g.strokeStyle="#d9c9a3"; g.lineWidth=1.2;
+      g.beginPath(); g.moveTo(sx-6,cy+2); g.lineTo(sx-7,cy-2); g.stroke();
+      return;
+    }
+    case "shopdoor3": return;
+  }
+  _drawEnt2(g,e,t);
+};
+
+/* ---------- Act III interactions ---------- */
+const BRAZ_ORDER=["ember","cinder","flicker","blaze","glow"];
+let brazSeq=[];
+const _loadMap2=loadMap;
+loadMap=function(id,tx,ty,dir,silent){
+  _loadMap2(id,tx,ty,dir,silent);
+  brazSeq=[];
+};
+const _interactEntity2=interactEntity;
+interactEntity=async function(e){
+  switch(e.kind){
+    case "shopdoor3": sfx("blip2"); runDlg(DLGS.tuber); return;
+    case "whirlpool":{
+      sfx("warp"); flashT=18;
+      loadMap("rootholme",17,18,"down");
+      if(!flag("deep_seen")){
+        setFlag("deep_seen");
+        runDlg(async()=>{
+          await say("🌀","","The whirlpool swallows you whole — down past sleeping fish, down past old anchors, down past <i>down</i> itself…");
+          await say("🌀","","…and sets you, perfectly dry, in a cavern lit by glowing moss. Root-pillars hold up the world like table legs.");
+          await say("🌀","","Welcome to <b>Rootholme</b> — the town beneath everything. A badger with spectacles is already squinting at you.");
+        });
+      }
+      return;
+    }
+    case "geyser":{
+      sfx("warp"); flashT=18;
+      loadMap("tidecave",12,7,"down");
+      toast("🌀 The gentle geyser lifts you home like a parcel.");
+      return;
+    }
+    case "shrine":{
+      if(!hasItem("seasonstone")){
+        runDlg(async()=>{ await say("🗿","Season Shrine","The shrine sleeps. Its hollow is shaped exactly like a stone you don't have yet. Elder Bracken would know."); });
+        return;
+      }
+      if(S.flags.season_frost) delete S.flags.season_frost; else S.flags.season_frost=true;
+      const frost=flag("season_frost");
+      sfx("shimmer"); flashT=16;
+      renderBase();
+      toast(frost?"❄️ <b>Frost</b> settles over the Undergrove — the gloam-water hardens to ice.":
+                  "🌸 <b>Bloom</b> returns to the Undergrove — vines stretch back across the gaps.",3000);
+      save();
+      return;
+    }
+    case "brazier":{
+      if(flag("braziers_done")){ sfx("shell"+(BRAZ_ORDER.indexOf(e.id)%5)); return; }
+      if(brazSeq.includes(e.id)){ toast("🔥 The "+e.id.toUpperCase()+" brazier already burns."); return; }
+      brazSeq.push(e.id);
+      const ok=BRAZ_ORDER.slice(0,brazSeq.length).every((v,i)=>v===brazSeq[i]);
+      if(!ok){
+        brazSeq=[]; sfx("error"); shake=8;
+        toast("💨 A cold draught snuffs every flame at once. The Stoker's Song knows the order…");
+        return;
+      }
+      sfx("shell"+(brazSeq.length-1));
+      if(brazSeq.length===BRAZ_ORDER.length){
+        setFlag("braziers_done");
+        sfx("fanfare"); flashT=24;
+        toast("🔥 All five braziers roar in harmony — warmth floods the vault!",3200);
+        respawnEnts(); save();
+      } else {
+        toast("🔥 The "+e.id.toUpperCase()+" brazier catches! ("+brazSeq.length+" of 5)");
+      }
+      return;
+    }
+    case "seedped":{
+      if(e.need&&!flag(e.need)){
+        const hints={spring_plates:"The pedestal is dark. Behind you, three round plates wait under three round stones. Old mole engineering: stones roll where they're walked into.",
+          braziers_done:"The pedestal is cold. Five braziers stand unlit around the vault — and somewhere, a sign hums the Stoker's Song."};
+        runDlg(async()=>{ await say("🗿","Pedestal",hints[e.need]||"It waits."); });
+        return;
+      }
+      if(flag("seed_"+e.seed)){
+        runDlg(async()=>{ await say("🗿","Pedestal","Warm soil-light lingers here. It smells faintly of "+e.seed+"."); });
+        return;
+      }
+      setFlag("seed_"+e.seed);
+      sfx("shard"); flashT=24;
+      const names={spring:"🌱 The <b>Spring Seed</b>! It wriggles like it's ticklish.",
+        summer:"🌞 The <b>Summer Seed</b>! Warm as a pocketful of noon.",
+        autumn:"🍂 The <b>Autumn Seed</b>! It rustles with tiny falling leaves.",
+        winter:"❄️ The <b>Winter Seed</b>! Cool and quiet, like snow about to happen."};
+      toast(names[e.seed],3200);
+      const qmap={spring:"deep2",summer:"deep3",autumn:"deep4",winter:"deep5"};
+      if(!S.quests[qmap[e.seed]]) startQuest(qmap[e.seed]);
+      doneQuest(qmap[e.seed]);
+      if(seeds()>=2&&!S.quests.deep5&&!flag("seed_winter")) startQuest("deep5");
+      if(seeds()>=4&&!S.quests.deep6){ startQuest("deep6");
+        toast("🌳 Four seasons in your satchel — the Heartroot Door in Rootholme will open now!",3600); }
+      respawnEnts(); refreshHUD(); save();
+      return;
+    }
+    case "deeplamp":{
+      if(flag("lamp_"+e.id)){ runDlg(async()=>{ await say("🏮","Deep-lantern","It burns steady and green-gold. Wick would be proud."); }); return; }
+      if(S.quests.lamps!=="on"){
+        runDlg(async()=>{ await say("🏮","Deep-lantern","A cold deep-lantern. Someone in Rootholme must worry about these…"); });
+        return;
+      }
+      setFlag("lamp_"+e.id);
+      sfx("success"); flashT=10;
+      const n=["lr","lf","lg","le","ld"].filter(i=>flag("lamp_"+i)).length;
+      toast("🏮 You relight the deep-lantern! ("+n+" of 5)");
+      save();
+      return;
+    }
+    case "rootstone":{
+      runDlg(async()=>{ await say("🪨","Root-stone","Round, mossy, and exactly shoulder-height. It looks like it would <b>roll if walked into</b>."); });
+      return;
+    }
+    case "plate":{
+      runDlg(async()=>{ await say("⭕","Stone Plate","A round plate set into the floor, stone-sized. Subtle as moles get."); });
+      return;
+    }
+    case "togswitch":{
+      const names={A:"AMBER",B:"TEAL",C:"VIOLET"};
+      if(flag("sw_"+e.color)) delete S.flags["sw_"+e.color]; else S.flags["sw_"+e.color]=true;
+      sfx("lever"); shake=3;
+      const on=flag("sw_"+e.color);
+      toast("🎚️ The <b>"+names[e.color]+"</b> switch clunks "+(on?"ON — somewhere, doors grind.":"OFF — somewhere, doors grind back."));
+      save();
+      return;
+    }
+    case "toggate":{
+      runDlg(async()=>{ await say("🚪","Stone Gate", gateOpen(e)?"The bars hang open. For now.":"Stone bars, humming faintly with "+({A:"amber",B:"teal",C:"violet"})[e.color]+" light. A switch somewhere shares its colour."); });
+      return;
+    }
+    case "knot":{
+      runDlg(KNOTS[e.id]);
+      return;
+    }
+    case "seedaltar":{
+      runDlg(altarDlg);
+      return;
+    }
+  }
+  return _interactEntity2(e);
+};
+
+/* ---------- the three Great Knots ---------- */
+async function playKnotTune(){
+  const tune=[0,3,0,2];
+  for(const n of tune){ sfx("shell"+n); await new Promise(r=>setTimeout(r,460)); }
+}
+const KNOTS={
+async echo(){
+  const K=["🧶","Knot of Echoes"];
+  await say(...K,"A knot of pale blue thread, humming to itself. As you reach out, it sings four notes — <i>listen…</i>");
+  while(true){
+    await playKnotTune();
+    const c=await choice(...K,"Sing the song back. Which way did it go?",
+      ["Low — high — low — middle","Low — low — high — middle","High — low — middle — low","🔁 Hear it again"]);
+    if(c===3) continue;
+    if(c===0){
+      sfx("success"); setFlag("knot_echo"); break;
+    }
+    sfx("error");
+    await say(...K,"The knot pulls tighter, then relaxes, patient. It hums the song again, slower, like a teacher who likes you.");
+  }
+  flashT=14;
+  await say(...K,"The knot sighs apart into loose, happy thread. Inside it, something small falls free: <i>a five-note song you once taught some shells.</i>");
+  toast("🧶 The Knot of Echoes is untied! ("+["knot_echo","knot_riddle","knot_name"].filter(flag).length+" of 3)");
+  respawnEnts(); save();
+},
+async riddle(){
+  const K=["🧶","Knot of Riddles"];
+  await say(...K,"A knot of golden thread. It clears a throat it doesn't have. <i>'A riddle holds me shut. Quill the Owl Sage would approve.'</i>");
+  while(true){
+    const c=await choice(...K,"<i>'I grow stronger the more I am pulled — yet vanish the moment my two ends meet.'</i>",
+      ["A shadow","A knot","An echo"]);
+    if(c===1){ sfx("success"); setFlag("knot_riddle"); break; }
+    sfx("error");
+    await say(...K,"<i>'Hoo, no,'</i> says the knot, in a fair impression of an owl. <i>'Think about what I AM, little keeper.'</i>");
+  }
+  flashT=14;
+  await say(...K,"The two ends find each other — and the knot is suddenly just thread, light as a laugh. Inside it: <i>the memory of three riddles answered in a deep wood.</i>");
+  toast("🧶 The Knot of Riddles is untied! ("+["knot_echo","knot_riddle","knot_name"].filter(flag).length+" of 3)");
+  respawnEnts(); save();
+},
+async name(){
+  const K=["🧶","Knot of Names"];
+  await say(...K,"A knot of rose-coloured thread, wound tightest of all. It whispers with a hundred small voices: a kite string, a mitten thread, a strand of fox fur, a snail's silver trail…");
+  await say(...K,"<i>'We are everything the Hollow ever lost,'</i> the voices say. <i>'Pulled loose, drifted down, tangled together. Tell us what we are NOW.'</i>");
+  while(true){
+    const c=await choice(...K,"What are they?",
+      ["A big mess","A monster's heart","Lost things — waiting to go home"]);
+    if(c===2){ sfx("success"); setFlag("knot_name"); break; }
+    sfx("error");
+    if(c===0) await say(...K,"The voices go quiet, hurt. <i>'…A mess. Yes. But we weren't always.'</i> Try again — gently.");
+    else await say(...K,"<i>'A monster?'</i> The whisper wobbles. <i>'Is that what we look like from outside?'</i> Try again — kindly.");
+  }
+  flashT=14;
+  await say(...K,"<i>'Lost things… waiting to go home.'</i> The voices repeat it like a song they'd forgotten. The knot doesn't untie so much as <b>let go</b>.");
+  toast("🧶 The Knot of Names is untied! ("+["knot_echo","knot_riddle","knot_name"].filter(flag).length+" of 3)");
+  respawnEnts(); save();
+},
+};
+
+/* ---------- finale at the First Tree ---------- */
+async function altarDlg(){
+  const A=["🌳","The Heartroot Altar"];
+  if(flag("ended3")){
+    await say(...A,"Four seasons turn slowly in the altar's hollows, taking it in turns to glow. The First Tree above is heavy with silver-green leaves.");
+    return;
+  }
+  await say(...A,"Four hollows wait in the old altar stone — and four seeds rise warm out of your satchel: <i>spring, summer, autumn, winter.</i>");
+  await say("⭐","Lumen","Together, then! Light from above—");
+  await say("🌑","Umbra","—shade from below. Go on, keeper. Plant the year back where it grows from.");
+  sfx("fanfare"); flashT=40; startFireworks();
+  setFlag("ended3"); doneQuest("deep6");
+  await say("🌠","","The seeds settle home. A pulse rolls up through the First Tree — through root and trunk and every sleeping branch — and bursts out across the Hollow above as <b>weather</b>.");
+  await say("🌠","","Rain where rain was missing. Sun where the gardens sulked. At Glimmer Cove, the tide takes an enormous breath… and remembers what it was doing.");
+  await say("🧶","Snarl","Oh. <i>Oh.</i> The threads — they're going home. All of them. Even… even me?");
+  await say("🌠","","The last of the tangle unwinds — and standing in the middle of it is something small, green, and extremely surprised to have hands.");
+  await say("🌱","Tassel","I'm… a sprout? I'm a SPROUT! Three hundred years a knot, and I was a seed the whole time!");
+  await say("⭐","Lumen","Welcome to the Hollow, little one. Fair warning: it comes with a keeper. They're persistent.");
+  await say("🌑","Umbra","And the dusk sends its regards. Family is complicated down here. You'll fit right in.");
+  await say("🌠","","Above, below and beneath — lamp, loom and root — the whole Hollow finally turns together, like a story with all its pages back in order.");
+  save();
+  showCredits3();
+}
+function showCredits3(){
+  const sparkGot=Object.keys(S.got).filter(k=>k.includes("_s")&&!k.startsWith("ms_")&&!k.startsWith("dd_")).length;
+  const moonGot=Object.keys(S.got).filter(k=>k.startsWith("ms_")).length;
+  const dewGot=Object.keys(S.got).filter(k=>k.startsWith("dd_")).length;
+  const qDone=Object.values(S.quests).filter(v=>v==="done").length;
+  const total=Object.keys(QUESTS).length;
+  $("#credits h3").textContent="The Hollow Turns Together";
+  $("#credbody").innerHTML=
+    "<p>The Heartlamp burns. The Night Loom weaves. The First Tree blooms. And somewhere between all three, a sprout named Tassel is learning to skip.</p>"+
+    "<p><b>You mended a lamp, a sky, and a year. Thank you for playing, little keeper. Truly.</b></p>"+
+    '<p class="stat">Shards: <b>'+S.shards+"/5</b> · Threads: <b>"+threads()+"/3</b> · Seeds: <b>"+seeds()+"/4</b> · Quests: <b>"+qDone+"/"+total+"</b></p>"+
+    '<p class="stat">Sparkles: <b>'+sparkGot+"/13</b> · Moonstones: <b>"+moonGot+"/10</b> · Dewdrops: <b>"+dewGot+"/12</b> · Sir Plod: <b>"+
+    Object.keys(S.plod).length+"/11</b> regions</p>"+
+    '<p class="stat">All three worlds stay open. The Hollow is yours, keeper — every layer of it.</p>'+
+    '<p class="stat" style="margin-top:.6rem">A Wild Olive Studios adventure 🫒</p>';
+  panelOpen("credits");
+  mode="panel";
+}
+
+/* ---------- Act III dialogue ---------- */
+Object.assign(DLGS,{
+
+async bracken(){
+  const B=["🦡","Elder Bracken"];
+  if(!flag("met_bracken")){
+    setFlag("met_bracken");
+    if(S.quests.deep1) doneQuest("deep1");
+    await say(...B,"Hm. Boots from the surface, moss on neither knee, and a satchel that smells of starlight. You'll be the keeper Elm's letters go on about.");
+    await say(...B,"Yes — letters. Root-post. We badgers have had a tube to her kitchen for forty years. The mint tea arrives cold but the gossip keeps.");
+    await say(...B,"So. You've felt it up top: seasons jammed like a stuck drawer. Down here we know <i>why</i>. Three hundred years of unpicked night-thread sank into the deep and <b>tangled the four Season Seeds</b> — the little engines that turn the year.");
+    await say(...B,"Four seeds, four directions. <b>Fungalwood</b> west — its Sprout Vault wants old-fashioned stone-rolling. <b>Embervault</b> north, <b>Rivergloam</b> east, and the <b>Catacomb of Doors</b> south, which is exactly as annoying as it sounds.");
+    await say(...B,"Start west; the vault asks nothing but patience and shoulders. And see Tuber's shop — surface coins spend fine down here, he checks them with his teeth anyway.");
+    startQuest("deep2");
+    return;
+  }
+  if(seeds()>=1&&!hasItem("seasonstone")){
+    await say(...B,"A seed already? Elm said you were quick. She said it like a complaint. It wasn't one.");
+    await say(...B,"Here — the <b>Season Stone</b>. Half bloom, half frost. The shrines out in the Rivergloam answer to it: bloom grows the vine-bridges, frost hardens the water. You'll need both, in the right order, more than once.");
+    give("seasonstone");
+    addCoins(20);
+    if(!S.quests.deep3) startQuest("deep3");
+    if(!S.quests.deep4) startQuest("deep4");
+    await say(...B,"The Embervault wants a hard hat — Tuber's helms are ugly and perfect. The gloam wants his Bubble Charm. Yes, he's my nephew. No, I don't get a discount either.");
+    return;
+  }
+  if(seeds()>=2&&!flag("bracken_c2")){
+    setFlag("bracken_c2");
+    await say(...B,"Two seasons in one satchel. The catacomb stair will count them and let you down now — the old doors only open for someone the year already trusts.");
+    await say(...B,"Mind the switches: amber, teal, violet. The builders believed locks should be <i>conversations</i>. You'll be having one.");
+    addCoins(20);
+    return;
+  }
+  if(seeds()>=4&&!flag("bracken_c4")){
+    setFlag("bracken_c4");
+    await say(...B,"All four. <i>All four.</i> Keeper, in three hundred years of badger records, nobody has held a whole year in their hands.");
+    await say(...B,"The Heartroot Door, south-west corner of town. Beyond it waits the <b>First Tree</b> — and whatever the tangle has become down there. It has been alone even longer than your shadow friend was. Remember that, when it snarls.");
+    addCoins(20);
+    return;
+  }
+  if(flag("ended3")){
+    await say(...B,"The root-post tube delivered six letters from Elm this morning, all exclamation marks. The year turns, the tea is warm, and the keeper did it. So says the official badger record.");
+    return;
+  }
+  if(!flag("seed_spring")) await say(...B,"West, to Fungalwood. The Sprout Vault's stones roll where they're walked into — mole engineering. Push thoughtfully; the room forgives anyone who steps out and back.");
+  else if(!flag("seed_summer")&&!flag("seed_autumn")) await say(...B,"North needs a helm, east needs the Bubble Charm and your Season Stone. Either order. The year isn't fussy, just stuck.");
+  else if(seeds()<2) await say(...B,"One more seed and the catacomb will trust you. The braziers north sing in a strict order; the gloam east freezes and blooms by shrine.");
+  else if(!flag("seed_winter")) await say(...B,"South, past the counting stair. Talk to the switches with your hands and the doors will argue themselves open.");
+  else await say(...B,"Four seeds, keeper. The Heartroot Door. Go and plant the year.");
+},
+
+async tuber(){
+  const Tu=["🐭","Tuber"];
+  if(!flag("met_tuber")){ setFlag("met_tuber");
+    await say(...Tu,"Customers! REAL ones! Uncle Bracken doesn't count, he reviews my stock and buys nothing. Welcome to Deep Goods!");
+  }
+  const c=await choice(...Tu,"What'll it be, surfacer?",["Show me your wares","Any advice?","Just looking"]);
+  if(c===0){ openShop("tuber"); return; }
+  if(c===1){
+    if(!hasItem("helm")) await say(...Tu,"The Embervault drops pebbles like opinions. The <b>Mole-made Helm</b> shrugs them off AND lights your way a little better. Forty coins of pure sensible.");
+    else if(!hasItem("bubblecharm")) await say(...Tu,"Gloam-spray gets into everything — boots, ears, dreams. The <b>Bubble Charm</b> keeps you crisp. Thirty-five, and worth it for the ears alone.");
+    else await say(...Tu,"The <b>Firefly Crown</b>? Madam Loam calls it 'too much'. It is. That's the POINT. Seventy coins of too much.");
+    return;
+  }
+  await say(...Tu,"Look with your eyes, not your shoulders — the shelves are load-bearing.");
+},
+
+async wick(){
+  const W=["🪱","Wick"];
+  if(!S.quests.lamps){
+    await say(...W,"Evening, keeper! Or morning. Hard to say, down here — that's rather the problem.");
+    await say(...W,"I'm Wick. Lamplighter, third generation, glow-worm by birth and by trade. When the seasons jammed, <b>five of my deep-lanterns went out</b> — one in town, one in each wild region, one down in the catacomb.");
+    await say(...W,"You carry keeper's fire — I can smell it. Relight my five, and I'll pay proper wages. A dark patch is a lonely patch.");
+    startQuest("lamps");
+    return;
+  }
+  const n=["lr","lf","lg","le","ld"].filter(i=>flag("lamp_"+i)).length;
+  if(S.quests.lamps==="on"&&n>=5){
+    doneQuest("lamps"); addCoins(30);
+    await say(...W,"Five of five! The dark patches are gone and my rounds make sense again. Wages, as promised — and the title of <b>Honorary Lamplighter</b>, which comes with nothing but my undying respect. It's a good title.");
+    await say(...W,"One keeper relights a village lamp; a real keeper relights everyone else's too. My gran used to say that. She'd have liked you.");
+    return;
+  }
+  if(S.quests.lamps==="on"){
+    await say(...W,"That's "+n+" of 5 alight. "+(n<5?"One in town, one in Fungalwood, one by the gloam shore, one in the Embervault, one in the catacomb dark.":""));
+    return;
+  }
+  if(flag("ended3")) await say(...W,"With the seasons turning, my lanterns keep TIME now as well as light. Promotion, basically. Gran would faint.");
+  else await say(...W,"Keep your own lamp trimmed, keeper. The deep respects a tended flame.");
+},
+
+async pebble(){
+  const P=["🐹","Pebble"];
+  const n=[1,2,3,4].filter(i=>S.got["mar"+i]).length;
+  if(!S.quests.marbles){
+    await say(...P,"Don't tell mum. DON'T TELL MUM. I rolled my four best marbles down four different tunnels to see which tunnel was fastest and the answer is ALL OF THEM.");
+    await say(...P,"One went west, one east, one north, one down the spooky south stairs. If you find them I'll pay you my entire fortune. It's twenty-five coins. It was going to be a wheelbarrow fund.");
+    startQuest("marbles");
+    return;
+  }
+  if(S.quests.marbles==="on"&&n>=4){
+    doneQuest("marbles"); addCoins(25);
+    await say(...P,"ALL FOUR! You went down the spooky stairs for a MARBLE! You're my favourite surfacer ever. The wheelbarrow can wait — heroes first.");
+    return;
+  }
+  if(S.quests.marbles==="on"){
+    await say(...P,"That's "+n+" of 4… The purple one rolls the farthest. It's the best one. No pressure. (Pressure.)");
+    return;
+  }
+  if(flag("ended3")) await say(...P,"Mum found out about the marbles. But the seasons came back the same week so technically I'm part of history and CANNOT be grounded.");
+  else await say(...P,"I'm saving up for a wheelbarrow. Then: the world. Well. The garden.");
+},
+
+async brine(){
+  const Br=["🦎","Brine"];
+  const n=[1,2,3].filter(i=>S.got["ps"+i]).length;
+  if(!S.quests.snails){
+    await say(...Br,"Ah! A dry one! Mostly dry. I'm Brine — I keep the gloam-shore, and the gloam-shore keeps pearlsnails, and the pearlsnails have <b>wandered off</b>.");
+    await say(...Br,"Three of them, out across the Rivergloam. They're related to a fellow called Pinch up top, which explains the attitude. Walk up gently and they'll ride home in your satchel.");
+    startQuest("snails");
+    return;
+  }
+  if(S.quests.snails==="on"&&n>=3){
+    doneQuest("snails"); addCoins(30);
+    await say(...Br,"All three! Look at them, completely unrepentant. Thank you, keeper — wages from the shore fund, and a tip: snails always wander toward the thing that's wrong. They were all heading for the First Tree. Make of that what you will.");
+    return;
+  }
+  if(S.quests.snails==="on"){
+    await say(...Br,"That's "+n+" of 3. One keeps to the near shore, one likes the bloom-island, and one — the brave one — made it all the way past the far crossing.");
+    return;
+  }
+  if(flag("ended3")) await say(...Br,"The tide's been writing to us again — proper waves, twice a day, like clockwork. The snails take full credit. I let them.");
+  else await say(...Br,"The gloam is beautiful and it knows it. Don't tell it I said so.");
+},
+
+async loam(){
+  const L=["🍄","Granny Loam"];
+  if(!flag("met_loam")){ setFlag("met_loam");
+    await say(...L,"A surfacer! Stand still, let me look at you. Hmm. Good boots, kind eyes, terrible posture. You'll do.");
+    return;
+  }
+  const tips=[
+    "Tuber's prices are fair and his helms are ugly. Buy the helm. Beauty fades; rockfalls don't.",
+    "Little glints of <b>dewdrop</b> hide all over the deep — worth coins to those who look behind things. I'd look myself but my looking days are mostly napping days.",
+    "The Sprout Vault? Walk INTO the stones, dear, don't pat them. Moles built it for shoulders, not manners.",
+    "The brazier song goes ember, cinder, flicker, blaze, glow — or was it glow first? No — no, I had it right. Probably.",
+    "In my day the catacomb switches were a courting test. Solve it in five pulls and you could marry my sister. Nobody married my sister.",
+    "That snail knight came through last Tuesday. He's very brave and very lost, in both cases extremely slowly.",
+  ];
+  S.flags.loam_i=((S.flags.loam_i||0)+1)%tips.length;
+  await say(...L,tips[S.flags.loam_i]);
+},
+
+async cap(){
+  const C=["🍄","Farmer Cap"];
+  if(!flag("met_cap")){ setFlag("met_cap");
+    await say(...C,"Mind the rows! …Sorry, force of habit. Everything down here is rows. I farm mushrooms, which is to say I stand near mushrooms and worry.");
+  }
+  if(flag("seed_spring")) await say(...C,"Since you woke the Spring Seed, the caps have been growing in SPIRALS. Spirals! My grandfather farmed forty years for one decent spiral.");
+  else if(flag("ended3")) await say(...C,"Four seasons underground now, regular as soup. The mushrooms have opinions about autumn. Loud ones.");
+  else await say(...C,"The big caps are furniture, the small ones are dinner, and the glowing ones are STRICTLY decorative. We learned that the fun way.");
+},
+
+async snarl(){
+  const Sn=["🧶","???"];
+  const allKnots=flag("knot_echo")&&flag("knot_riddle")&&flag("knot_name");
+  if(flag("snarl_freed")){
+    await say("🧶","Snarl","Plant them, keeper. The altar's waited three hundred years; another minute might actually kill it.");
+    return;
+  }
+  if(!allKnots){
+    const n=["knot_echo","knot_riddle","knot_name"].filter(flag).length;
+    if(!flag("met_snarl")){
+      setFlag("met_snarl");
+      await say(...Sn,"<i>DON'T—</i> …don't pull. Please. Everyone who finds me pulls, and pulling makes it worse, it has ALWAYS made it worse.");
+      await say(...Sn,"I am the tangle. The unpicked nights, the lost strings, the dropped stitches of the whole Hollow — all of it sank down here and knotted around the Tree. Around <i>me</i>. I can't tell anymore where the knot ends and I start.");
+      await say(...Sn,"Three great knots hold me to the roots. They won't be <b>forced</b> — they were tied by losing, so they only answer to… the opposite. Whatever that is. I've had three hundred years and I still can't say it.");
+    } else {
+      await say(...Sn,(3-n)+" knot"+(n===2?"":"s")+" still hold"+(n===2?"s":"")+". The blue one hums, the gold one asks, the rose one… the rose one remembers. Be careful with the rose one. It's mostly me.");
+    }
+    return;
+  }
+  // all knots untied — the turn
+  await say("🧶","Snarl","…They're loose. They're LOOSE. Three hundred years and you — you didn't pull. Not once.");
+  await say("🧶","Snarl","A song given back. A riddle answered kindly. A <i>name</i> that isn't 'mess' or 'monster'. That's what the opposite of losing is. It's being <b>found</b>.");
+  const c=await choice("🧶","Snarl","What happens to a tangle when every thread in it goes home?",
+    ["Let's find out together","Something new, I think","Whatever YOU choose, Snarl"]);
+  if(c===0) await say("🧶","Snarl","<i>Together.</i> Yes. That's how threads do everything, when they're lucky.");
+  if(c===1) await say("🧶","Snarl","Something new. Three hundred years of being something OLD… I'd like that very much.");
+  if(c===2) await say("🧶","Snarl","I choose?? Nobody's ever— …I choose to find out. I choose the keeper's way.");
+  setFlag("snarl_freed");
+  sfx("fanfare"); flashT=20;
+  await say("🌠","","The tangle slips down from the roots like a heavy coat coming off. Above you, two familiar lights are descending through the cavern: one gold, one soft violet-dark.");
+  toast("⭐🌑 Lumen and Umbra have come down to the First Tree!",3400);
+  respawnEnts(); save();
+},
+
+async lumen3(){
+  await say("⭐","Lumen","A lamp, a loom, and now the deepest root of all. Keeper, I fell into the best possible valley.");
+  await say("⭐","Lumen","Go on — the altar. We'll hold the light steady.");
+},
+async umbra3(){
+  await say("🌑","Umbra","Three hundred years ago I pulled one thread, and it landed <i>here</i>, on something lonelier than me. Funny. Not funny. Both.");
+  await say("🌑","Umbra","Plant the seeds, keeper. Let's finally put the year back where I knocked it from.");
+},
+async tassel(){
+  const Ta=["🌱","Tassel"];
+  if(S.map==="village"){
+    await say(...Ta,"Keeper! Look! I'm visiting the SURFACE! Elm gave me tea, Pip showed me his kite, and the sun is the single best thing I have ever pointed my face at.");
+    await say(...Ta,"Tilda says when I'm taller I can help with the honeycakes. I am going to be SO tall. I'm a tree, technically. It's a long story. You were there.");
+    return;
+  }
+  await say(...Ta,"Every morning the First Tree grows one new leaf, and every morning I say 'good job' to it. Lumen says that's basically being a keeper. I'm PRACTISING.");
+},
+});
+
+/* Sir Plod, knight of all three realms */
+DLGS.plod=async function(){
+  const P=["🐌","Sir Plod"];
+  const GROUND=["village","forest","cove","peak","crater"], SKY=["galegardens","mirrorvale","moontemple"], DEEP=["fungalwood","rivergloam","embervault"];
+  if(!S.quests.plod) startQuest("plod");
+  const here=S.map;
+  if(!S.plod[here]){
+    S.plod[here]=true;
+    const gn=GROUND.filter(m=>S.plod[m]).length;
+    const sn=SKY.filter(m=>S.plod[m]).length;
+    const dn=DEEP.filter(m=>S.plod[m]).length;
+    const lines={
+      village:"A knight! Questing! Yes, I am Sir Plod, and I am crossing the ENTIRE Hollow. Started in spring. Of some year.",
+      forest:"You again! See? PROGRESS. The trees here gossip terribly. About my pace, mostly. Rude.",
+      cove:"Sand, my old nemesis. Beautiful, but it gets in the shell. Still — onward! Eventually!",
+      peak:"C-c-cold! But a knight does not stop. A knight merely proceeds extremely gradually.",
+      crater:"The final region! I have crossed the WHOLE Hollow! They said it could not be done by a snail. They were nearly right!",
+      galegardens:"A gust picked me up on Tuesday and now I quest in the SKY. I have decided this was intentional. Knights adapt!",
+      mirrorvale:"The crystals show my reflection. Heroic. Gleaming. Slightly behind schedule.",
+      moontemple:"A TEMPLE. AT MY PACE. Squire-witness, we have peaked. Do not tell the mountain I said that.",
+      fungalwood:"I fell down a whirlpool. ON PURPOSE. (It was not on purpose.) (Knights adapt.) The mushrooms here are excellent listeners.",
+      rivergloam:"A sea! Underground! I attempted to sail my shell across it. The shell and I have agreed never to speak of it.",
+      embervault:"It is WARM down here, squire. Do you know what warmth does to a snail's pace? NOTHING. Consistency is my entire brand.",
+    };
+    await say(...P,lines[here]||"Onward!");
+    if(GROUND.includes(here)){
+      if(gn>=5&&S.quests.plod==="on"){
+        await say(...P,"And YOU have witnessed the entire quest! Every region! A knight rewards his squire-witness. My treasure — I shan't be needing it. Too heavy anyway.");
+        addCoins(50); give("medal"); doneQuest("plod"); sfx("fanfare");
+      } else if(S.quests.plod==="on"){
+        await say(...P,"You've now seen me in <b>"+gn+" of 5</b> regions. Witness my whole journey and you shall share in my treasure. Knight's honour!");
+      }
+    } else if(SKY.includes(here)){
+      if(!S.quests.plodsky) startQuest("plodsky");
+      if(sn>=3&&S.quests.plodsky==="on"){
+        await say(...P,"Three sky regions, fully knighted! You witnessed history at its slowest, squire. Take the Sky Medal — and the sky treasure. Clouds are FULL of loose change, who knew?");
+        addCoins(60); give("skymedal"); doneQuest("plodsky"); sfx("fanfare");
+      } else if(S.quests.plodsky==="on"){
+        await say(...P,"That's <b>"+sn+" of 3</b> sky regions witnessed. The quest continues! Upward! Ish!");
+      }
+    } else {
+      if(!S.quests.plodeep) startQuest("plodeep");
+      if(dn>=3&&S.quests.plodeep==="on"){
+        await say(...P,"Surface, sky, and now the DEEP — witnessed in full! Squire, you have followed a snail to the bottom of the world. History will be kind to us both, and extremely slow about it.");
+        await say(...P,"The Deep Medal — and the last of my treasure. A knight travels light. A snail has no choice.");
+        addCoins(70); give("deepmedal"); doneQuest("plodeep"); sfx("fanfare");
+      } else if(S.quests.plodeep==="on"){
+        await say(...P,"That's <b>"+dn+" of 3</b> deep regions. The bottom of the world, at the top of my pace!");
+      }
+    }
+    return;
+  }
+  await say(...P,"Still here. Building momentum. It takes several days to build momentum when you're a snail. It's mostly paperwork.");
+};
+
+/* Lumen by the Heartlamp — now carries all three act transitions */
+DLGS.lumen2=async function(){
+  const L=["⭐","Lumen"];
+  if(!flag("act2")){
+    await say(...L,"Keeper! Down here — well, out here. I can step out of the lamp for a bit. Perk of the job.");
+    await say(...L,"I have to tell you something I should have said sooner. I didn't just <i>fall</i> that night… I was <b>shaken loose</b>.");
+    await say(...L,"Something up there is unpicking the <b>Night Loom</b> — the great weave that holds the dark sky snug around the stars. If it frays through, the night unravels. No stars. No moon. Just… a draught.");
+    const c=await choice(...L,"I can open the star bridge at the crater. Will you go up?",
+      ["Up? UP? …Okay. Up.","The sky needs a keeper too, I suppose."]);
+    if(c===0) await say(...L,"That's the spirit! Mostly. The clouds hold, I promise — Skyharbor has been up there longer than Willowdale's been down here.");
+    else await say(...L,"Exactly. And between us, the sky has been doing your job for years — time to return the favour.");
+    await say(...L,"Find <b>Glint</b> in Skyharbor — a spark of me I sent ahead. And take the south road to the crater: the <b>star bridge</b> is waiting where I landed.");
+    setFlag("act2"); startQuest("sky1");
+    refreshHUD();
+    return;
+  }
+  if(flag("ended2")&&!flag("act3")){
+    await say(...L,"Keeper… something's still wrong. Elm's roses froze on Tuesday, bloomed on Wednesday, and on Thursday they couldn't decide. And Marra says the <b>tide has stopped</b>.");
+    await say("🌑","Umbra","(a voice from your shadow) It's my fault. Again. <i>Three hundred years</i> of thread I pulled didn't vanish, keeper. It sank. It's tangled around something old, down beneath everything.");
+    await say(...L,"The seasons turn from below — from the roots. Umbra and I can feel the knot from here, like a stone in the Hollow's shoe.");
+    const c=await choice(...L,"Marra says a whirlpool has opened in the tide cave at Glimmer Cove. Will you go down?",
+      ["Lamp, sky… fine. BOTTOM OF THE WORLD.","Someone down there might need finding."]);
+    if(c===0) await say(...L,"That's the collector's spirit! Surface, sky, and deep — the full set.");
+    else await say(...L,"…You sound like you already understand whatever's waiting. You usually do, somehow.");
+    await say(...L,"The whirlpool in the <b>Tide Cave</b> — where the shells sang for you. Breathe out on the way down; that's what the fish do.");
+    setFlag("act3"); startQuest("deep1");
+    refreshHUD();
+    return;
+  }
+  if(flag("ended3")){
+    await say(...L,"Lamp, loom, and root, keeper. Three lights, all of them yours. The Hollow doesn't have a medal big enough, so Tilda is baking one instead.");
+    return;
+  }
+  if(flag("act3")&&!flag("ended3")){
+    if(seeds()===0) await say(...L,"The whirlpool waits in the Tide Cave at the cove. Find the folk of Rootholme — roots remember everything, so their elder will know where the year is stuck.");
+    else await say(...L,"You carry "+seeds()+" of 4 Season Seeds. Even up here I can feel the year stretching in its sleep.");
+    return;
+  }
+  if(flag("ended2")){
+    await say(...L,"Two lamps lit: one for the village, one for the whole night sky. You're rather good at this, you know.");
+    return;
+  }
+  if(threads()===0) await say(...L,"The star bridge rises from the crater, south of the square. Glint will meet you in Skyharbor — follow the threads from there.");
+  else await say(...L,"You carry "+threads()+" of 3 Moonthreads. I can feel the Loom holding its breath.");
+};
 
 showTitle();
 </script>
