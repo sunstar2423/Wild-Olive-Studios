@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750" role="img" aria-label="A glowing light shard floating in a dark cavern, a small hooded explorer standing on a ledge below">
+  <defs>
+    <radialGradient id="shGlow" cx="0.5" cy="0.42" r="0.7">
+      <stop offset="0" stop-color="#2a3b66"/>
+      <stop offset="0.5" stop-color="#162038"/>
+      <stop offset="1" stop-color="#0a0e1c"/>
+    </radialGradient>
+    <radialGradient id="shShard" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#eaf6ff"/>
+      <stop offset="0.5" stop-color="#9fd8ff"/>
+      <stop offset="1" stop-color="#3aa0e6"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="750" fill="url(#shGlow)"/>
+  <!-- cavern walls / stalactites -->
+  <g fill="#0c1426">
+    <path d="M0 0 H1200 V120 Q1080 70 980 130 Q900 180 820 110 Q740 50 660 130 Q580 200 500 120 Q420 50 340 130 Q260 200 180 120 Q90 60 0 130 Z"/>
+    <path d="M0 750 H1200 V600 Q1060 660 940 600 Q820 540 700 620 Q600 690 480 610 Q360 540 240 620 Q120 690 0 610 Z"/>
+  </g>
+  <g fill="#101a30">
+    <path d="M150 750 q40 -160 80 0 Z"/><path d="M520 750 q30 -120 60 0 Z"/><path d="M1010 750 q46 -190 92 0 Z"/>
+  </g>
+  <!-- glow halo -->
+  <circle cx="600" cy="300" r="250" fill="#3aa0e6" opacity="0.16"/>
+  <circle cx="600" cy="300" r="150" fill="#7cc6ff" opacity="0.18"/>
+  <!-- floating light shard -->
+  <g transform="translate(600 295)">
+    <path d="M0 -70 L26 0 L0 90 L-26 0 Z" fill="url(#shShard)"/>
+    <path d="M0 -70 L0 90" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+    <g stroke="#bfe6ff" stroke-width="3" stroke-linecap="round" opacity="0.7">
+      <line x1="0" y1="-92" x2="0" y2="-110"/><line x1="40" y1="0" x2="58" y2="0"/>
+      <line x1="-40" y1="0" x2="-58" y2="0"/><line x1="0" y1="108" x2="0" y2="126"/>
+    </g>
+  </g>
+  <!-- ledge -->
+  <path d="M470 560 H760 L740 600 H490 Z" fill="#1a2742"/>
+  <!-- little hooded explorer with lantern -->
+  <g transform="translate(600 500)">
+    <path d="M-16 60 Q-22 6 0 -6 Q22 6 16 60 Z" fill="#1d2c4a"/>
+    <circle cx="0" cy="-18" r="16" fill="#26385c"/>
+    <path d="M-14 -22 Q0 -40 14 -22 L12 -10 Q0 -20 -12 -10 Z" fill="#142036"/>
+    <circle cx="-5" cy="-16" r="3" fill="#9fd8ff"/><circle cx="6" cy="-16" r="3" fill="#9fd8ff"/>
+    <circle cx="26" cy="10" r="9" fill="#ffd36b" opacity="0.95"/>
+    <circle cx="26" cy="10" r="18" fill="#ffd36b" opacity="0.25"/>
+    <line x1="14" y1="6" x2="26" y2="10" stroke="#26385c" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <!-- drifting motes -->
+  <g fill="#bfe6ff">
+    <circle cx="420" cy="240" r="3" opacity="0.8"/><circle cx="780" cy="200" r="2.5" opacity="0.7"/>
+    <circle cx="700" cy="380" r="2" opacity="0.6"/><circle cx="500" cy="360" r="2.5" opacity="0.6"/>
+    <circle cx="860" cy="320" r="2" opacity="0.5"/><circle cx="360" cy="330" r="2" opacity="0.5"/>
+  </g>
+</svg>

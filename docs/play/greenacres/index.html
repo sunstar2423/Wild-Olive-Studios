@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenAcres — Sustainable Farming Simulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header id="top-bar"></header>
+    <main id="main-content">
+      <section id="farm-stage">
+        <div id="sky-scene">
+          <div id="celestial"></div>
+          <div id="clouds">
+            <span class="cloud c1"></span>
+            <span class="cloud c2"></span>
+            <span class="cloud c3"></span>
+          </div>
+          <div id="scenery"></div>
+        </div>
+        <div id="field-wrap">
+          <div id="farm-grid"></div>
+        </div>
+        <div id="weather-fx"></div>
+        <div id="forecast-strip"></div>
+      </section>
+      <aside id="side-panel"></aside>
+    </main>
+    <footer id="bottom-bar">
+      <div id="actions">
+        <button id="btn-till" class="action-btn" disabled>Till</button>
+        <button id="btn-plant" class="action-btn" disabled>Plant</button>
+        <button id="btn-irrigate" class="action-btn" disabled>Irrigate</button>
+        <button id="btn-harvest" class="action-btn" disabled>Harvest</button>
+      </div>
+      <div>
+        <button id="btn-advance" class="advance-btn">Advance Week ➡️</button>
+      </div>
+    </footer>
+    <div id="message-bar"></div>
+    <div id="overlay"></div>
+    <div id="how-to-play">
+      <h3>❓ How to Play GreenAcres</h3>
+      <p><strong>Goal (Campaign):</strong> Reach Sustainability ≥ 75 AND $5,000 by end of Year 2 (week 96).</p>
+      <p><strong>Core Loop:</strong> Click a tile → Till it → Select a crop in Seed Shop → Plant → Advance Week to grow → Harvest when ready → Sell in Inventory → Buy more seeds!</p>
+      <p><strong>Soil & Water:</strong> Watch soil health and moisture. Irrigate dry tiles. Rotate crops to avoid monoculture penalty. Legumes (beans, soybean) restore soil.</p>
+      <p><strong>Sustainability:</strong> Use organic fertiliser, grow diverse crops, buy green tech. Higher sustainability unlocks premium prices and calmer weather.</p>
+      <p><strong>Tech:</strong> Buy upgrades in the Tech tab. Greenhouse lets you plant in winter; Drip Irrigation halves water costs; Compost System makes organic free.</p>
+      <p><strong>Market:</strong> Prices fluctuate weekly. Selling too much of one crop drops its price. Watch for demand events (bonus prices in Market tab).</p>
+      <p><strong>Seasons:</strong> Spring/Summer/Autumn/Winter — 12 weeks each. Crops grow best in their season. Nothing grows outdoors in winter.</p>
+      <button id="btn-close-help" class="action-btn">Got it!</button>
+    </div>
+  </div>
+  <script src="data.js"></script>
+  <script src="sprites.js"></script>
+  <script src="sound.js"></script>
+  <script src="game.js"></script>
+  <script src="ui.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Game.init();
+      UI.init();
+      document.getElementById('btn-close-help')?.addEventListener('click', () => {
+        document.getElementById('how-to-play').classList.remove('visible');
+      });
+      document.getElementById('how-to-play')?.classList.add('visible');
+    });
+  </script>
+</body>
+</html>
