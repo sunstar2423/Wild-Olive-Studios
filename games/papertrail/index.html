@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+  <title>Paper Trail — Paper Lantern Studios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="game-wrapper">
+    <canvas id="game-canvas"></canvas>
+
+    <div id="screen-title" class="screen">
+      <div class="screen-bg"></div>
+      <div class="screen-content">
+        <h1 class="game-logo">Paper Trail</h1>
+        <p class="game-subtitle">a bicycle ride through paper & pine</p>
+        <p class="game-brand">Paper Lantern Studios</p>
+        <div class="title-info">
+          <p id="best-score-title" class="best-label">Best: —</p>
+        </div>
+        <button id="btn-start" class="btn btn-primary">Ride</button>
+        <p class="controls-hint">Arrows / WASD steer · Space hop · Up ramps for air &amp; tricks · Grab ⚡ boosts · Skim hazards for combos · M mute · P pause</p>
+      </div>
+    </div>
+
+    <div id="screen-over" class="screen" hidden>
+      <div class="screen-bg"></div>
+      <div class="screen-content">
+        <h1 class="game-logo">Crash!</h1>
+        <p class="game-subtitle">Your ride is over</p>
+        <div class="score-display">
+          <p class="final-score-label">Score</p>
+          <p id="final-score" class="final-score">0</p>
+          <p id="new-best" class="new-best" hidden>New Best!</p>
+          <p class="best-label">Best: <span id="best-score-over">—</span></p>
+          <p class="stat-line">Distance: <span id="final-distance">0</span>m · Coins: <span id="final-coins">0</span></p>
+        </div>
+        <div class="over-buttons">
+          <button id="btn-restart" class="btn btn-primary">Ride Again</button>
+          <button id="btn-title" class="btn btn-secondary">Title</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="hud" class="hud" hidden>
+      <div class="hud-row">
+        <span id="hud-score" class="hud-score">0</span>
+        <span id="hud-zone" class="hud-zone">Whispering Pines</span>
+        <span id="hud-lives" class="hud-lives">❤❤❤</span>
+      </div>
+      <div class="hud-row hud-row-2">
+        <span id="hud-distance" class="hud-distance">0m</span>
+        <span id="hud-speed" class="hud-speed">SPD</span>
+      </div>
+      <div id="hud-combo" class="hud-combo" hidden>
+        <span class="combo-mult">x2</span>
+        <span class="combo-label">COMBO</span>
+        <span class="combo-bar"><span class="combo-bar-fill"></span></span>
+      </div>
+    </div>
+
+    <button id="mute-indicator" class="mute-indicator" aria-label="Mute">🔊</button>
+
+    <div id="pause-overlay" class="pause-overlay" hidden>
+      <p>PAUSED</p>
+      <p class="pause-hint">Press P to resume</p>
+    </div>
+
+    <div id="zone-banner" class="zone-banner" hidden>
+      <div class="zone-banner-inner">
+        <span class="zone-banner-label">Now entering</span>
+        <span id="zone-banner-name" class="zone-banner-name"></span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/game.js"></script>
+</body>
+</html>
