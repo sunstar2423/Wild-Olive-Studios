@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+  <title>Shade — Paper Lantern Studios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="shade">
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="dust" aria-hidden="true"></div>
+
+  <main class="stage">
+    <!-- ---- menu ---- -->
+    <section id="screen-menu" class="overlay overlay--menu">
+      <h1 class="brand">Shade</h1>
+      <p class="brand-sub">a tiny hollow-knight-like platformer</p>
+      <div class="menu-buttons">
+        <button id="btn-start" class="btn btn--primary">Play</button>
+        <button id="btn-select" class="btn">Level Select</button>
+        <button id="btn-howto" class="btn">How to Play</button>
+        <button id="btn-mute-menu" class="btn btn--ghost">🔊 Sound</button>
+      </div>
+      <p class="credit">Paper Lantern Studios</p>
+    </section>
+
+    <!-- ---- how to play ---- -->
+    <section id="screen-howto" class="overlay overlay--card" hidden>
+      <h2>How to Play</h2>
+      <ul class="rules">
+        <li><b>Move</b> with <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>.</li>
+        <li><b>Jump</b> with <kbd>Space</kbd> / <kbd>Z</kbd> / <kbd>J</kbd>. Hold for a higher leap.</li>
+        <li><b>Attack</b> with <kbd>X</kbd> / <kbd>K</kbd>. Time strikes to defeat shades.</li>
+        <li>Collect <b>light shards</b> and find the <b>lantern door</b> to escape each cave.</li>
+        <li>Find the <b>Moth Wings</b> power-up to gain a double jump.</li>
+      </ul>
+      <p class="tip">Tip: press <kbd>R</kbd> to restart a level, <kbd>Esc</kbd> for the menu.</p>
+      <button id="btn-howto-back" class="btn">Back</button>
+    </section>
+
+    <!-- ---- level select ---- -->
+    <section id="screen-select" class="overlay overlay--card overlay--select" hidden>
+      <h2>Level Select</h2>
+      <div id="select-grid" class="select-grid"></div>
+      <button id="btn-select-back" class="btn">Back</button>
+    </section>
+
+    <!-- ---- play hud ---- -->
+    <header id="hud" class="hud" hidden>
+      <div class="hud-left">
+        <span id="level-name" class="hud-title">Level 1</span>
+        <span id="level-hint" class="hud-hint"></span>
+      </div>
+      <div class="hud-right">
+        <span class="hud-stat"><span id="shards">0</span> ✦</span>
+        <span class="hud-stat" id="hearts">♥♥♥</span>
+        <button id="btn-reset" class="iconbtn" title="Restart (R)">↺</button>
+        <button id="btn-mute" class="iconbtn" title="Sound">🔊</button>
+        <button id="btn-menu" class="iconbtn" title="Menu (Esc)">≡</button>
+      </div>
+    </header>
+
+    <div id="board" class="board" hidden>
+      <canvas id="shade-canvas"></canvas>
+    </div>
+
+    <!-- ---- win ---- -->
+    <section id="screen-win" class="overlay overlay--win" hidden>
+      <div class="win-glow"></div>
+      <h2 id="win-title">Cave cleared</h2>
+      <p id="win-stats" class="win-stats"></p>
+      <div class="win-buttons">
+        <button id="btn-replay" class="btn">Replay</button>
+        <button id="btn-next" class="btn btn--primary">Next cave →</button>
+      </div>
+      <button id="btn-win-menu" class="btn btn--ghost">Level menu</button>
+    </section>
+
+    <!-- ---- death ---- -->
+    <section id="screen-death" class="overlay overlay--win" hidden>
+      <div class="win-glow death-glow"></div>
+      <h2>Your light faded</h2>
+      <p class="win-stats">Press restart to try again.</p>
+      <div class="win-buttons">
+        <button id="btn-death-restart" class="btn btn--primary">Restart</button>
+        <button id="btn-death-menu" class="btn btn--ghost">Level menu</button>
+      </div>
+    </section>
+
+    <!-- ---- pause ---- -->
+    <section id="screen-pause" class="overlay overlay--card" hidden>
+      <h2>Paused</h2>
+      <div class="menu-buttons">
+        <button id="btn-resume" class="btn btn--primary">Resume</button>
+        <button id="btn-pause-reset" class="btn">Restart</button>
+        <button id="btn-pause-menu" class="btn btn--ghost">Level menu</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="levels.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
