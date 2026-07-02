@@ -497,10 +497,83 @@ const Game = {
     try {
       const data = localStorage.getItem('greenacres_save');
       if (!data) return null;
-      const parsed = JSON.parse(data);
-      if (parsed && parsed.tiles && Array.isArray(parsed.tiles)) return parsed;
-      return null;
+      return this.sanitizeSave(JSON.parse(data));
     } catch (e) { return null; }
+  },
+
+  // Rebuild a clean state from a parsed save. Saved values are copied onto a
+  // fresh state only after validation (enums whitelisted, ids checked against
+  // game data, numbers clamped) — several of these fields end up in innerHTML,
+  // so a hand-edited or corrupt save must never carry markup or unknown ids.
+  sanitizeSave(parsed) {
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.tiles)) return null;
+    const num = (v, fallback, min, max) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+    };
+    const cropIds = new Set(CROPS.map(c => c.id));
+    const s = this.createInitialState();
+
+    s.money = Math.round(num(parsed.money, STARTING_MONEY, 0, 1e9));
+    s.week = Math.round(num(parsed.week, 1, 1, 48));
+    s.year = Math.round(num(parsed.year, 1, 1, 999));
+    s.season = this.getSeason(s.week, s.year);
+    s.waterReserve = Math.round(num(parsed.waterReserve, STARTING_WATER_RESERVE, 0, 500));
+    s.sustainability = Math.round(num(parsed.sustainability, 50, 0, 100));
+    s.mode = parsed.mode === 'sandbox' ? 'sandbox' : 'campaign';
+    s.gameOver = parsed.gameOver === true;
+    s.won = parsed.won === true;
+    s.climateSeverity = num(parsed.climateSeverity, 0.5, 0.05, 1);
+
+    s.weather = (parsed.weather && WEATHER_EVENTS.find(w => w.id === parsed.weather.id)) || null;
+    s.weatherQueue = (Array.isArray(parsed.weatherQueue) ? parsed.weatherQueue : [])
+      .filter(id => WEATHER_EVENTS.some(w => w.id === id)).slice(0, 3);
+
+    const demandCrop = parsed.demandEvent && CROPS.find(c => c.id === parsed.demandEvent.cropId);
+    if (demandCrop) {
+      s.demandEvent = {
+        cropId: demandCrop.id, name: demandCrop.name, emoji: demandCrop.emoji,
+        bonus: Math.round(num(parsed.demandEvent.bonus, 0, 0, 500)),
+      };
+      s.demandTimer = Math.round(num(parsed.demandTimer, 0, 0, 99));
+    }
+
+    const TILE_STATES = ['empty', 'tilled', 'planted', 'ready', 'withered'];
+    parsed.tiles.slice(0, TOTAL_TILES).forEach((t, i) => {
+      if (!t || typeof t !== 'object') return;
+      const tile = s.tiles[i];
+      tile.state = TILE_STATES.includes(t.state) ? t.state : 'empty';
+      tile.crop = cropIds.has(t.crop) ? t.crop : null;
+      if ((tile.state === 'planted' || tile.state === 'ready') && !tile.crop) tile.state = 'empty';
+      tile.growthProgress = num(t.growthProgress, 0, 0, 999);
+      tile.soilHealth = num(t.soilHealth, STARTING_SOIL_HEALTH, 0, 100);
+      tile.moisture = num(t.moisture, STARTING_MOISTURE, 0, 100);
+      tile.previousCrop = cropIds.has(t.previousCrop) ? t.previousCrop : null;
+      tile.fertiliser = ['chemical', 'organic'].includes(t.fertiliser) ? t.fertiliser : 'none';
+      tile.greenhouse = t.greenhouse === true;
+      tile.dryWeeks = Math.round(num(t.dryWeeks, 0, 0, 99));
+    });
+
+    if (parsed.inventory && typeof parsed.inventory === 'object') {
+      for (const id of cropIds) {
+        const qty = Math.round(num(parsed.inventory[id], 0, 0, 1e6));
+        if (qty > 0) s.inventory[id] = qty;
+      }
+    }
+    if (Array.isArray(parsed.ownedTech)) {
+      s.ownedTech = TECH.map(t => t.id).filter(id => parsed.ownedTech.includes(id));
+    }
+    for (const crop of CROPS) {
+      if (parsed.marketPrices) {
+        s.marketPrices[crop.id] = Math.round(num(parsed.marketPrices[crop.id], crop.basePrice, 1, 9999));
+      }
+      if (parsed.salesHistory && Array.isArray(parsed.salesHistory[crop.id])) {
+        s.salesHistory[crop.id] = parsed.salesHistory[crop.id].slice(-12).map(v => num(v, 0, 0, 1e6));
+      }
+    }
+    s.recentCrops = (Array.isArray(parsed.recentCrops) ? parsed.recentCrops : [])
+      .filter(id => cropIds.has(id)).slice(-20);
+    return s;
   },
 
   deleteSave() {

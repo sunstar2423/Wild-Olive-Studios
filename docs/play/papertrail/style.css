@@ -126,6 +126,15 @@ html, body {
   color: #6a5a4a;
 }
 
+.back-link {
+  display: inline-block;
+  margin-top: 1.25rem;
+  font-size: 0.75rem;
+  color: #6a5a4a;
+  text-decoration: none;
+}
+.back-link:hover { color: #f4ecd8; text-decoration: underline; }
+
 /* Game Over */
 .score-display { margin-bottom: 1.5rem; }
 

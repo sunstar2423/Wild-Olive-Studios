@@ -134,6 +134,7 @@ const UI = {
 
     this.els.topBar.innerHTML = `
       <div class="top-left">
+        <a class="stat back-link" href="../../#games" title="Back to Wild Olive Studios">← Studio</a>
         <span class="stat brand">🌱 GreenAcres</span>
         <span class="stat">💰 $${s.money}</span>
         <span class="stat">📅 Yr${s.year} ${s.season} Wk${s.week}</span>
