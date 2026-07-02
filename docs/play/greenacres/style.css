@@ -63,6 +63,13 @@ body {
 }
 .stat.warn { color: #ffd24a; }
 
+.stat.back-link {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  cursor: pointer;
+}
+.stat.back-link:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
 /* sustainability meter */
 .sust-meter {
   display: inline-flex;
